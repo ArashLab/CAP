@@ -2,6 +2,7 @@ import glob
 import time
 
 import hail as hl
+from munch import Munch
 from .logutil import *
 from .common import *
 from .helper import *
@@ -11,10 +12,16 @@ if __name__ == '__main__':
     print('This module is not executable. Please import this module in your program.')
     exit(0)
 
-#TBF: to include ref genome as parameter
+# TBF: to include ref genome as parameter
+
+
 @D_General
 def ImportGenotype(stage):
-    spec, arg, inout = stage.spec, stage.arg, stage.inout
+    inout = stage.inout
+    if 'arg' in stage:
+        arg = stage.arg
+    else:
+        arg = Munch()
 
     # >>>>>>> Input/Output <<<<<<<<
     inGt = inout.inGt
@@ -27,12 +34,16 @@ def ImportGenotype(stage):
     try:
         if 'importParam' not in arg:
             arg.importParam = dict()
-        if arg.inputFormat == 'vcf' and inGt.format == 'vcf':
+        if 'inputFormat' in arg:
+            if arg.inputFormat != inGt.format:
+                LogException(f'input format mentioned in arg {arg.inputFormat} is different from input format of the inout inGt {inGt.format}')
+
+        if inGt.format == 'vcf':
             mt = hl.import_vcf(inGt.path, **arg.importParam)
-        elif arg.inputFormat == 'bfile' and inGt.format == 'bfile':
+        elif inGt.format == 'bfile':
             mt = hl.import_plink(bed=f'{inGt.path}.bed', bim=f'{inGt.path}.bim', fam=f'{inGt.path}.fam', **arg.importParam)
         else:
-            LogException(f'Input format is not properly set. Make sure arg.inputFormat ({arg.inputFormat}) and inGt.format ({inGt.format}) are consistent.')
+            LogException(f'inGt.format ({inGt.format}) is not supported')
     except:
         LogException('Hail cannot read genotype data.')
     Log(f'Genotypes are loaded from "{inGt.path}".')
@@ -47,6 +58,7 @@ def ImportGenotype(stage):
 
     # >>>>>>> Live Output <<<<<<<<
     outGt.data = mt
+
 
 @D_General
 def SplitMulti(stage):
@@ -67,12 +79,13 @@ def SplitMulti(stage):
             mt = hl.split_multi_hts(mt)
         else:
             mt = hl.split_multi(mt)
-        after = Count(mt) 
+        after = Count(mt)
     except:
         LogException('Could not split multi allelic sites.')
     Log(f'{before.variants} loci result in {after.variants} bi-allelic loci.')
     # >>>>>>> Live Output <<<<<<<<
     outGt.data = mt
+
 
 @D_General
 def AddId(stage):
@@ -86,13 +99,13 @@ def AddId(stage):
 
     # >>>>>>> Live Input <<<<<<<<
     mt = Shared[inGt.path]
-    
+
     # >>>>>>> STAGE Code <<<<<<<<
     # Add indexes
     mt = mt.add_col_index(name='sampleId')
     mt = mt.add_row_index(name='variantId')
-    mt = mt.annotate_cols(sampleId = mt.sampleId+1)
-    mt = mt.annotate_rows(variantId = mt.variantId+1)
+    mt = mt.annotate_cols(sampleId=mt.sampleId+1)
+    mt = mt.annotate_rows(variantId=mt.variantId+1)
 
     mt = mt.key_cols_by('sampleId')
 
@@ -110,6 +123,7 @@ def AddId(stage):
     outGt.data = mt
     outCol.data = ht_col
     outRow.data = ht_row
+
 
 @D_General
 def ExportGenotype(stage):
@@ -160,7 +174,7 @@ def ExportGenotype(stage):
     try:
         if 'exportParam' not in arg:
             arg.exportParam = dict()
-        if arg.outputFormat == 'vcf' and outGt.format =='vcf':
+        if arg.outputFormat == 'vcf' and outGt.format == 'vcf':
             hl.export_vcf(mt, outGt.path, **arg.exportParam)
         elif arg.outputFormat == 'bfile' and outGt.format == 'bfile':
             for k in ['call', 'fam_id', 'ind_id', 'pat_id', 'mat_id', 'is_female', 'pheno', 'varid', 'cm_position']:
@@ -176,13 +190,14 @@ def ExportGenotype(stage):
 
     # >>>>>>> Live Output <<<<<<<<
 
+
 @D_General
 def ImportPhenotype(stage):
     spec, arg, inout = stage.spec, stage.arg, stage.inout
 
     # >>>>>>> Input/Output <<<<<<<<
     inPt = inout.inPt
-    inS = inout.inS # input samples with sample IDs
+    inS = inout.inS  # input samples with sample IDs
     outPt = inout.outPt
 
     # >>>>>>> Live Input <<<<<<<<
@@ -215,10 +230,10 @@ def ImportPhenotype(stage):
     ht = ht.join(htS)
 
     Log('Sample ids are added.')
-    
 
     # >>>>>>> Live Output <<<<<<<<
     outPt.data = ht
+
 
 @D_General
 def PcaHweNorm(stage):
@@ -342,12 +357,12 @@ def VepAnnotation(stage):
         templateCommand = arg.vepCli
 
         Bash(['mkdir', outData.path])
-        
+
         vcfList = glob.glob(path + '/part-*.bgz')
         numJob = len(vcfList)
 
         if 'isArrayJob' in arg and arg.isArrayJob:
-            
+
             numSgeJobs = Shared.numSgeJobs
 
             if 'numSgeJobs' in arg:
@@ -356,11 +371,11 @@ def VepAnnotation(stage):
             else:
                 arg.numSgeJobs = numSgeJobs.default
 
-            #Get the absolute path to the scripts
+            # Get the absolute path to the scripts
             templateCommand[1] = AbsPath(templateCommand[1])
             templateCommand[10] = AbsPath(templateCommand[10])
             # submit the array job
-            
+
             command = templateCommand
             command = [path if p == '__VCF_DIR__' else p for p in command]
             command = [outData.path if p == '__JSON_DIR__' else p for p in command]
@@ -370,10 +385,10 @@ def VepAnnotation(stage):
             command = ['1' if p == '__JOB_START__' else p for p in command]
             command = [str(numJob) if p == '__JOB_END__' else p for p in command]
             command = [str(arg.numSgeJobs) if p == '__JOB_IN_PARALLEL__' else p for p in command]
-            
+
             Bash(command)
         else:
-            #Get the absolute path to the scripts
+            # Get the absolute path to the scripts
             templateCommand[1] = AbsPath(templateCommand[1])
             templateCommand[7] = AbsPath(templateCommand[7])
             # submit a job for each VCF
@@ -386,7 +401,7 @@ def VepAnnotation(stage):
                 command = [os.path.join(outData.path, f'part-{code}.table') if p == '__OUT_TSV__' else p for p in command]
                 command = [os.path.join(outData.path, f'part-{code}.job') if p == '__OUT_JOB__' else p for p in command]
                 command = [f'CAP-{code}' if p == '__JOB_ID__' else p for p in command]
-                
+
                 Bash(command)
 
         LogPrint(f'All {numJob} jobs are submitted.')
@@ -429,19 +444,19 @@ def VepLoadTables(stage):
     try:  # TBF it currently check if the folder exist or not. should find a way to check all tsv files
         tsvList = glob.glob(path + '/part-*.var.tsv')
         htVar = ImportMultipleTsv(tsvList, arg.tempDir)
-        htVar = htVar.annotate(varId = hl.int(htVar.varId))
+        htVar = htVar.annotate(varId=hl.int(htVar.varId))
 
         tsvList = glob.glob(path + '/part-*.clvar.tsv')
         htClVar = ImportMultipleTsv(tsvList, arg.tempDir, addFileNumber=True)
-        htClVar = htClVar.annotate(varId = hl.int(htClVar.varId))
-    
+        htClVar = htClVar.annotate(varId=hl.int(htClVar.varId))
+
         tsvList = glob.glob(path + '/part-*.freq.tsv')
         htFreq = ImportMultipleTsv(tsvList, arg.tempDir)
-        htFreq = htFreq.annotate(varId = hl.int(htFreq.varId))
+        htFreq = htFreq.annotate(varId=hl.int(htFreq.varId))
 
         tsvList = glob.glob(path + '/part-*.conseq.tsv')
         htConseq = ImportMultipleTsv(tsvList, arg.tempDir)
-        htConseq = htConseq.annotate(varId = hl.int(htConseq.varId))
+        htConseq = htConseq.annotate(varId=hl.int(htConseq.varId))
     except:
         LogException(f'Can not read tsv files')
 

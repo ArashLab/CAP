@@ -1,0 +1,297 @@
+# 'config' key is used to define all constant to avoid replication
+config:
+    inVcfPath: &inVcfPath 1kg.micro.vcf.bgz # The input VCF file
+    
+    mtPathMa: &mtPathMa 1kg.ma.mt # Hail Matrix Table with multi-allelic variant
+    
+    mtPathRC: &mtPathRC 1kg.rc.mt # Hail Matrix Table with numeric ids for samples and variants
+    htSample: &htSample 1kg.sample.ht # Hail Table with sample information (since the input is a VCF file there is no sample information except sample name)
+    htVariant: &htVariant 1kg.variant.ht # Hail Table with variant information
+    
+    mtPath: &mtPath 1kg.mt # Hail Matrix Table with genotype and loci data only (all other data are excluded)
+
+    outVcfPath: &outVcfPath 1kg.exported.vcf.bgz 
+    bfilePath: &bfilePath 1kg.bfile
+
+    phenoPath: &phenoPath 1kg.pheno.tsv
+    htPhenoPath: &htPhenoPath 1kg.pheno.ht
+
+    htPcaEigenPath: &htPcaEigenPath 1kg.sample.pca.eigen.json
+    htPcaLoadingPath: &htPcaLoadingPath 1kg.sample.pca.loading.ht
+    htPcaScorePath: &htPcaScorePath 1kg.sample.pca.score.ht
+    htPcaVarList: &htPcaVarList 1kg.sample.pca.varlist.ht
+
+    htSampleQc: &htSampleQc 1kg.sample.sqc.ht
+    htVariantQc: &htVariantQc 1kg.variant.vqc.ht
+
+# 'globConfig' is a structure and is used to set the default values and check the range of the given values       
+globConfig:
+    numPartitions:
+        default: 4
+        min: 1
+        max: 128
+
+# 'order' key is an array of stage names and define the order in which stages must be executed.
+order:
+    - IGTVCF # Import GenoType from VCF file into a Hail MatrixTable
+    - BRKMA # Break Multiallelic
+    - ADDID # Add numeric id for samples and variants
+    - TSVS # Export sample information in TSV format
+    - TSVV # Export variant information in TSV format
+    - EGTVCF # Export Genotype in VCF format
+    - EGTPLINK # Export Genotype in plink2 bfile format
+    - IPT # Import Phenotype form TSV file
+    - TSVP # Export Phenotype in TSV format
+    - PCA # Perform Principle Component Analysis (PCA)
+    - TSVPCA # Export PCA scores in TSV format
+    - SQC # Calculate Quality Control (QC) metrics for samples
+    - VQC # Calculate Quality Control (QC) metrics for variants
+    - TSVSQC # Export sample QC in TSV format
+    - TSVVQC # Export variant QC in TSV format
+
+# 'stages' describe all the stages
+# each stage must present 3 keys:
+#    spec: Specification of the stage (i.e. which function to execute)
+#    inout: Input and Output of each stage
+stages:
+    IGTVCF:
+        arg:
+            importParam:
+                min_partitions: 4
+            inputFormat: vcf
+            rename:
+                s: sample
+        inout:
+            inGt:
+                direction: input
+                path: *inVcfPath
+            outGt:
+                direction: output
+                path: *mtPathMa
+                toBeCached: false
+                toBeCounted: false
+        spec:
+            dependencies: []
+            description: Import input VCF file
+            function: ImportGenotype
+    BRKMA:
+        arg:
+            withHTS: true
+        inout:
+            inGt:
+                direction: input
+                path: *mtPathMa
+            outGt:
+                direction: output
+                path: *mtPathRC
+        spec:
+            dependencies: []
+            description: Split multi-allelic sites to multiple bi-allelic sites
+            function: SplitMulti
+    ADDID:
+        arg:
+            dummy: true
+        inout:
+            inGt:
+                direction: input
+                path: *mtPathRC
+            outGt:
+                direction: output
+                path: *mtPath
+            outCol:
+                direction: output
+                path: *htSample
+            outRow:
+                direction: output
+                path: *htVariant
+        spec:
+            dependencies: []
+            description: Add Sample and Variant Id and decouple sample and variant info from matrix table 
+            function: AddId
+    TSVS:
+        arg:
+            mySqlConfig:
+                <<: *mySqlConfig
+                dbtable: sample
+        inout:
+            inHt:
+                direction: input
+                path: *htSample
+        spec:
+            dependencies: []
+            description: TSV
+            function: ToMySql
+    TSVV:
+        arg:
+            mySqlConfig:
+                <<: *mySqlConfig
+                dbtable: variant
+        inout:
+            inHt:
+                direction: input
+                path: *htVariant
+        spec:
+            dependencies: []
+            description: TSV
+            function: ToMySql
+    EGTVCF:
+        arg:
+            drop:
+            - info
+            exportParam:
+                tabix: false
+            outputFormat: vcf
+        inout:
+            inGt:
+                direction: input
+                path: *mtPath
+            outGt:
+                direction: output
+                path: *outVcfPath
+        spec:
+            dependencies: []
+            description: Export Genotype to VCF
+            function: ExportGenotype
+    EGTPLINK:
+        arg:
+            drop:
+            - info
+            exportParam: {}
+            outputFormat: bfile
+        inout:
+            inGt:
+                direction: input
+                path: *mtPath
+            outGt:
+                direction: output
+                format: bfile
+                path: *bfilePath
+                pathType: prefix
+        spec:
+            dependencies: []
+            description: Export Genotype to Plink bfile
+            function: ExportGenotype
+    IPT:
+        arg:
+            importParam: {}
+            sampleKey: 'sample'
+            phenoKey: 'ID'
+        inout:
+            inPt:
+                direction: input
+                path: *phenoPath
+            inS:
+                direction: input
+                path: *htSample
+            outPt:
+                direction: output
+                path: *htPhenoPath
+        spec:
+            dependencies: []
+            description: Import Phenotype
+            function: ImportPhenotype
+    TSVP:
+        arg:
+            mySqlConfig:
+                <<: *mySqlConfig
+                dbtable: pheno
+        inout:
+            inHt:
+                direction: input
+                path: *htPhenoPath
+        spec:
+            dependencies: []
+            description: TSV
+            function: ToMySql
+    PCA:
+        arg:
+            #ldR2: 0.2
+            #minMaf: 0.05
+            numPcaVectors: 3
+            subsample: 1000
+        inout:
+            inGt:
+                direction: input
+                path: *mtPath
+            outPcaLoading:
+                direction: output
+                path: *htPcaLoadingPath
+                toBeCached: false # True results an error for larger datasets
+            outPcaScore:
+                direction: output
+                path: *htPcaScorePath
+            outPcaVarList:
+                direction: output
+                path: *htPcaVarList
+        spec:
+            dependencies: []
+            description: PCA
+            function: PcaHweNorm
+    TSVPCA:
+        arg:
+            mySqlConfig:
+                <<: *mySqlConfig
+                dbtable: pca
+        inout:
+            inHt:
+                direction: input
+                path: *htPcaScorePath
+        spec:
+            dependencies: []
+            description: TSV
+            function: ToMySql
+    SQC:
+        arg:
+            axis: sample
+        inout:
+            inGt:
+                direction: input
+                path: *mtPath
+            outQc:
+                direction: output
+                path: *htSampleQc
+        spec:
+            dependencies: []
+            description: SQC
+            function: CalcQC
+    VQC:
+        arg:
+            axis: variant
+        inout:
+            inGt:
+                direction: input
+                path: *mtPath
+            outQc:
+                direction: output
+                path: *htVariantQc
+        spec:
+            dependencies: []
+            description: VQC
+            function: CalcQC
+    TSVSQC:
+        arg:
+            mySqlConfig:
+                <<: *mySqlConfig
+                dbtable: sqc
+        inout:
+            inHt:
+                direction: input
+                path: *htSampleQc
+        spec:
+            dependencies: []
+            description: TSV
+            function: ToMySql
+    TSVVQC:
+        arg:
+            mySqlConfig:
+                <<: *mySqlConfig
+                dbtable: vqc
+        inout:
+            inHt:
+                direction: input
+                path: *htVariantQc
+        spec:
+            dependencies: []
+            description: TSV
+            function: ToMySql
+

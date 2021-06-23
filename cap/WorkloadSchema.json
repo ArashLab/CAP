@@ -2,7 +2,8 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.com/product.schema.json",
   "type": "object",
-  "required": ["globConfig", "config", "order", "stages"],
+  "required": ["order", "stages"],
+  "additionalProperties": false,
   "properties": {
     "globConfig": { "type": "object" },
     "config": { "type": "object" },
