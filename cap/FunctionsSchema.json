@@ -1,0 +1,368 @@
+{
+  "ImportGenotype": {
+    "arg": {
+      "type": "object",
+      "required": ["inputFormat"],
+      "properties": {
+        "rename": {
+          "type": "object"
+        },
+        "inputFormat": {
+          "type": "string",
+          "enum": ["vcf", "bfile"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "inputFormat": { "const": "vcf" } },
+            "required": ["inputFormat"]
+          },
+          "then": {
+            "properties": {
+              "importParam": {
+                "type": "object",
+                "properties": {
+                  "force": { "type": "boolean" },
+                  "force_bgz": { "type": "boolean" },
+                  "header_file": { "type": "string" },
+                  "min_partitions": { "type": "integer" },
+                  "drop_samples": { "type": "boolean" },
+                  "call_fields": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "reference_genome": { "type": "string" },
+                  "contig_recoding": { "type": "object" },
+                  "array_elements_required": { "type": "boolean" },
+                  "skip_invalid_loci": { "type": "boolean" },
+                  "entry_float_type": { "type": "object" },
+                  "filter": { "type": "string" },
+                  "find_replace": { "type": "object" },
+                  "n_partitions": { "type": "integer" },
+                  "block_size": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "inputFormat": { "const": "bfile" } },
+            "required": ["inputFormat"]
+          },
+          "then": {
+            "properties": {
+              "importParam": {
+                "type": "object",
+                "properties": {
+                  "min_partitions": { "type": "integer" },
+                  "delimiter": { "type": "string" },
+                  "missing": { "type": "string" },
+                  "quant_pheno": { "type": "boolean" },
+                  "a2_reference": { "type": "boolean" },
+                  "reference_genome": { "type": "string" },
+                  "contig_recoding": { "type": "object" },
+                  "skip_invalid_loci": { "type": "boolean" },
+                  "n_partitions": { "type": "integer" },
+                  "block_size": { "type": "integer" }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "inout": {
+      "type": "object",
+      "required": ["inGt", "outGt"],
+      "properties": {
+        "inGt": {
+          "anyOf": [
+            { "$ref": "#/definitions/inoutVcf" },
+            { "$ref": "#/definitions/inoutPlink" }
+          ]
+        },
+        "outGt": { "$ref": "#/definitions/inoutMT" }
+      }
+    }
+  },
+  "SplitMulti": {
+    "arg": {
+      "type": "object",
+      "properties": {
+        "withHTS": { "type": "boolean" }
+      }
+    },
+    "inout": {
+      "type": "object",
+      "required": ["inGt", "outGt"],
+      "properties": {
+        "inGt": { "$ref": "#/definitions/inoutMT" },
+        "outGt": { "$ref": "#/definitions/inoutMT" }
+      }
+    }
+  },
+  "AddId": {
+    "arg": {
+      "type": "object",
+      "properties": {
+        "dummy": { "type": "boolean" }
+      }
+    },
+    "inout": {
+      "type": "object",
+      "required": ["inGt", "outGt", "outCol", "outRow"],
+      "properties": {
+        "inGt": { "$ref": "#/definitions/inoutMT" },
+        "outGt": { "$ref": "#/definitions/inoutMT" },
+        "outCol": { "$ref": "#/definitions/inoutHT" },
+        "outRow": { "$ref": "#/definitions/inoutHT" }
+      }
+    }
+  },
+  "ExportGenotype": {
+    "arg": {
+      "type": "object",
+      "required": ["outputFormat"],
+      "properties": {
+        "drop": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "outputFormat": {
+          "type": "string",
+          "enum": ["vcf", "bfile"]
+        },
+        "forVep": { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "outputFormat": { "const": "vcf" } },
+            "required": ["outputFormat"]
+          },
+          "then": {
+            "properties": {
+              "exportParam": {
+                "type": "object",
+                "properties": {
+                  "parallel": {
+                    "type": "string",
+                    "enum": ["header_per_shard", "separate_header"]
+                  },
+                  "append_to_header": { "type": "string" },
+                  "metadata": { "type": "object" },
+                  "tabix": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "outputFormat": { "const": "bfile" } },
+            "required": ["outputFormat"]
+          },
+          "then": {
+            "properties": {
+              "exportParam": {
+                "type": "object",
+
+                "properties": {
+                  "call": { "type": "array", "items": { "type": "string" } },
+                  "fam_id": { "type": "array", "items": { "type": "string" } },
+                  "ind_id": { "type": "array", "items": { "type": "string" } },
+                  "pat_id": { "type": "array", "items": { "type": "string" } },
+                  "mat_id": { "type": "array", "items": { "type": "string" } },
+                  "is_female": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "pheno": { "type": "array", "items": { "type": "string" } },
+                  "varid": { "type": "array", "items": { "type": "string" } },
+                  "cm_position": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "inout": {
+      "type": "object",
+      "required": ["inGt", "outGt"],
+      "properties": {
+        "inGt": { "$ref": "#/definitions/inoutMT" },
+        "outGt": {
+          "anyOf": [
+            { "$ref": "#/definitions/inoutVcf" },
+            { "$ref": "#/definitions/inoutPlink" }
+          ]
+        }
+      }
+    }
+  },
+  "ImportPhenotype": {
+    "arg": {
+      "type": "object",
+      "required": ["sampleKey", "phenoKey"],
+      "properties": {
+        "sampleKey": {"type": "string"},
+        "phenoKey": {"type": "string"},
+        "importParam": {
+          "type": "object",
+          "properties": {
+            "force": { "type": "boolean" },
+            "force_bgz": { "type": "boolean" },
+            "min_partitions": { "type": "integer" },
+            "key": { "$ref": "#/definitions/strListStr" },
+            "no_header": { "type": "boolean" },
+            "comment": { "$ref": "#/definitions/strListStr" },
+            "missing": { "$ref": "#/definitions/strListStr" },
+            "types": { "type": "object" },
+            "quote": { "type": "string" },
+            "skip_blank_lines": { "type": "boolean" },
+            "filter": { "type": "string" },
+            "find_replace": { "type": "object" },
+            "source_file_field": { "type": "string" }
+          }
+        }
+      }
+    },
+    "inout": {
+      "type": "object",
+      "required": ["inPt", "inS", "outPt"],
+      "properties": {
+        "inPt": {
+          "anyOf": [
+            { "$ref": "#/definitions/inoutTsv" },
+            { "$ref": "#/definitions/inoutCsv" }
+          ]
+        },
+        "inS": { "$ref": "#/definitions/inoutHT" },
+        "outPt": { "$ref": "#/definitions/inoutHT" }
+      }
+    }
+  },
+  "PcaHweNorm": {
+    "arg": {
+      "type": "object",
+      "required": ["numPcaVectors"],
+      "properties": {
+        "numPcaVectors": { "type": "integer" },
+        "minMaf": { "type": "number" },
+        "ldR2": { "type": "number" },
+        "subsample": { "type": "number" }
+      }
+    },
+    "inout": {
+      "type": "object",
+      "required": ["inGt", "outPcaScore"],
+      "properties": {
+        "inGt": { "$ref": "#/definitions/inoutMT" },
+        "outPcaScore": { "$ref": "#/definitions/inoutHT" },
+        "outPcaEigen": { "$ref": "#/definitions/inoutJSON" },
+        "outPcaLoading": { "$ref": "#/definitions/inoutHT" },
+        "outPcaVarList": { "$ref": "#/definitions/inoutHT" }
+      }
+    }
+  },
+  "CalcQC": {
+    "arg": {
+      "type": "object",
+      "required": ["axis"],
+      "properties": {
+        "axis": { "type": "string", "enum": ["sample", "variant"] }
+      }
+    },
+    "inout": {
+      "type": "object",
+      "required": ["inGt", "outQc"],
+      "properties": {
+        "inGt": { "$ref": "#/definitions/inoutMT" },
+        "outQc": { "$ref": "#/definitions/inoutHT" }
+      }
+    }
+  },
+  "ToMySql": {
+    "arg": {
+      "type": "object",
+      "required": ["mySqlConfig"],
+      "properties": {
+        "mySqlConfig": {
+          "type": "object",
+          "required": ["url", "driver", "user", "password", "dbtable"],
+          "properties": {
+            "uri": { "type": "string" },
+            "driver": { "type": "string" },
+            "user": { "type": "string" },
+            "password": { "type": "string" },
+            "dbtable": { "type": "string" }
+          }
+        }
+      }
+    },
+    "inout": {
+      "type": "object",
+      "required": ["inHt"],
+      "properties": {
+        "inHt": { "$ref": "#/definitions/inoutHT" }
+      }
+    }
+  },
+  "VepAnnotation": {
+    "arg": {
+      "type": "object",
+      "required": ["vepCli"],
+      "properties": {
+        "vepCli": { "type": "array", "items": { "type": "string" } },
+        "isArrayJob": { "type": "boolean" },
+        "numSgeJobs": { "type": "integer" }
+      }
+    },
+    "inout": {
+      "type": "object",
+      "required": ["inVar", "outData"],
+      "properties": {
+        "inVar": { "$ref": "#/definitions/inoutVcf" },
+        "outQc": { "$ref": "#/definitions/inoutTemplate" }
+      }
+    }
+  },
+  "VepLoadTables": {
+    "arg": {
+      "type": "object",
+      "required": ["tempDir"],
+      "properties": {
+        "tempDir": { "type": "string" }
+      }
+    },
+    "inout": {
+      "type": "object",
+      "required": [
+        "inData",
+        "outVar",
+        "outClVar",
+        "outFreq",
+        "outConseq",
+        "outConseqToVar",
+        "outConseqTerms",
+        "outVarTerms"
+      ],
+      "properties": {
+        "inData": { "$ref": "#/definitions/inoutTemplate" },
+        "outVar": { "$ref": "#/definitions/inoutHT" },
+        "outClVar": { "$ref": "#/definitions/inoutHT" },
+        "outFreq": { "$ref": "#/definitions/inoutHT" },
+        "outConseq": { "$ref": "#/definitions/inoutHT" },
+        "outConseqToVar": { "$ref": "#/definitions/inoutHT" },
+        "outConseqTerms": { "$ref": "#/definitions/inoutHT" },
+        "outVarTerms": { "$ref": "#/definitions/inoutHT" }
+      }
+    }
+  }
+}

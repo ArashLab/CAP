@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/product.schema.json",
+  "definitions": {
+    "strListStr": {
+      "anyOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" } }
+      ]
+    },
+    "inoutTemplate": {
+      "type": "object",
+      "required": ["direction", "path"],
+      "properties": {
+        "direction": { "type": "string", "enum": ["input", "output"] },
+        "path": { "$ref": "#/definitions/strListStr" },
+        "pathType": {
+          "type": "string",
+          "enum": ["file", "directory", "prefix", "list", "parallel"]
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "ht",
+            "mt",
+            "vcf",
+            "bfile",
+            "bed",
+            "bim",
+            "fam",
+            "tsv",
+            "csv",
+            "json"
+          ]
+        },
+        "compressions": { "type": "string", "enum": ["None", "gz", "bgz"] },
+
+        "pattern": { "type": "string" },
+        "numMatch": { "type": "integer" },
+
+        "isAlive": { "type": "boolean" },
+        "numPartitions": { "type": "integer" },
+        "toBeCached": { "type": "boolean" },
+        "toBeCounted": { "type": "boolean" }
+      }
+    },
+    "inoutMT": {
+      "allOf": [
+        { "$ref": "#/definitions/inoutTemplate" },
+        {
+          "type": "object",
+          "properties": {
+            "format": { "const": "mt" }
+          }
+        }
+      ]
+    },
+    "inoutHT": {
+      "allOf": [
+        { "$ref": "#/definitions/inoutTemplate" },
+        {
+          "type": "object",
+          "properties": {
+            "format": { "const": "ht" }
+          }
+        }
+      ]
+    },
+    "inoutJSON": {
+      "allOf": [
+        { "$ref": "#/definitions/inoutTemplate" },
+        {
+          "type": "object",
+          "properties": {
+            "format": { "const": "json" }
+          }
+        }
+      ]
+    },
+    "inoutPlink": {
+      "allOf": [
+        { "$ref": "#/definitions/inoutTemplate" },
+        {
+          "type": "object",
+          "properties": {
+            "format": { "const": "bfile" }
+          }
+        }
+      ]
+    },
+    "inoutVcf": {
+      "allOf": [
+        { "$ref": "#/definitions/inoutTemplate" },
+        {
+          "type": "object",
+          "properties": {
+            "format": { "const": "vcf" }
+          }
+        }
+      ]
+    },
+    "inoutTsv": {
+      "allOf": [
+        { "$ref": "#/definitions/inoutTemplate" },
+        {
+          "type": "object",
+          "properties": {
+            "format": { "const": "tsv" }
+          }
+        }
+      ]
+    },
+    "inoutCsv": {
+      "allOf": [
+        { "$ref": "#/definitions/inoutTemplate" },
+        {
+          "type": "object",
+          "properties": {
+            "format": { "const": "csv" }
+          }
+        }
+      ]
+    }
+  },
+  "type": "object",
+  "required": ["spec", "arg", "inout"],
+  "properties": {
+    "spec": {
+      "type": "object",
+      "required": ["function"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Initiated", "Running", "Completed"]
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "function": {
+          "type": "string",
+          "enum": [
+            "ImportGenotype",
+            "SplitMulti",
+            "AddId",
+            "ExportGenotype",
+            "ImportPhenotype",
+            "PcaHweNorm",
+            "CalcQC",
+            "ToMySql",
+            "VepAnnotation",
+            "VepLoadTables"
+          ]
+        }
+      }
+    }
+  }
+}
