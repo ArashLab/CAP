@@ -373,3 +373,4 @@ This example include the following stages:
 * `TSVVQC`: Export variant QC in TSV format
 
 To run this example start from a fresh copy of the [examples](examples) folder. 
+A copy of the expected output form this example is provided in the [examples](examples) folder (see [Example_06_Output.tar.gz](examples/Example_06_Output.tar.gz))
