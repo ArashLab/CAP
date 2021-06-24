@@ -51,7 +51,7 @@ Notes:
 
 The sucessfull compeletion of the 
 
-```bash
+```
 *** logger is initialised to write to cap.2021-06-24 11:29:53.034782.K1398THY.log.tsv
 IGTVCF	CheckStage	Stage is Checked
 2021-06-24 11:29:57 WARN  NativeCodeLoader:60 - Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
