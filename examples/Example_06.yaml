@@ -1,0 +1,264 @@
+config:
+
+    inVcfPath: &inVcfPath 1kg.micro.vcf.bgz # The initial VCF file to start with
+    
+    mtPathMa: &mtPathMa 1kg.ma.mt # MatrixTable with Multi-Allelic loci
+    mtPathBa: &mtPathBa 1kg.ba.mt # MatrixTable with Bi-Allelic loci only
+    
+    ### Output of ADDID stage
+    mtPath: &mtPath 1kg.mt # MatrixTable with numerical sample and variant id (This is used as the input to all other stages)
+    htSample: &htSample 1kg.sample.ht # Sample annotations in HailTable format
+    htVariant: &htVariant 1kg.variant.ht # Variant annotations in HailTable format
+
+    ### Output of TSVVAR and TSVSAM
+    tsvSample: &tsvSample 1kg.sample.tsv # Sample annotations in TSV format
+    tsvVariant: &tsvVariant 1kg.variant.tsv # Variant annotations in TSV format
+
+    ### Output of EGTVCF and EGTPLINK
+    outVcfPath: &outVcfPath 1kg.exported.vcf.bgz # The exprted VCF file
+    bfilePath: &bfilePath 1kg.bfile # The exported plink2 bfile
+
+    ### Phenotype data
+    phenoPath: &phenoPath 1kg.pheno.tsv # The input phenotype data
+    htPhenoPath: &htPhenoPath 1kg.pheno.ht # Phenotype data in HailTable format
+    tsvPhenoPath: &tsvPhenoPath 1kg.pheno.exported.tsv # Phenotype data in TSV format (same as input phenotype but also include numerical sample id added in ADDID stage)
+
+    ### Output of PCA analysis in HailTable format
+    htPcaEigenPath: &htPcaEigenPath 1kg.sample.pca.eigen.json # (not fully supported yet)
+    htPcaLoadingPath: &htPcaLoadingPath 1kg.sample.pca.loading.ht
+    htPcaScorePath: &htPcaScorePath 1kg.sample.pca.score.ht
+    htPcaVarList: &htPcaVarList 1kg.sample.pca.varlist.ht # (subset of variant used to calculate PCA)
+
+    ### Output of PCA analysis in TSV format
+    tsvPcaScorePath: &tsvPcaScorePath 1kg.sample.pca.score.tsv
+    tsvPcaVarList: &tsvPcaVarList 1kg.sample.pca.varlist.tsv
+
+    ### Output of QC analysis in HailTable format
+    htSampleQc: &htSampleQc 1kg.sample.sqc.ht
+    htVariantQc: &htVariantQc 1kg.variant.vqc.ht
+
+    ### Output of QC analysis in TSV format
+    tsvSampleQc: &tsvSampleQc 1kg.sample.sqc.tsv
+    tsvVariantQc: &tsvVariantQc 1kg.variant.vqc.tsv
+    
+globConfig:
+    numPartitions:
+        default: 4 # 4 is suitable for 1kg.micro.vcf.bgz. If you use tiny or small subset set this to 16 and 64 respectively.
+        min: 1
+        max: 128
+
+
+order:
+    - IGTVCF # Import GenoType from VCF file into a Hail MatrixTable
+    - BRKMA # Break Multiallelic
+    - ADDID # Add numeric id for samples and variants
+    - TSVSAM # Export sample information in TSV format
+    - TSVVAR # Export variant information in TSV format
+    - EGTVCF # Export Genotype in VCF format
+    - EGTPLINK # Export Genotype in plink2 bfile format
+    - IPT # Import Phenotype form TSV file
+    - TSVPHENO # Export Phenotype in TSV format
+    - PCA # Perform Principle Component Analysis (PCA)
+    - TSVPCASCORE # Export PCA scores in TSV format
+    - TSVPCAVAR # Export PCA variant in TSV format
+    - SQC # Calculate Quality Control (QC) metrics for samples
+    - VQC # Calculate Quality Control (QC) metrics for variants
+    - TSVSQC # Export sample QC in TSV format
+    - TSVVQC # Export variant QC in TSV format
+
+stages:
+    IGTVCF:
+        spec:
+            function: ImportGenotype
+        inout:
+            inGt:
+                direction: input
+                path: *inVcfPath
+            outGt:
+                direction: output
+                path: *mtPathMa
+    BRKMA:
+        spec:
+            function: SplitMulti
+        arg:
+            withHTS: true
+        inout:
+            inGt:
+                direction: input
+                path: *mtPathMa
+            outGt:
+                direction: output
+                path: *mtPathBa
+    ADDID:
+        spec:
+            function: AddId
+        arg:
+            dummy: true
+        inout:
+            inGt:
+                direction: input
+                path: *mtPathBa
+            outGt:
+                direction: output
+                path: *mtPath
+            outCol:
+                direction: output
+                path: *htSample
+            outRow:
+                direction: output
+                path: *htVariant
+    TSVSAM:
+        spec:
+            function: ToText
+        inout:
+            inHt:
+                direction: input
+                path: *htSample
+            outText:
+                direction: output
+                path: *tsvSample
+    TSVVAR:
+        spec:
+            function: ToText
+        inout:
+            inHt:
+                direction: input
+                path: *htVariant
+            outText:
+                direction: output
+                path: *tsvVariant
+    EGTVCF:
+        spec:
+            function: ExportGenotype
+        inout:
+            inGt:
+                direction: input
+                path: *mtPath
+            outGt:
+                direction: output
+                path: *outVcfPath
+    EGTPLINK:
+        spec:
+            function: ExportGenotype
+        inout:
+            inGt:
+                direction: input
+                path: *mtPath
+            outGt:
+                direction: output
+                format: bfile
+                path: *bfilePath
+                pathType: prefix
+    IPT:
+        spec:
+            function: ImportPhenotype
+        arg:
+            sampleKey: 's'
+            phenoKey: 'ID'
+        inout:
+            inPt:
+                direction: input
+                path: *phenoPath
+            inS:
+                direction: input
+                path: *htSample
+            outPt:
+                direction: output
+                path: *htPhenoPath
+    TSVPHENO:
+        spec:
+            function: ToText
+        inout:
+            inHt:
+                direction: input
+                path: *htPhenoPath
+            outText:
+                direction: output
+                path: *tsvPhenoPath
+    PCA:
+        spec:
+            function: PcaHweNorm
+        arg:
+            #### if you are using 1kg.small.vcf.bgz you can uncomment the following three lines and set numPcaVectors to 5
+            #ldR2: 0.2
+            #minMaf: 0.05
+            #subsample: 5000
+            numPcaVectors: 3
+        inout:
+            inGt:
+                direction: input
+                path: *mtPath
+            outPcaLoading:
+                direction: output
+                path: *htPcaLoadingPath
+                toBeCached: false # True results an error for larger datasets
+            outPcaScore:
+                direction: output
+                path: *htPcaScorePath
+            outPcaVarList:
+                direction: output
+                path: *htPcaVarList
+    TSVPCASCORE:
+        spec:
+            function: ToText
+        inout:
+            inHt:
+                direction: input
+                path: *htPcaScorePath
+            outText:
+                direction: output
+                path: *tsvPcaScorePath
+    TSVPCAVAR:
+        spec:
+            function: ToText
+        inout:
+            inHt:
+                direction: input
+                path: *htPcaVarList
+            outText:
+                direction: output
+                path: *tsvPcaVarList
+    SQC:
+        spec:
+            function: CalcQC
+        arg:
+            axis: sample
+        inout:
+            inGt:
+                direction: input
+                path: *mtPath
+            outQc:
+                direction: output
+                path: *htSampleQc
+    VQC:
+        spec:
+            function: CalcQC
+        arg:
+            axis: variant
+        inout:
+            inGt:
+                direction: input
+                path: *mtPath
+            outQc:
+                direction: output
+                path: *htVariantQc
+    TSVSQC:
+        spec:
+            function: ToText
+        inout:
+            inHt:
+                direction: input
+                path: *htSampleQc
+            outText:
+                direction: output
+                path: *tsvSampleQc
+    TSVVQC:
+        spec:
+            function: ToText
+        inout:
+            inHt:
+                direction: input
+                path: *htVariantQc
+            outText:
+                direction: output
+                path: *tsvVariantQc

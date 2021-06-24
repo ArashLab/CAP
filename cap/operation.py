@@ -2,6 +2,7 @@ import glob
 import time
 
 import hail as hl
+from hail.methods.impex import export_bgen
 from munch import Munch
 from .logutil import *
 from .common import *
@@ -128,7 +129,11 @@ def AddId(stage):
 
 @D_General
 def ExportGenotype(stage):
-    spec, arg, inout = stage.spec, stage.arg, stage.inout
+    inout = stage.inout
+    if 'arg' in stage:
+        arg = stage.arg
+    else:
+        arg = Munch()
 
     # >>>>>>> Input/Output <<<<<<<<
     inGt = inout.inGt
@@ -143,10 +148,11 @@ def ExportGenotype(stage):
     if 'forVep' in arg and arg.forVep:
         if 'drop' in arg:
             LogException('When exporting for VEP (forVep=True) drop argument must not presented')
-        if arg.outputFormat != 'vcf' or outGt.format != 'vcf' or outGt.compression != 'bgz':
-            LogException('When exporting for VEP (forVep=True) arg.outputFormat and outGt.format must be "vcf" and outGt.compression must be "bgz"')
-        if 'exportParam' not in arg or 'parallel' not in arg.exportParam or arg.exportParam.parallel != 'separate_header':
-            LogException('When exporting for VEP (forVep=True) arg.exportParam.parallel must be set to "separate_header"')
+        #TBF arg may not present
+        # if arg.outputFormat != 'vcf' or outGt.format != 'vcf' or outGt.compression != 'bgz':
+        #     LogException('When exporting for VEP (forVep=True) arg.outputFormat and outGt.format must be "vcf" and outGt.compression must be "bgz"')
+        # if 'exportParam' not in arg or 'parallel' not in arg.exportParam or arg.exportParam.parallel != 'separate_header':
+        #     LogException('When exporting for VEP (forVep=True) arg.exportParam.parallel must be set to "separate_header"')
 
         try:
             ht = mt.rows().select('variantId')
@@ -175,9 +181,11 @@ def ExportGenotype(stage):
     try:
         if 'exportParam' not in arg:
             arg.exportParam = dict()
-        if arg.outputFormat == 'vcf' and outGt.format == 'vcf':
+        #if arg.outputFormat == 'vcf' and outGt.format == 'vcf':
+        if outGt.format == 'vcf':
             hl.export_vcf(mt, outGt.path, **arg.exportParam)
-        elif arg.outputFormat == 'bfile' and outGt.format == 'bfile':
+        #elif arg.outputFormat == 'bfile' and outGt.format == 'bfile':
+        elif outGt.format == 'bfile':
             for k in ['call', 'fam_id', 'ind_id', 'pat_id', 'mat_id', 'is_female', 'pheno', 'varid', 'cm_position']:
                 if k in arg.exportParam:
                     arg.exportParam[k] = HailPath([mt]+arg.exportParam[k])
@@ -344,7 +352,10 @@ def ToMySql(stage):
 @D_General
 def ToText(stage):
     inout = stage.inout
-    arg = stage.arg
+    if 'arg' in stage:
+        arg = stage.arg
+    else:
+        arg = Munch()
 
     # >>>>>>> Input/Output <<<<<<<<
     inHt = inout.inHt

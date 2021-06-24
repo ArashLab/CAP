@@ -5,6 +5,8 @@ The [examples](examples) folder includes three subsets of [1000-Genome project p
 * *1kg.tiny.vcf.bgz*: 4053 variant
 * *1kg.small.vcf.bgz*: 40408 variant
 
+A simulated phenotypic file (*1kg.pheno.tsv*) is aslo included that present Type2 Diabetes (T2D) and Body Mass Index (BMI) for 100-genome samples along with other real phenotipic data. 
+
 In our [examples](examples) we use the *1kg.micro.vcf.bgz* to make sure everything runs fast but you can use larger subsets too.
 
 The [examples](examples) folder contains a series of numbered example workload in yaml format such as [Example_01.yaml](examples/Example_01.yaml). These workload contains one or a few stages to be executed. The [Example_All.yaml](examples/Example_All.yaml) put all stages toghether.
@@ -350,5 +352,24 @@ locus.contig	locus.position	rsid	qual	a_index	was_split	variantId	alleles.1	alle
 1	93992857	rs184594653	1.0000e+02	1	false	8	C	T
 1	97156615	rs528557531	1.0000e+02	1	false	9	A	G
 ```
-## Example 5 (VEP Annotations)
+## Example 6 (All together)
 
+This example include the following stages:
+* `IGTVCF`: Import GenoType from VCF file
+* `BRKMA`: Break multi-allelic loci
+* `ADDID`: Add numeric ids
+* `TSVSAM`: Export sample information in TSV format
+* `TSVVAR`: Export variant information in TSV format
+* `EGTVCF`: Export Genotype (output of `ADDID`) in VCF format
+* `EGTPLINK`: Export Genotype (output of `ADDID`) in plink2 bfile format
+* `IPT`: Import Phenotype form TSV file. This stage also requiers `1kg.samples.ht` that is the output of `ADDID` to link phenotype with the numerical sample ids. 
+* `TSVPHENO`: Export Phenotype in TSV format. This is as same as input phenotype but also include the numerical sample ids
+* `PCA`: Perform Principle Component Analysis (PCA) and compute scores and loading. It also output list of variants included in the calculation. The PCA function allows to sub-sampleing data.
+* `TSVPCASCORE`: Export PCA scores in TSV format
+* `TSVPCAVAR`: Export list of variant used in PCA calculation in TSV format.
+* `SQC`: Calculate Quality Control (QC) metrics for samples
+* `VQC`: Calculate Quality Control (QC) metrics for variants
+* `TSVSQC`: Export sample QC in TSV format
+* `TSVVQC`: Export variant QC in TSV format
+
+To run this example start from a fresh copy of the [examples](examples) folder. 
