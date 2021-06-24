@@ -156,6 +156,7 @@
             "PcaHweNorm",
             "CalcQC",
             "ToMySql",
+            "ToText",
             "VepAnnotation",
             "VepLoadTables"
           ]

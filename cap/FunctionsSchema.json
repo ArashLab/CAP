@@ -314,6 +314,38 @@
       }
     }
   },
+  "ToText": {
+    "arg": {
+      "type": "object",
+      "properties": {
+        "exportParam": {
+          "type": "object",
+          "properties": {
+            "parallel": {
+              "type": "string",
+              "enum": ["header_per_shard", "separate_header"]
+            },
+            "header": { "type": "boolean" },
+            "delimiter": { "type": "string" },
+            "types_file": { "type": "string" }
+          }
+        }
+      }
+    },
+    "inout": {
+      "type": "object",
+      "required": ["inHt", "outText"],
+      "properties": {
+        "inHt": { "$ref": "#/definitions/inoutHT" },
+        "outText": { 
+          "anyof": [
+            { "$ref": "#/definitions/inoutCSV" },
+            { "$ref": "#/definitions/inoutTSV" }
+          ]
+        }
+      }
+    }
+  },
   "VepAnnotation": {
     "arg": {
       "type": "object",

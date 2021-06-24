@@ -1,0 +1,16 @@
+order:
+    - TSVVAR
+stages:
+    TSVVAR:
+        spec:
+            function: ToText
+        arg:
+            header: true
+            delimiter: "\t"
+        inout:
+            inHt:
+                direction: input
+                path: 1kg.variants.ht
+            outText:
+                direction: output
+                path: 1kg.variants.tsv

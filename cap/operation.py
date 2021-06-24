@@ -62,7 +62,8 @@ def ImportGenotype(stage):
 
 @D_General
 def SplitMulti(stage):
-    spec, arg, inout = stage.spec, stage.arg, stage.inout
+    inout = stage.inout
+    arg = stage.arg
 
     # >>>>>>> Input/Output <<<<<<<<
     inGt = inout.inGt
@@ -89,7 +90,7 @@ def SplitMulti(stage):
 
 @D_General
 def AddId(stage):
-    spec, arg, inout = stage.spec, stage.arg, stage.inout
+    inout = stage.inout
 
     # >>>>>>> Input/Output <<<<<<<<
     inGt = inout.inGt
@@ -337,6 +338,30 @@ def ToMySql(stage):
     except:
         LogException('Hail cannot write data into MySQL database')
     Log(f'Data is exported to MySQL')
+
+    # >>>>>>> Live Output <<<<<<<<
+
+@D_General
+def ToText(stage):
+    inout = stage.inout
+    arg = stage.arg
+
+    # >>>>>>> Input/Output <<<<<<<<
+    inHt = inout.inHt
+    outText = inout.outText
+
+    # >>>>>>> Live Input <<<<<<<<
+    ht = Shared[inHt.path]
+
+    # >>>>>>> STAGE Code <<<<<<<<
+    ht = FlattenTable(ht)
+    try:
+        if 'exportParam' not in arg:
+            arg.exportParam = dict()
+        ht.export(outText.path, **arg.exportParam)
+    except:
+        LogException(f'Hail cannot write data into a file {outText.path}')
+    Log(f'Data is exported to {outText.path}')
 
     # >>>>>>> Live Output <<<<<<<<
 

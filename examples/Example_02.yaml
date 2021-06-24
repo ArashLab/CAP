@@ -1,0 +1,15 @@
+order:
+    - BRKMA
+stages:
+    BRKMA:
+        spec:
+            function: SplitMulti
+        arg:
+            withHTS: true
+        inout:
+            inGt:
+                direction: input
+                path: 1kg.ma.mt
+            outGt:
+                direction: output
+                path: 1kg.ba.mt

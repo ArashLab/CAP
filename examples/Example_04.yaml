@@ -1,0 +1,19 @@
+order:
+    - ADDID
+stages:
+    ADDID:
+        spec:
+            function: AddId
+        inout:
+            inGt:
+                direction: input
+                path: 1kg.ba.mt
+            outGt:
+                direction: output
+                path: 1kg.mt
+            outCol:
+                direction: output
+                path: 1kg.samples.ht
+            outRow:
+                direction: output
+                path: 1kg.variants.ht

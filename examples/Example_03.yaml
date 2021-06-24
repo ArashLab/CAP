@@ -1,0 +1,28 @@
+config:
+    mtPathMa: &mtPathMa 1kg.ma.mt
+order:
+    - IGTVCF
+    - BRKMA
+stages:
+    IGTVCF:
+        spec:
+            function: ImportGenotype
+        inout:
+            inGt:
+                direction: input
+                path: 1kg.micro.vcf.bgz
+            outGt:
+                direction: output
+                path: *mtPathMa
+    BRKMA:
+        spec:
+            function: SplitMulti
+        arg:
+            withHTS: true
+        inout:
+            inGt:
+                direction: input
+                path: *mtPathMa
+            outGt:
+                direction: output
+                path: 1kg.ba.mt
