@@ -2,6 +2,8 @@ order:
     - IGTVCF
 stages:
     IGTVCF:
+        spec:
+            function: ImportGenotype
         inout:
             inGt:
                 direction: input
@@ -9,5 +11,3 @@ stages:
             outGt:
                 direction: output
                 path: 1kg.ma.mt
-        spec:
-            function: ImportGenotype
