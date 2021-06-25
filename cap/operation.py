@@ -342,6 +342,7 @@ def ToMySql(stage):
     # >>>>>>> STAGE Code <<<<<<<<
     ht = FlattenTable(ht)
     try:
+        #TBF overwrite? really?
         ht.to_spark().write.format('jdbc').options(**arg.mySqlConfig).mode('overwrite').save()
     except:
         LogException('Hail cannot write data into MySQL database')

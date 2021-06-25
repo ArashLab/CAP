@@ -1,0 +1,20 @@
+config:
+    mySqlConfig: &mySqlConfig
+        driver: com.mysql.jdbc.Driver
+        password: __YOUR_MYSQL_PASSWORD__
+        url: jdbc:mysql://__YOUR_MYSQL_ADDRESS__/__YOUR_MYSQL_DATABASE__?useLegacyDatetimeCode=false&serverTimezone=UTC
+        user: __YOUR_MYSQL_USER__
+order:
+    - SQLVAR
+stages:
+    SQLVAR:
+        spec:
+            function: ToMySql
+        arg:
+            mySqlConfig:
+                <<: *mySqlConfig
+                dbtable: variant # This is the name of table to be created in your mysql database.
+        inout:
+            inHt:
+                direction: input
+                path: 1kg.variant.ht

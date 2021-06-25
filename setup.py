@@ -3,7 +3,7 @@ from pathlib import Path
 
 setuptools.setup(
     name='cap-genomics',
-    version='0.1.4',
+    version='0.1.5',
     description='Cohort Analysis Platform',
     long_description=Path('README.md').read_text(),
     long_description_content_type='text/markdown',

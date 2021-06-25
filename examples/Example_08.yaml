@@ -1,0 +1,236 @@
+config:
+
+    inVcfPath: &inVcfPath 1kg.micro.vcf.bgz # The initial VCF file to start with
+    
+    mtPathMa: &mtPathMa 1kg.ma.mt # MatrixTable with Multi-Allelic loci
+    mtPathBa: &mtPathBa 1kg.ba.mt # MatrixTable with Bi-Allelic loci only
+    
+    ### Output of ADDID stage
+    mtPath: &mtPath 1kg.mt # MatrixTable with numerical sample and variant id (This is used as the input to all other stages)
+    htSample: &htSample 1kg.sample.ht # Sample annotations in HailTable format
+    htVariant: &htVariant 1kg.variant.ht # Variant annotations in HailTable format
+
+
+    vepVcfPath: &vepVcfPath 1kg.forVep.vcf.bgz  # Exported genotype to for VEP annotations. 
+    vepOutPath: &vepOutPath 1kg.outVep # Output of VEP and CAP VEP Parser
+    tempDir: &tempDir 1kg.tempVep # Where to stor Temporary data
+
+    ### VEP Output in HailTable Foramt
+    htVepVar: &htVepVar 1kg.vep.var.ht
+    htVepClVar: &htVepClVar 1kg.vep.clvar.ht
+    htVepFreq: &htVepFreq 1kg.vep.freq.ht
+    htVepConseq: &htVepConseq 1kg.vep.conseq.ht
+    htVepConseqToVar: &htVepConseqToVar 1kg.vep.conseqVar.ht
+    htVepConseqTerms: &htVepConseqTerms 1kg.vep.conseqTerms.ht
+    htVepVarTerms: &htVepVarTerms 1kg.vep.varTerms.ht
+
+    ### VEP Output in TSV Foramt
+    tsvVepVar: &tsvVepVar 1kg.vep.var.tsv
+    tsvVepClVar: &tsvVepClVar 1kg.vep.clvar.tsv
+    tsvVepFreq: &tsvVepFreq 1kg.vep.freq.tsv
+    tsvVepConseq: &tsvVepConseq 1kg.vep.conseq.tsv
+    tsvVepConseqToVar: &tsvVepConseqToVar 1kg.vep.conseqVar.tsv
+    tsvVepConseqTerms: &tsvVepConseqTerms 1kg.vep.conseqTerms.tsv
+    tsvVepVarTerms: &tsvVepVarTerms 1kg.vep.varTerms.tsv
+      
+order:
+    - IGTVCF # Import GenoType from VCF file into a Hail MatrixTable
+    - BRKMA # Break Multiallelic
+    - ADDID # Add numeric id for samples and variants
+    - EGTVEP # Export Genotype for VEP in VCF format
+    - VEPANN # Run VEP and CAP VEP Parser
+    - VEPLT # Read Parsed VEP annotations (from TSV files) and generate HialTables for annotations
+    # Write Vep annotations to TSV files
+    - TSVVEPVAR
+    - TSVVEPCLVAR
+    - TSVVEPFREQ
+    - TSVVEPCONSEQ
+    - TSVVEPCONSEQVAR
+    - TSVVEPCONSEQTERMS
+    - TSVVEPVARTERMS
+
+stages:
+    IGTVCF:
+        spec:
+            function: ImportGenotype
+        inout:
+            inGt:
+                direction: input
+                path: *inVcfPath
+            outGt:
+                direction: output
+                path: *mtPathMa
+    BRKMA:
+        spec:
+            function: SplitMulti
+        arg:
+            withHTS: true
+        inout:
+            inGt:
+                direction: input
+                path: *mtPathMa
+            outGt:
+                direction: output
+                path: *mtPathBa
+    ADDID:
+        spec:
+            function: AddId
+        arg:
+            dummy: true
+        inout:
+            inGt:
+                direction: input
+                path: *mtPathBa
+            outGt:
+                direction: output
+                path: *mtPath
+            outCol:
+                direction: output
+                path: *htSample
+            outRow:
+                direction: output
+                path: *htVariant
+    EGTVEP:
+        spec:
+            function: ExportGenotype
+        arg:
+            exportParam:
+                parallel: separate_header
+            forVep: true
+            outputFormat: vcf
+        inout:
+            inGt:
+                direction: input
+                path: *mtPath
+            outGt:
+                compression: bgz
+                direction: output
+                format: vcf
+                path: *vepVcfPath
+                pathType: parallel
+    VEPANN:
+        spec:
+            function: VepAnnotation
+        arg:
+            vepCli: 
+                - bash
+                - vep/cvs-norm.sh
+                - __IN_VCF__
+                - __OUT_JSON__
+                - __OUT_TSV__
+                - NoJobId
+                - __OUT_JOB__
+                - vep
+        inout:
+            inVar:
+                compression: bgz
+                direction: input
+                format: vcf
+                path: *vepVcfPath
+                pathType: parallel
+            outData:
+                direction: output
+                format: tsv # TBF
+                path: *vepOutPath
+    VEPLT:
+        spec:
+            function: VepLoadTables
+        arg:
+            tempDir: *tempDir
+        inout:
+            inData:
+                direction: input
+                format: tsv #TBF
+                path: *vepOutPath
+            outClVar:
+                direction: output
+                path: *htVepClVar
+            outConseq:
+                direction: output
+                path: *htVepConseq
+            outConseqTerms:
+                direction: output
+                path: *htVepConseqTerms
+            outConseqToVar:
+                direction: output
+                path: *htVepConseqToVar
+            outFreq:
+                direction: output
+                path: *htVepFreq
+            outVar:
+                direction: output
+                path: *htVepVar
+            outVarTerms:
+                direction: output
+                path: *htVepVarTerms
+    TSVVEPCONSEQ:
+        spec:
+            function: ToText
+        inout:
+            inHt:
+                direction: input
+                path: *htVepConseq
+            outText:
+                direction: output
+                path: *tsvVepConseq
+    TSVVEPCONSEQTERMS:
+        spec:
+            function: ToText
+        inout:
+            inHt:
+                direction: input
+                path: *htVepConseqTerms
+            outText:
+                direction: output
+                path: *tsvVepConseqTerms
+    TSVVEPCONSEQVAR:
+        spec:
+            function: ToText
+        inout:
+            inHt:
+                direction: input
+                path: *htVepConseqToVar
+            outText:
+                direction: output
+                path: *tsvVepConseqToVar
+    TSVVEPFREQ:
+        spec:
+            function: ToText
+        inout:
+            inHt:
+                direction: input
+                path: *htVepFreq
+            outText:
+                direction: output
+                path: *tsvVepFreq
+    TSVVEPVAR:
+        spec:
+            function: ToText
+        inout:
+            inHt:
+                direction: input
+                path: *htVepVar
+            outText:
+                direction: output
+                path: *tsvVepVar
+    TSVVEPVARTERMS:
+        spec:
+            function: ToText
+        inout:
+            inHt:
+                direction: input
+                path: *htVepVarTerms
+            outText:
+                direction: output
+                path: *tsvVepVarTerms
+    TSVVEPCLVAR:
+        spec:
+            function: ToText
+        inout:
+            inHt:
+                direction: input
+                path: *htVepClVar
+            outText:
+                direction: output
+                path: *tsvVepClVar
+    

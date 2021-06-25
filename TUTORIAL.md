@@ -374,3 +374,154 @@ This example include the following stages:
 
 To run this example start from a fresh copy of the [examples](examples) folder. 
 A copy of the expected output form this example is provided in the [examples](examples) folder (see [Example_06_Output.tar.gz](examples/Example_06_Output.tar.gz))
+
+## Example 7 (Write to MySQL)
+You can write data into MySQL tables too. You need access to a MySQL database and JDBC conector for spark.
+
+Once you download the JDBC into your system. You can add `jar` file to your spark submit command using the following trick. Remember to replace the `full_path` with and if you use a different version of it you need to change the version in the following command. 
+
+```bash
+export PYSPARK_SUBMIT_ARGS='--jars /full_path/mysql-connector-java-8.0.22/mysql-connector-java-8.0.22.jar pyspark-shell'
+```
+
+note that in the following example you should replace the following to define your access to MySQL server.
+* \_\_YOUR_MYSQL_PASSWORD__
+* \_\_YOUR_MYSQL_ADDRESS__
+* \_\_YOUR_MYSQL_DATABASE__
+* \_\_YOUR_MYSQL_USER__
+
+```yaml
+config:
+    mySqlConfig: &mySqlConfig
+        driver: com.mysql.jdbc.Driver
+        password: __YOUR_MYSQL_PASSWORD__
+        url: jdbc:mysql://__YOUR_MYSQL_ADDRESS__/__YOUR_MYSQL_DATABASE__?useLegacyDatetimeCode=false&serverTimezone=UTC
+        user: __YOUR_MYSQL_USER__
+order:
+    - SQLVAR
+stages:
+    SQLVAR:
+        spec:
+            function: ToMySql
+        arg:
+            mySqlConfig:
+                <<: *mySqlConfig
+                dbtable: variant # This is the name of table to be created in your mysql database.
+        inout:
+            inHt:
+                direction: input
+                path: 1kg.variant.ht
+```
+
+## Example 8 (VEP Annotation)
+To run this example you need to have VEP-CLI installed on your system. We use [VEP Docker container](https://hub.docker.com/r/ensemblorg/ensembl-vep) for that as installing VEP-CLI is pretty complicated.
+In our example we use VEP CACHE file as the annotation database. Its less than 20GB and you can download it from VEP website. You can change the example to use a different annotation source. 
+
+VEP annotation occures in 3 stages which are included in this example:
+**EGTVEP**: This stage export genotype in VCF format with forVep argument set to true. This result in droping all sample information and keeping only the locus and allele informations. Also it reaplces the rsid field with the numerical variant id to be able to join the VEP result with the rest of variant related tables produced by CAP.
+Also the genotypes are exported in parallel. That means each partition of the matrix table is written in a separate VCF file. The output of this step is named `1kg.forVep.vcf.bgz`, however it is not a file but a directory with the following content. Since the input MatrixTable had 4 partitions, the data is divided in 4 parts. Note that these parts are actually `vcf.bgz` eventhough `vcf` is missing in the file name.
+You can process each part independently and in parallel. Note that VEP annotation is a time-consuming processe and the CAP VEP parser runs sequentianlly. Idealy you should have a job scheduler such as Sun Grid Engin (SGE) where you can submit jobs and jobs running in parallel. In this example, we run 4 jobs sequentinally (see the next stage).
+
+```
+_SUCCESS
+header.bgz
+part-00000.bgz
+part-00001.bgz
+part-00002.bgz
+part-00003.bgz
+```
+
+**VEPANN**:
+This stage uses **VepAnnotation** function in cap to process each VCF part independently. First it uses VEP to produce variant annotation in JSON format, then it run CAP VEP parser to parse the JSON format and produce set of TSV files used in the next stage. Note that here we process VCF part sequentinally. However, If you have a job scheduler such as Sun Grid Engin (SGE) you can submit them as jobs and make sure they are executed in parallel. 
+
+This stage uses a shell script ([cvs-norm.sh](examples/vep/cvs-norm.sh)) to call VEP and CAP VEP Parser. This shell script uses two other shell scrtip ([cvs.sh](examples/vep/cvs.sh) and [vep.sh](examples/vep/vep.sh)) all of which are included in [examples/vep](examples/vep/) directory in this reposetory. We use python subprocess module to run [cvs-norm.sh](examples/vep/cvs-norm.sh) and the command line argument can be found in the stage argument as below. Note that values wrapped with double underscore are replaced by the CAP when executing the script.
+
+The output is a set of TSV file per VCF parts. For more information refers to our [documentation page on GitHub](https://github.com/ArashLab/CAP/blob/main/DOCUMENTATION.md)
+
+```yaml
+VEPANN:
+        spec:
+            function: VepAnnotation
+        arg:
+            vepCli: 
+                - bash
+                - vep/cvs-norm.sh
+                - __IN_VCF__
+                - __OUT_JSON__
+                - __OUT_TSV__
+                - NoJobId
+                - __OUT_JOB__
+                - vep
+        inout:
+            inVar:
+                compression: bgz
+                direction: input
+                format: vcf
+                path: *vepVcfPath
+                pathType: parallel
+            outData:
+                direction: output
+                format: tsv # TBF
+                path: *vepOutPath
+```
+
+**VEPLT**: This stage merge the TSV file produced for different parts, load then to HailTable and process them to generate a few more tables. and then output the folowing tables. For more information on this stage refer to our [documentation page on GitHub](https://github.com/ArashLab/CAP/blob/main/DOCUMENTATION.md)
+
+* var: Main variant annotations
+* clvar: Co-Located variants linked to each variants
+* freq: Frequencies for each Co-Located variatn
+* conseqVar: Linking variants to consequences (it is a many to many relationship)
+* conseq: Consequences
+* conseqTerms: Linking Consequences to Consequence terms (each consequence could have multiple tersm)
+* varTerms: Linking Variants to Consequence terms (each variant could have multiple consequence and each consequence could have multiple tersm)
+
+The last table is for performace reason only as it could be obtained by joining other tables.
+
+
+There are other stages in this example workload to export the resulting VEP annotation tables into TSV format. The command below reveals the first few line of those output.
+
+```bash
+head -n 3 *.tsv
+```
+
+That looks like:
+
+```
+==> 1kg.vep.var.tsv <==
+strand	variant_class	end	most_severe_consequence	start	allele_string	assembly_name	seq_region_name	varId
+1	SNV	91093367	intergenic_variant	91093367	C/T	GRCh37	12	145
+1	SNV	78880078	intron_variant	78880078	T/C	GRCh37	13	149
+
+==> 1kg.vep.clvar.tsv <==
+allele_string	start	minor_allele_freq	strand	seq_region_name	id	minor_allele	end	varId	clVarId	fileNumber	somatic	phenotype_or_disease	pubmed
+T/C	36434303	0.0012	1	1	rs574016683	C	36434303	2	1	0	NA	NA	NA
+A/T	70114929	0.001	1	1	rs190757654	T	70114929	6	5	0	NA	NA	NA
+
+==> 1kg.vep.freq.tsv <==
+afr	sas	amr	eur	eas	varId	clvarId	allele	gnomad_oth	gnomad_nfe	aa	gnomad	gnomad_afr	gnomad_sas	gnomad_asj	egnomad_fin	gnomad_eas	gnomad_amr
+0.0000e+00	0.0000e+00	1.4000e-03	0.0000e+00	0.0000e+00	145	1	T									
+0.0000e+00	7.2000e-03	0.0000e+00	0.0000e+00	0.0000e+00	149	5	C									
+
+==> 1kg.vep.conseqVar.tsv <==
+conseqId	varId
+0	173
+1	173
+
+==> 1kg.vep.conseq.tsv <==
+variant_allele	impact	feature	transcript_id	strand	ccds	intron	swissprot	gene_symbol	gene_symbol_source	trembl	given_ref	uniparc	protein_id	biotype	source	used_ref	hgvsc	hgnc_id	gene_id	canonical	flags	distance	gene_pheno	bam_edit	regulatory_feature_id	exon	cdna_end	cdna_start	mirna	transcription_factors	motif_name	high_inf_pos	motif_feature_id	motif_score_change	motif_pos	conseqId
+-	MODIFIER	transcript	ENST00000583426	1.0				RP11-464D20.6	Clone_based_vega_gene		TTTTG			sense_intronic	Ensembl	TTTTG			ENSG00000264546	1.0		4260.0							NA				0
+-	MODIFIER	transcript	ENST00000583843	1.0				TLK2	HGNC	['J3QQN4_HUMAN']	TTTTG	['UPI000268B2E6']	ENSP00000463814	protein_coding	Ensembl	TTTTG		11842.0	ENSG00000146872		['cds_end_NF']	4042.0	1.0						N1
+
+==> 1kg.vep.conseqTerms.tsv <==
+conseqId	consequence_terms
+0	downstream_gene_variant
+1	downstream_gene_variant
+
+
+==> 1kg.vep.varTerms.tsv <==
+varId	consequence_terms
+1	intergenic_variant
+1	intergenic_variant
+```
+
+A copy of the expected output form this example is provided in the [examples](examples) folder (see [Example_08_Output.tar.gz](examples/Example_08_Output.tar.gz))
