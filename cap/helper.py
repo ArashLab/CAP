@@ -21,8 +21,8 @@ def AbsPath(path):
     if path.lower().startswith('hdfs://'):
         abspath = path
     elif path.lower().startswith('file://'):
-        path = path[7:]
-        abspath = os.path.abspath(path)
+        abspath = path[7:]
+        abspath = os.path.abspath(abspath)
         abspath = f'file://{abspath}'
     else:
         if Shared['fileSystem'] == 'file':
