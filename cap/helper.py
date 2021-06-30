@@ -58,7 +58,7 @@ def Bash(command, isPath):
         Log(isPath)
         LogException(f'Command array is of lenght {len(command)} but isPath array is of lenght {len(isPath)}')
 
-    for i in len(isPath):
+    for i in range(len(isPath)):
         if isPath[i]:
             command[i] =  GetLocalPath(command[i])
 
