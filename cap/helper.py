@@ -33,7 +33,7 @@ def AbsPath(path):
         else:
             abspath = os.path.abspath(path)
 
-    LogPrint(f'Absolute path of {path} is {abspath}')
+    Log(f'Absolute path of {path} is {abspath}')
     return abspath
 
 @D_General
@@ -42,10 +42,10 @@ def GetLocalPath(path):
     if path.lower().startswith('hdfs://'):
         LogException(f'hdfs pathes are not local: {path}')
     elif path.lower().startswith('file://'):
-        LogPrint(f'Removeing file:// from {path}')
+        Log(f'Removeing file:// from {path}')
         path = path[7:]
     path = os.path.abspath(path)
-    LogPrint(f'Local path of {inPath} is {path}')
+    Log(f'Local path of {inPath} is {path}')
     return path
 
 def FileExist(path):
@@ -56,7 +56,7 @@ def FileExist(path):
 def WildCardPath(path):
     path = GetLocalPath(path)
     fileList = glob.glob(path)
-    LogPrint(f'{len(fileList)} files are found in {path}')
+    Log(f'{len(fileList)} files are found in {path}')
     return fileList
 
 @D_General
@@ -239,6 +239,7 @@ def ImportMultipleTsv(files, tempDir, addFileNumber=False):
         LogException('No file to be loaded')
     # TBF support for bgz and gz
     for i, file in enumerate(files):
+        file = AbsPath(file)
         if i == 0:  # The first table
             ht = hl.import_table(file, impute=False, force=True)
             if addFileNumber:
