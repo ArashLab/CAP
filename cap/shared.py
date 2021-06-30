@@ -4,6 +4,8 @@ Shared = Munch()
 
 Shared.fileSystem = None
 
+Shared.vepCheckWaitTime = 5
+
 Shared.CurrentStageForLogging = None
 Shared.CurrentFunctionForLogging = list()
 

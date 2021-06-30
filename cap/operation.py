@@ -455,8 +455,8 @@ def VepAnnotation(stage):
                 if FileExist(doneFile):
                     numCompeleted += 1
             if numCompeleted != numJob:
-                time.sleep(5)
-                passed += 1
+                time.sleep(Shared.vepCheckWaitTime)
+                passed += Shared.vepCheckWaitTime
                 LogPrint(f'{numCompeleted} out of {numJob} compeleted in {passed} second ...')
             else:
                 break
