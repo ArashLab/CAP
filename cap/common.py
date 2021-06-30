@@ -14,5 +14,3 @@ def JsonDumps(obj):
 def ToDict(obj):
     return json.loads(JsonDumps(obj))
 
-def FileExist(path):
-    return os.path.exists(path)

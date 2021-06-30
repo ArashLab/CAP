@@ -47,6 +47,10 @@ def GetLocalPath(path):
     LogPrint(f'Local path of {inPath} is {path}')
     return path
 
+def FileExist(path):
+    path = GetLocalPath(path)
+    return os.path.exists(path)
+
 @D_General
 def WildCardPath(path):
     path = GetLocalPath(path)
