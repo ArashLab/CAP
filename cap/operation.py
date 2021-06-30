@@ -1,7 +1,8 @@
-import glob
+
 import time
 
 import hail as hl
+from hail.expr.expressions.expression_typecheck import T
 from hail.methods.impex import export_bgen
 from munch import Munch
 from .logutil import *
@@ -393,9 +394,9 @@ def VepAnnotation(stage):
         path = inVar.path
         templateCommand = arg.vepCli
 
-        Bash(['mkdir', outData.path])
+        Bash(command=['mkdir', outData.path], isPath=[False, True])
 
-        vcfList = glob.glob(path + '/part-*.bgz')
+        vcfList = WildCardPath(path + '/part-*.bgz')
         numJob = len(vcfList)
 
         if 'isArrayJob' in arg and arg.isArrayJob:
@@ -423,7 +424,7 @@ def VepAnnotation(stage):
             command = [str(numJob) if p == '__JOB_END__' else p for p in command]
             command = [str(arg.numSgeJobs) if p == '__JOB_IN_PARALLEL__' else p for p in command]
 
-            Bash(command)
+            Bash(command, isPath={False, True, True, True, True, True, False, False, False, False, True})
         else:
             # Get the absolute path to the scripts
             templateCommand[1] = AbsPath(templateCommand[1])
@@ -439,7 +440,7 @@ def VepAnnotation(stage):
                 command = [os.path.join(outData.path, f'part-{code}.job') if p == '__OUT_JOB__' else p for p in command]
                 command = [f'CAP-{code}' if p == '__JOB_ID__' else p for p in command]
 
-                Bash(command)
+                Bash(command, isPath={False, True, True, True, True, False, True, True})
 
         LogPrint(f'All {numJob} jobs are submitted.')
 
@@ -479,19 +480,19 @@ def VepLoadTables(stage):
     # >>>>>>> STAGE Code <<<<<<<<
     path = inData.path
     try:  # TBF it currently check if the folder exist or not. should find a way to check all tsv files
-        tsvList = glob.glob(path + '/part-*.var.tsv')
+        tsvList = WildCardPath(path + '/part-*.var.tsv')
         htVar = ImportMultipleTsv(tsvList, arg.tempDir)
         htVar = htVar.annotate(varId=hl.int(htVar.varId))
 
-        tsvList = glob.glob(path + '/part-*.clvar.tsv')
+        tsvList = WildCardPath(path + '/part-*.clvar.tsv')
         htClVar = ImportMultipleTsv(tsvList, arg.tempDir, addFileNumber=True)
         htClVar = htClVar.annotate(varId=hl.int(htClVar.varId))
 
-        tsvList = glob.glob(path + '/part-*.freq.tsv')
+        tsvList = WildCardPath(path + '/part-*.freq.tsv')
         htFreq = ImportMultipleTsv(tsvList, arg.tempDir)
         htFreq = htFreq.annotate(varId=hl.int(htFreq.varId))
 
-        tsvList = glob.glob(path + '/part-*.conseq.tsv')
+        tsvList = WildCardPath(path + '/part-*.conseq.tsv')
         htConseq = ImportMultipleTsv(tsvList, arg.tempDir)
         htConseq = htConseq.annotate(varId=hl.int(htConseq.varId))
     except:

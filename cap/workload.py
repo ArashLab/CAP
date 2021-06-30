@@ -76,7 +76,6 @@ class Workload(PyObj):
         self.Update()
         Log('Cleared')
 
-
     @D_General
     def InferFileFormat(self, inout, name):
 
@@ -127,8 +126,7 @@ class Workload(PyObj):
 
         for name, inout in stage.inout.items():
             Log(f'<< inout: {name} >> Checking...')
-            if not (inout.path.startswith('hdfs:///') or inout.path.startswith('file:///')):
-                inout.path = AbsPath(inout.path)
+            inout.path = AbsPath(inout.path)
             
             if 'pathType' not in inout:
                 inout.pathType = 'file'

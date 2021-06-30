@@ -1,3 +1,4 @@
+import glob
 import subprocess
 from .decorators import *
 from .common import *
@@ -17,12 +18,50 @@ if __name__ == '__main__':
 
 @D_General
 def AbsPath(path):
-    abspath = os.path.abspath(path)
-    Log(f'Absolute path of {path} is {abspath}')
+    if path.lower().startswith('hdfs://') or path.lower().startswith('file://'):
+        abspath = path
+    else:
+        if Shared['fileSystem'] == 'file':
+            abspath = os.path.abspath(path)
+            abspath = f'file://{abspath}'
+
+        if Shared['fileSystem'] == 'hdfs':
+            abspath = f'hdfs://{path}'
+
+    LogPrint(f'Absolute path of {path} is {abspath}')
     return abspath
 
 @D_General
-def Bash(command):
+def GetLocalPath(path):
+    inPath = path
+    if path.lower().startswith('hdfs://'):
+        LogException(f'hdfs pathes are not local: {path}')
+    elif path.lower().startswith('file://'):
+        LogPrint(f'Removeing file:// from {path}')
+        path = path[7:]
+    path = os.path.abspath(path)
+    LogPrint(f'Local path of {inPath} is {path}')
+    return path
+
+@D_General
+def WildCardPath(path):
+    path = GetLocalPath(path)
+    fileList = glob.glob(path)
+    LogPrint(f'{len(fileList)} files are found in {path}')
+    return fileList
+
+@D_General
+def Bash(command, isPath):
+
+    if len(command) != len(isPath):
+        Log(command)
+        Log(isPath)
+        LogException(f'Command array is of lenght {len(command)} but isPath array is of lenght {len(isPath)}')
+
+    for i in len(isPath):
+        if isPath[i]:
+            command[i] =  GetLocalPath(command[i])
+
     LogPrint(f'Executing bash command {command}')
     process = subprocess.run(command)
     if process.returncode:
