@@ -96,10 +96,7 @@ class PyObj:
     @D_General
     def LoadInternal(self, name):
         with importlib.resources.path('cap', name) as path:
-            print(">>>", type(path))
-            xpath = str(path)
-            print(">>>", type(xpath))
-            self.LoadExtenal(xpath)
+            self.LoadExtenal(str(path))
 
     @D_General
     def Load(self):
