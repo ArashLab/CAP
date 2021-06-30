@@ -18,8 +18,12 @@ if __name__ == '__main__':
 
 @D_General
 def AbsPath(path):
-    if path.lower().startswith('hdfs://') or path.lower().startswith('file://'):
+    if path.lower().startswith('hdfs://'):
         abspath = path
+    elif path.lower().startswith('file://'):
+        path = path[7:]
+        abspath = os.path.abspath(path)
+        abspath = f'file://{abspath}'
     else:
         if Shared['fileSystem'] == 'file':
             abspath = os.path.abspath(path)

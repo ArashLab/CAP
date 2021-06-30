@@ -424,7 +424,7 @@ def VepAnnotation(stage):
             command = [str(numJob) if p == '__JOB_END__' else p for p in command]
             command = [str(arg.numSgeJobs) if p == '__JOB_IN_PARALLEL__' else p for p in command]
 
-            Bash(command, isPath={False, True, True, True, True, True, False, False, False, False, True})
+            Bash(command, isPath=[False, True, True, True, True, True, False, False, False, False, True])
         else:
             # Get the absolute path to the scripts
             templateCommand[1] = AbsPath(templateCommand[1])
@@ -440,7 +440,7 @@ def VepAnnotation(stage):
                 command = [os.path.join(outData.path, f'part-{code}.job') if p == '__OUT_JOB__' else p for p in command]
                 command = [f'CAP-{code}' if p == '__JOB_ID__' else p for p in command]
 
-                Bash(command, isPath={False, True, True, True, True, False, True, True})
+                Bash(command, isPath=[False, True, True, True, True, False, True, True])
 
         LogPrint(f'All {numJob} jobs are submitted.')
 
