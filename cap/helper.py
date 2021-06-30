@@ -28,9 +28,10 @@ def AbsPath(path):
         if Shared['fileSystem'] == 'file':
             abspath = os.path.abspath(path)
             abspath = f'file://{abspath}'
-
-        if Shared['fileSystem'] == 'hdfs':
+        elif Shared['fileSystem'] == 'hdfs':
             abspath = f'hdfs://{path}'
+        else:
+            abspath = os.path.abspath(path)
 
     LogPrint(f'Absolute path of {path} is {abspath}')
     return abspath

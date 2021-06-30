@@ -2,6 +2,8 @@ from munch import Munch
 
 Shared = Munch()
 
+Shared.fileSystem = None
+
 Shared.CurrentStageForLogging = None
 Shared.CurrentFunctionForLogging = list()
 

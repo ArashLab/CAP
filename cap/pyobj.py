@@ -6,6 +6,7 @@ import importlib.resources
 
 from .logutil import *
 from .common import *
+from .helper import *
 from .decorators import *
 
 if __name__ == '__main__':
@@ -95,7 +96,10 @@ class PyObj:
     @D_General
     def LoadInternal(self, name):
         with importlib.resources.path('cap', name) as path:
-            self.LoadExtenal(path)
+            print(">>>", type(path))
+            xpath = str(path)
+            print(">>>", type(xpath))
+            self.LoadExtenal(xpath)
 
     @D_General
     def Load(self):
