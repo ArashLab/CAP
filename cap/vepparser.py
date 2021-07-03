@@ -87,22 +87,22 @@ def VepParser(args):
             # add remaining field
             variants.append(variant)
 
-        tsvPath = args.tsv
+        parquetPath = args.parquet
         # write the variant to the file
         cdf = pd.DataFrame(variants)
-        cdf.to_parquet(f'{tsvPath}.var.parquet')
+        cdf.to_parquet(f'{parquetPath}.var.parquet')
 
         # write colocated variant to the file
         cdf = pd.DataFrame(clVariants)
-        cdf.to_parquet(f'{tsvPath}.clvar.parquet')
+        cdf.to_parquet(f'{parquetPath}.clvar.parquet')
 
         # write colocated variant frequencies to the file
         cdf = pd.DataFrame(frequencies)
-        cdf.to_parquet(f'{tsvPath}.freq.parquet')
+        cdf.to_parquet(f'{parquetPath}.freq.parquet')
 
         # write consequences to the file
         cdf = pd.DataFrame(consequences)
-        cdf.to_parquet(f'{tsvPath}.conseq.parquet')
+        cdf.to_parquet(f'{parquetPath}.conseq.parquet')
 
 
 @D_General
