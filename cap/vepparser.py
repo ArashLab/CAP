@@ -90,6 +90,7 @@ def VepParser(args):
         parquetPath = args.parquet
         # write the variant to the file
         cdf = pd.DataFrame(variants)
+        print(cdf.dtypes)
         cdf.to_parquet(f'{parquetPath}.var.parquet')
 
         # write colocated variant to the file
