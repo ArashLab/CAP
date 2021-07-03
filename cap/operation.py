@@ -452,7 +452,7 @@ def VepAnnotation(stage):
                 fileName = os.path.basename(vcf)
                 code = fileName[5:10]
                 doneFile = os.path.join(outData.path, f'part-{code}.job.done')
-                if FileExist(doneFile):
+                if FileExist(doneFile, silent=True):
                     numCompeleted += 1
             if numCompeleted != numJob:
                 time.sleep(Shared.vepCheckWaitTime)

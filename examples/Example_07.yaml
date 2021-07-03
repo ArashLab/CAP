@@ -1,6 +1,6 @@
 config:
     mySqlConfig: &mySqlConfig
-        driver: com.mysql.jdbc.Driver
+        driver: com.mysql.cj.jdbc.Driver
         password: __YOUR_MYSQL_PASSWORD__
         url: jdbc:mysql://__YOUR_MYSQL_ADDRESS__/__YOUR_MYSQL_DATABASE__?useLegacyDatetimeCode=false&serverTimezone=UTC
         user: __YOUR_MYSQL_USER__

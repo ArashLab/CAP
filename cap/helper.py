@@ -242,9 +242,9 @@ def ImportMultipleTsv(files, tempDir, addFileNumber=False):
         LogException('No file to be loaded')
 
 
-    sc = hl.spark_context()
-    sqc = SQLContext(sc)
-    df = sqc.read.format("csv").option("header", "true").option("delimiter", "\t").load('file:///home/arabay/capdata/1kg_small/1kg.variant.vep/part-*.table.conseq.tsv')
+    # sc = hl.spark_context()
+    # sqc = SQLContext(sc)
+    # df = sqc.read.format("csv").option("header", "true").option("delimiter", "\t").load('file:///home/arabay/capdata/1kg_small/1kg.variant.vep/part-*.table.conseq.tsv')
     
     # TBF support for bgz and gz
     for i, file in enumerate(files):

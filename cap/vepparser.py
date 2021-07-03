@@ -90,19 +90,19 @@ def VepParser(args):
         tsvPath = args.tsv
         # write the variant to the file
         cdf = pd.DataFrame(variants)
-        cdf.to_csv(f'{tsvPath}.var.tsv', sep='\t', index=False)
+        cdf.to_parquet(f'{tsvPath}.var.parquet')
 
         # write colocated variant to the file
         cdf = pd.DataFrame(clVariants)
-        cdf.to_csv(f'{tsvPath}.clvar.tsv', sep='\t', index=False)
+        cdf.to_parquet(f'{tsvPath}.clvar.parquet')
 
         # write colocated variant frequencies to the file
         cdf = pd.DataFrame(frequencies)
-        cdf.to_csv(f'{tsvPath}.freq.tsv', sep='\t', index=False)
+        cdf.to_parquet(f'{tsvPath}.freq.parquet')
 
         # write consequences to the file
         cdf = pd.DataFrame(consequences)
-        cdf.to_csv(f'{tsvPath}.conseq.tsv', sep='\t', index=False)
+        cdf.to_parquet(f'{tsvPath}.conseq.parquet')
 
 
 @D_General
@@ -111,7 +111,7 @@ def Main():
         description='Parse VEP json output and produce a set of TSV files'
     )
     parser.add_argument('-j', '--json', required=True, type=str, help='Input JSON file contains VEP annotations one per line.')
-    parser.add_argument('-t', '--tsv', required=True, type=str, help='Output TSV file prefix (do not include ".tsv.bgz" at the end).')
+    parser.add_argument('-p', '--parquet', required=True, type=str, help='Output parquet file prefix (do not include ".parquet" at the end).')
     args = parser.parse_args()
 
     VepParser(args)
