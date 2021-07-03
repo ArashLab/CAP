@@ -9,6 +9,7 @@ import hail as hl
 import random
 import string
 from munch import munchify
+from pyspark.sql import SQLContext
 
 if __name__ == '__main__':
     print('This module is not executable. Please import this module in your program.')
@@ -37,19 +38,21 @@ def AbsPath(path):
     return abspath
 
 @D_General
-def GetLocalPath(path):
+def GetLocalPath(path, silent=False):
     inPath = path
     if path.lower().startswith('hdfs://'):
         LogException(f'hdfs pathes are not local: {path}')
     elif path.lower().startswith('file://'):
-        Log(f'Removeing file:// from {path}')
+        if not silent:
+            Log(f'Removeing file:// from {path}')
         path = path[7:]
     path = os.path.abspath(path)
-    Log(f'Local path of {inPath} is {path}')
+    if not silent:
+        Log(f'Local path of {inPath} is {path}')
     return path
 
-def FileExist(path):
-    path = GetLocalPath(path)
+def FileExist(path, silent=False):
+    path = GetLocalPath(path, silent)
     return os.path.exists(path)
 
 @D_General
@@ -237,6 +240,12 @@ def ImportMultipleTsv(files, tempDir, addFileNumber=False):
     """    
     if not files:
         LogException('No file to be loaded')
+
+
+    sc = hl.spark_context()
+    sqc = SQLContext(sc)
+    df = sqc.read.format("csv").option("header", "true").option("delimiter", "\t").load('file:///home/arabay/capdata/1kg_small/1kg.variant.vep/part-*.table.conseq.tsv')
+    
     # TBF support for bgz and gz
     for i, file in enumerate(files):
         file = AbsPath(file)
