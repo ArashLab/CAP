@@ -92,22 +92,22 @@ def VepParser(args):
         # write the variant to the file
         cdf = pd.DataFrame(variants)
         cdf = InferColumnTypes(cdf)
-        cdf.to_parquet(f'{parquetPath}.var.parquet')
+        cdf.to_parquet(f'{parquetPath}.var.parquet', index=False)
 
         # write colocated variant to the file
         cdf = pd.DataFrame(clVariants)
         cdf = InferColumnTypes(cdf)
-        cdf.to_parquet(f'{parquetPath}.clvar.parquet')
+        cdf.to_parquet(f'{parquetPath}.clvar.parquet', index=False)
 
         # write colocated variant frequencies to the file
         cdf = pd.DataFrame(frequencies)
         cdf = InferColumnTypes(cdf)
-        cdf.to_parquet(f'{parquetPath}.freq.parquet')
+        cdf.to_parquet(f'{parquetPath}.freq.parquet', index=False)
 
         # write consequences to the file
         cdf = pd.DataFrame(consequences)
         cdf = InferColumnTypes(cdf)
-        cdf.to_parquet(f'{parquetPath}.conseq.parquet')
+        cdf.to_parquet(f'{parquetPath}.conseq.parquet', index=False)
 
 
 @D_General
