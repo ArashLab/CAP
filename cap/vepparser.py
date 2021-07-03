@@ -5,6 +5,7 @@ import pandas as pd
 
 from .logutil import *
 from .common import *
+from .helper import *
 from .decorators import *
 
 
@@ -90,19 +91,22 @@ def VepParser(args):
         parquetPath = args.parquet
         # write the variant to the file
         cdf = pd.DataFrame(variants)
-        print(cdf.dtypes)
+        cdf = InferColumnTypes(cdf)
         cdf.to_parquet(f'{parquetPath}.var.parquet')
 
         # write colocated variant to the file
         cdf = pd.DataFrame(clVariants)
+        cdf = InferColumnTypes(cdf)
         cdf.to_parquet(f'{parquetPath}.clvar.parquet')
 
         # write colocated variant frequencies to the file
         cdf = pd.DataFrame(frequencies)
+        cdf = InferColumnTypes(cdf)
         cdf.to_parquet(f'{parquetPath}.freq.parquet')
 
         # write consequences to the file
         cdf = pd.DataFrame(consequences)
+        cdf = InferColumnTypes(cdf)
         cdf.to_parquet(f'{parquetPath}.conseq.parquet')
 
 

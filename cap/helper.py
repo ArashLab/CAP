@@ -9,7 +9,8 @@ import hail as hl
 import random
 import string
 from munch import munchify
-from pyspark.sql import SQLContext
+import io
+import pandas as pd
 
 if __name__ == '__main__':
     print('This module is not executable. Please import this module in your program.')
@@ -310,3 +311,13 @@ def CheckRangeShared(varName):
 def CheckShared():
     CheckRangeShared('numPartitions')
     CheckRangeShared('numSgeJobs')
+
+@D_General
+def InferColumnTypes(df):
+    Log(df.dtypes)
+    memFile = io.StringIO()
+    df.to_csv(memFile)
+    memFile.seek(0)
+    df = pd.read_csv(memFile)
+    Log(df.dtypes)
+    return df
