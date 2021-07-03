@@ -316,7 +316,7 @@ def CheckShared():
 def InferColumnTypes(df):
     Log(df.dtypes)
     memFile = io.StringIO()
-    df.to_csv(memFile)
+    df.to_csv(memFile, index=False)
     memFile.seek(0)
     df = pd.read_csv(memFile)
     Log(df.dtypes)
