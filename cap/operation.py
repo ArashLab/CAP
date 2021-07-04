@@ -480,20 +480,20 @@ def VepLoadTables(stage):
     # >>>>>>> STAGE Code <<<<<<<<
     path = inData.path
     try:  # TBF it currently check if the folder exist or not. should find a way to check all tsv files
-        tsvList = WildCardPath(path + '/part-*.var.tsv')
-        htVar = ImportMultipleTsv(tsvList, arg.tempDir)
+        tsvList = AbsPath(path + '/part-*.var.tsv')
+        htVar = ImportMultipleTsv(tsvList)
         htVar = htVar.annotate(varId=hl.int(htVar.varId))
 
-        tsvList = WildCardPath(path + '/part-*.clvar.tsv')
-        htClVar = ImportMultipleTsv(tsvList, arg.tempDir, addFileNumber=True)
+        tsvList = AbsPath(path + '/part-*.clvar.tsv')
+        htClVar = ImportMultipleTsv(tsvList, addFileNumber=True)
         htClVar = htClVar.annotate(varId=hl.int(htClVar.varId))
 
-        tsvList = WildCardPath(path + '/part-*.freq.tsv')
-        htFreq = ImportMultipleTsv(tsvList, arg.tempDir)
+        tsvList = AbsPath(path + '/part-*.freq.tsv')
+        htFreq = ImportMultipleTsv(tsvList)
         htFreq = htFreq.annotate(varId=hl.int(htFreq.varId))
 
-        tsvList = WildCardPath(path + '/part-*.conseq.tsv')
-        htConseq = ImportMultipleTsv(tsvList, arg.tempDir)
+        tsvList = AbsPath(path + '/part-*.conseq.tsv')
+        htConseq = ImportMultipleTsv(tsvList)
         htConseq = htConseq.annotate(varId=hl.int(htConseq.varId))
     except:
         LogException(f'Can not read tsv files')

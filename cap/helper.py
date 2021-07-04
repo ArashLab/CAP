@@ -1,4 +1,5 @@
 import glob
+from hail.expr.functions import log
 from pyspark.sql import SQLContext
 from functools import reduce
 from pyspark.sql.functions import lit
@@ -225,7 +226,7 @@ def FlattenTable(ht):
 
 
 @D_General
-def ImportMultipleTsv(files, tempDir, addFileNumber=False):
+def ImportMultipleTsv(files, addFileNumber=False):
     """Load multiple tsv files and turn it into a Hail Table
 
     Notes:
@@ -255,41 +256,19 @@ def ImportMultipleTsv(files, tempDir, addFileNumber=False):
     fileList = [f'file://{file}' for file in fileList]
     print(len(fileList))
 
-    dfs = [sqlc.read.parquet(file).withColumn("fileNumber", lit(i)) for i, file in enumerate(fileList)]
+    if addFileNumber:
+        dfs = [sqlc.read.parquet(file).withColumn("fileNumber", lit(i)) for i, file in enumerate(fileList)]
+    else:
+        dfs = [sqlc.read.parquet(file) for file in fileList]
 
     def UnionByName(a, b):
         return a.unionByName(b, allowMissingColumns=True)
 
     df = reduce(UnionByName, dfs)
-    
+    Log(f'Count DataFrame: {df.count()}')
+
     ht = Table.from_spark(df)
 
-
-    # TBF support for bgz and gz
-    for i, file in enumerate(files):
-        file = AbsPath(file)
-        if i == 0:  # The first table
-            ht = hl.import_table(file, impute=False, force=True)
-            if addFileNumber:
-                ht = ht.annotate(fileNumber=i)
-        htx = hl.import_table(file, impute=False, force=True)
-        if addFileNumber:
-            htx = htx.annotate(fileNumber=i)
-        ht = ht.union(htx, unify=True)
-
-    # write table and read it back with impute=True
-    rnd = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
-    tempPath = os.path.join(tempDir, f'TEMP-{rnd}.tsv.bgz')
-    if FileExist(tempPath):
-        LogException(f'Temp file {tempPath} exist on the system')
-    Log(f'Write to {tempPath}')
-    ht.export(tempPath)
-    ht = hl.import_table(tempPath, impute=True)
-    # TBF: The above operation should happen in parallel
-    # Hint1: parallel='header_per_shard'
-    # Hint2: finder.glob(tempPath + '/part-*.bgz') "import glob as finder"
-    # Hint3: types=ht.row.dtype
-    # TBF: Temp files must be cleand up
     Count(ht)
     return ht
 
