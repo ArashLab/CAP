@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
 # TBF: Live JSON Input/Output are not supported yet. (Like PCA Eigen)
 
-@D_General
+
 def AbsPath(path):
     if path.lower().startswith('hdfs://'):
         abspath = path
@@ -44,7 +44,7 @@ def AbsPath(path):
     Log(f'Absolute path of {path} is {abspath}')
     return abspath
 
-@D_General
+
 def GetLocalPath(path, silent=False):
     inPath = path
     if path.lower().startswith('hdfs://'):

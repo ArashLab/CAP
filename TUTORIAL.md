@@ -1,5 +1,7 @@
 # Tutorials for Cohort Analysis Platform (CAP)
 
+**Examples are tested with version 0.1.7 on pypi**
+
 The [examples](examples) folder includes three subsets of [1000-Genome project phase 3 dataset](https://www.internationalgenome.org/data/) all of which contains the full set of 2504 samples in the original dataset. However variants are random subset of different size as below:
 * *1kg.micro.vcf.bgz*: 193 variant
 * *1kg.tiny.vcf.bgz*: 4053 variant
