@@ -1,4 +1,9 @@
 import glob
+from pyspark.sql import SQLContext
+from functools import reduce
+from pyspark.sql.functions import lit
+from hail import Table
+
 import subprocess
 from .decorators import *
 from .common import *
@@ -243,10 +248,23 @@ def ImportMultipleTsv(files, tempDir, addFileNumber=False):
         LogException('No file to be loaded')
 
 
-    # sc = hl.spark_context()
-    # sqc = SQLContext(sc)
-    # df = sqc.read.format("csv").option("header", "true").option("delimiter", "\t").load('file:///home/arabay/capdata/1kg_small/1kg.variant.vep/part-*.table.conseq.tsv')
+    sc = hl.spark_context()
+    sqlc = SQLContext(sc)
+
+    fileList = glob.glob('/home/arabay/capdata/vep/*.conseq.parquet')
+    fileList = [f'file://{file}' for file in fileList]
+    print(len(fileList))
+
+    dfs = [sqlc.read.parquet(file).withColumn("fileNumber", lit(i)) for i, file in enumerate(fileList)]
+
+    def UnionByName(a, b):
+        return a.unionByName(b, allowMissingColumns=True)
+
+    df = reduce(UnionByName, dfs)
     
+    ht = Table.from_spark(df)
+
+
     # TBF support for bgz and gz
     for i, file in enumerate(files):
         file = AbsPath(file)
@@ -316,8 +334,8 @@ def CheckShared():
 def InferColumnTypes(df):
     Log(df.dtypes)
     memFile = io.StringIO()
-    df.to_csv(memFile, index=False)
+    df.to_csv(memFile, index=False, sep='\t')
     memFile.seek(0)
-    df = pd.read_csv(memFile)
+    df = pd.read_csv(memFile, delimiter='\t')
     Log(df.dtypes)
     return df
