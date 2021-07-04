@@ -480,23 +480,23 @@ def VepLoadTables(stage):
     # >>>>>>> STAGE Code <<<<<<<<
     path = inData.path
     try:  # TBF it currently check if the folder exist or not. should find a way to check all tsv files
-        tsvList = AbsPath(path + '/part-*.var.tsv')
+        tsvList = AbsPath(path + '/part-*.var.parquet')
         htVar = ImportMultipleTsv(tsvList)
         htVar = htVar.annotate(varId=hl.int(htVar.varId))
 
-        tsvList = AbsPath(path + '/part-*.clvar.tsv')
+        tsvList = AbsPath(path + '/part-*.clvar.parquet')
         htClVar = ImportMultipleTsv(tsvList, addFileNumber=True)
         htClVar = htClVar.annotate(varId=hl.int(htClVar.varId))
 
-        tsvList = AbsPath(path + '/part-*.freq.tsv')
+        tsvList = AbsPath(path + '/part-*.freq.parquet')
         htFreq = ImportMultipleTsv(tsvList)
         htFreq = htFreq.annotate(varId=hl.int(htFreq.varId))
 
-        tsvList = AbsPath(path + '/part-*.conseq.tsv')
+        tsvList = AbsPath(path + '/part-*.conseq.parquet')
         htConseq = ImportMultipleTsv(tsvList)
         htConseq = htConseq.annotate(varId=hl.int(htConseq.varId))
     except:
-        LogException(f'Can not read tsv files')
+        LogException(f'Can not read parquet files')
 
     try:
         # Process colocated-variants table
@@ -528,12 +528,7 @@ def VepLoadTables(stage):
     except:
         LogException('Cannot process tables.')
 
-    Log(f'VEP tsv files are converted to hail tables.')
-
-    # TBF: Clean up tempDir (does not work due to lazy operaion of spark)
-    # Log(f'Cleaning up temporary files.')
-    # os.system(f'rm -rf {arg.tempDir}/TEMP-*.tsv.bgz')
-    # Log(f'Temporary files are deleted.')
+    Log(f'VEP parquet files are converted to hail tables.')
 
     # >>>>>>> Live Output <<<<<<<<
     inout.outVar.data = htVar
