@@ -254,8 +254,7 @@ def ImportMultipleTsv(files, addFileNumber=False):
 
     fileList = glob.glob(GetLocalPath(files))
     fileList = [f'file://{file}' for file in fileList]
-    print(len(fileList))
-    print(fileList)
+    Log(f'Number of files linked to the input path {len(fileList)}')
 
     if addFileNumber:
         dfs = [sqlc.read.parquet(file).withColumn("fileNumber", lit(i)) for i, file in enumerate(fileList)]
