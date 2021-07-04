@@ -252,7 +252,7 @@ def ImportMultipleTsv(files, addFileNumber=False):
     sc = hl.spark_context()
     sqlc = SQLContext(sc)
 
-    fileList = glob.glob('/home/arabay/capdata/vep/*.conseq.parquet')
+    fileList = glob.glob(files)
     fileList = [f'file://{file}' for file in fileList]
     print(len(fileList))
 
