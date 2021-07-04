@@ -44,7 +44,7 @@ def AbsPath(path):
     Log(f'Absolute path of {path} is {abspath}')
     return abspath
 
-
+# not to have D_General as these function may be called in a wait loop in VEP annotation function
 def GetLocalPath(path, silent=False):
     inPath = path
     if path.lower().startswith('hdfs://'):
@@ -58,6 +58,7 @@ def GetLocalPath(path, silent=False):
         Log(f'Local path of {inPath} is {path}')
     return path
 
+# not to have D_General as these function may be called in a wait loop in VEP annotation function
 def FileExist(path, silent=False):
     path = GetLocalPath(path, silent)
     return os.path.exists(path)
