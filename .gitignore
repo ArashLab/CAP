@@ -132,3 +132,4 @@ dmypy.json
 dev.txt
 temp
 examples/Example_07local.yaml
+.DS_Store
