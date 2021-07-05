@@ -117,7 +117,7 @@ stages:
                 - vep/cvs-norm.sh
                 - __IN_VCF__
                 - __OUT_JSON__
-                - __OUT_TSV__
+                - __OUT_TBL__
                 - NoJobId
                 - __OUT_JOB__
                 - vep

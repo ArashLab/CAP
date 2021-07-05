@@ -229,7 +229,7 @@ def FlattenTable(ht):
 
 
 @D_General
-def ImportMultipleTsv(files, addFileNumber=False):
+def ImportMultipleTable(files, addFileNumber=False):
     """Load multiple tsv files and turn it into a Hail Table
 
     Notes:

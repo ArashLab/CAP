@@ -300,7 +300,6 @@ class Workload(PyObj):
                 else:
                     pass  # Already handled in CheckInout
 
-
     @D_General
     def ProcessLiveOutputs(self, stage):
         """Write live output to disk.

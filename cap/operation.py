@@ -417,7 +417,7 @@ def VepAnnotation(stage):
             command = templateCommand
             command = [path if p == '__VCF_DIR__' else p for p in command]
             command = [outData.path if p == '__JSON_DIR__' else p for p in command]
-            command = [outData.path if p == '__TSV_DIR__' else p for p in command]
+            command = [outData.path if p == '__TBL_DIR__' else p for p in command]
             command = [outData.path if p == '__JOB_DIR__' else p for p in command]
             command = [f'CAP' if p == '__JOB_NAME__' else p for p in command]
             command = ['1' if p == '__JOB_START__' else p for p in command]
@@ -436,7 +436,7 @@ def VepAnnotation(stage):
                 command = templateCommand
                 command = [vcf if p == '__IN_VCF__' else p for p in command]
                 command = [os.path.join(outData.path, f'part-{code}.json.bgz')if p == '__OUT_JSON__' else p for p in command]
-                command = [os.path.join(outData.path, f'part-{code}.table') if p == '__OUT_TSV__' else p for p in command]
+                command = [os.path.join(outData.path, f'part-{code}.table') if p == '__OUT_TBL__' else p for p in command]
                 command = [os.path.join(outData.path, f'part-{code}.job') if p == '__OUT_JOB__' else p for p in command]
                 command = [f'CAP-{code}' if p == '__JOB_ID__' else p for p in command]
 
@@ -463,14 +463,14 @@ def VepAnnotation(stage):
         LogPrint(f'All {numJob} jobs are compeleted.')
     except:
         LogException(f'Can not extract vcf file list.')
-    Log(f'VEP JSON and TSV files are created.')
+    Log(f'VEP JSON and TBL files are created.')
 
     # >>>>>>> Live Output <<<<<<<<
 
 
 @D_General
 def VepLoadTables(stage):
-    spec, arg, inout = stage.spec, stage.arg, stage.inout
+    inout = stage.inout
 
     # >>>>>>> Input/Output <<<<<<<<
     inData = inout.inData
@@ -479,21 +479,21 @@ def VepLoadTables(stage):
 
     # >>>>>>> STAGE Code <<<<<<<<
     path = inData.path
-    try:  # TBF it currently check if the folder exist or not. should find a way to check all tsv files
-        tsvList = AbsPath(path + '/part-*.var.parquet')
-        htVar = ImportMultipleTsv(tsvList)
+    try:  # TBF it currently check if the folder exist or not. should find a way to check all parquet files
+        tblList = AbsPath(path + '/part-*.var.parquet')
+        htVar = ImportMultipleTable(tblList)
         htVar = htVar.annotate(varId=hl.int(htVar.varId))
 
-        tsvList = AbsPath(path + '/part-*.clvar.parquet')
-        htClVar = ImportMultipleTsv(tsvList, addFileNumber=True)
+        tblList = AbsPath(path + '/part-*.clvar.parquet')
+        htClVar = ImportMultipleTable(tblList, addFileNumber=True)
         htClVar = htClVar.annotate(varId=hl.int(htClVar.varId))
 
-        tsvList = AbsPath(path + '/part-*.freq.parquet')
-        htFreq = ImportMultipleTsv(tsvList)
+        tblList = AbsPath(path + '/part-*.freq.parquet')
+        htFreq = ImportMultipleTable(tblList)
         htFreq = htFreq.annotate(varId=hl.int(htFreq.varId))
 
-        tsvList = AbsPath(path + '/part-*.conseq.parquet')
-        htConseq = ImportMultipleTsv(tsvList)
+        tblList = AbsPath(path + '/part-*.conseq.parquet')
+        htConseq = ImportMultipleTable(tblList)
         htConseq = htConseq.annotate(varId=hl.int(htConseq.varId))
     except:
         LogException(f'Can not read parquet files')
