@@ -220,7 +220,13 @@ def FlattenTable(ht):
                         LogException(f'Cannot drop {k} from table.')
                     doneFlag = False
                 else:
-                    LogPrint(f'{k} of type {t} can not be flattend beacuase its length is variable min:{minLen} max:{maxLen}.', level='WARNING')
+                    Log(f'{k} of type {t} can not be flattend beacuase its length is variable min:{minLen} max:{maxLen}.', level='WARNING')
+                    Log(f'Variable length array {k} is converted to string with " ~#^#~ " as a seperator', level='WARNING')
+                    expr[k] = hl.str(' ~#^#~ ').join(ht[k])
+                    try:
+                        ht = ht.annotate(**expr)
+                    except:
+                        LogException(f'Cannot perform annotation with expression {expr}.')
 
     Count(ht)
     return ht
