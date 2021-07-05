@@ -63,7 +63,6 @@ def FileExist(path, silent=False):
     path = GetLocalPath(path, silent)
     return os.path.exists(path)
 
-@D_General
 def WildCardPath(path):
     path = GetLocalPath(path)
     fileList = glob.glob(path)
@@ -111,7 +110,6 @@ def HailPath(path):
     else:
         LogException(f'Path must be a list but it is of type {type(path)} and the value is {path}.')
 
-
 @D_General
 def Count(table):
     """Count a Hail Table or MatrixTable.
@@ -136,7 +134,6 @@ def Count(table):
     Log(f'Counts: {JsonDumps(cnt)}.')
 
     return cnt
-
 
 @D_General
 def SampleRows(mt, subSample):
@@ -176,7 +173,6 @@ def SampleRows(mt, subSample):
 
     Count(mt)
     return mt
-
 
 @D_General
 def FlattenTable(ht):

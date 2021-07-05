@@ -47,7 +47,13 @@ class Workload(PyObj):
             if 'spec' not in stage:
                 print(stage)
                 LogException(f'stage {stageId} does not have the "spec"')
+            
+            # Push stage id and inout name into the structure
             stage.spec.id = stageId
+            if 'inout' in stage:
+                for name, inout in stage.inout.items():
+                    inout.name = name
+
             if 'status' not in stage.spec:
                 stage.spec.status = 'Initiated'
 
@@ -211,6 +217,40 @@ class Workload(PyObj):
                 Shared.CurrentStageForLogging = None
 
     @D_General
+    def ProcessLiveInput(self, input):
+        if input.direction == 'input':
+            Log(f'<< inout: {input.name} >> is {JsonDumps(input)}.')
+            if 'isAlive' in input and input.isAlive:
+                if input.path not in Shared:
+                    Log(f'<< inout: {input.name} >> Loading.')
+                    try:
+                        if input.format == 'ht':
+                            mht = hl.read_table(input.path)
+                        elif input.format == 'mt':
+                            mht = hl.read_matrix_table(input.path)
+                        else:
+                            pass  # Already handled in CheckInout
+                    except:
+                        LogException(f'<< inout: {input.name} >> Cannot read input form {input.path}.')
+                    else:
+                        Shared[input.path] = mht
+                        Log('<< inout: {name} >> Loaded.')
+                else:
+                    mht = Shared[input.path]
+                    Log(f'<< inout: {input.name} >> Preloaded.')
+
+                if input.numPartitions and mht.n_partitions() != input.numPartitions:
+                    np = mht.n_partitions()
+                    mht = mht.repartition(input.numPartitions)
+                    Log(f'<< inout: {input.name} >> Repartitioned from {np} to {input.numPartitions}.')
+                if input.toBeCached:
+                    mht = mht.cache()
+                    Log(f'<< inout: {input.name} >> Cached.')
+                if input.toBeCounted:
+                    input.count = Count(mht)
+                    Log(f'<< inout: {input.name} >> Counted.')
+
+    @D_General
     def ProcessLiveInputs(self, stage):
         """Make sure that live input files are loaded in the shared object.
 
@@ -222,37 +262,44 @@ class Workload(PyObj):
         Log(f'Out of {len(stage.inout)} inouts {numInput} are inputs.')
 
         for name, input in stage.inout.items():
-            if input.direction == 'input':
-                Log(f'<< inout: {name} >> is {JsonDumps(input)}.')
-                if 'isAlive' in input and input.isAlive:
-                    if input.path not in Shared:
-                        Log(f'<< inout: {name} >> Loading.')
-                        try:
-                            if input.format == 'ht':
-                                mht = hl.read_table(input.path)
-                            elif input.format == 'mt':
-                                mht = hl.read_matrix_table(input.path)
-                            else:
-                                pass  # Already handled in CheckInout
-                        except:
-                            LogException(f'<< inout: {name} >> Cannot read input form {input.path}.')
-                        else:
-                            Shared[input.path] = mht
-                            Log('<< inout: {name} >> Loaded.')
-                    else:
-                        mht = Shared[input.path]
-                        Log(f'<< inout: {name} >> Preloaded.')
+            self.ProcessLiveInput(input)
 
-                    if input.numPartitions and mht.n_partitions() != input.numPartitions:
-                        np = mht.n_partitions()
-                        mht = mht.repartition(input.numPartitions)
-                        Log(f'<< inout: {name} >> Repartitioned from {np} to {input.numPartitions}.')
-                    if input.toBeCached:
-                        mht = mht.cache()
-                        Log(f'<< inout: {name} >> Cached.')
-                    if input.toBeCounted:
-                        input.count = Count(mht)
-                        Log(f'<< inout: {name} >> Counted.')
+    @D_General
+    def ProcessLiveOutput(self, output):
+        if output.direction == 'output':
+            Log(f'<< inout: {output.name} >> is {JsonDumps(output)}')
+
+            if 'isAlive' in output and output.isAlive:
+                if 'data' in output:
+                    mht = output.data
+                else:
+                    LogException(f'<< inout: {output.name} >> No "data" field is provided.')
+
+                if output.path in Shared:
+                    LogException(f'<< inout: {output.name} >> Output path {output.path} alredy exist in the shared.')
+
+                if output.numPartitions and mht.n_partitions() != output.numPartitions:
+                    np = mht.n_partitions()
+                    mht = mht.repartition(output.numPartitions)
+                    Log(f'<< inout: {output.name} >> Repartitioned from {np} to {output.numPartitions}.')
+
+                if output.toBeCached:
+                    mht = mht.cache()
+                    Log(f'<< inout: {output.name} >> Cached.')
+
+                if output.toBeCounted:
+                    output.count = Count(mht)
+                    Log(f'<< inout: {output.name} >> Counted.')
+
+                Shared[output.path] = mht
+                Log(f'<< inout: {output.name} >> Added to shared.')
+
+                if output.format in ['ht', 'mt']:
+                    mht.write(output.path, overwrite=False)
+                    Log(f'<< inout: {output.name} >> Dumped.')
+                else:
+                    pass  # Already handled in CheckInout
+
 
     @D_General
     def ProcessLiveOutputs(self, stage):
@@ -266,36 +313,4 @@ class Workload(PyObj):
         logger.info(f'Out of {len(stage.inout)} inouts {numOutput} are outputs')
 
         for name, output in stage.inout.items():
-            if output.direction == 'output':
-                Log(f'<< inout: {name} >> is {JsonDumps(output)}')
-
-                if 'isAlive' in output and output.isAlive:
-                    if 'data' in output:
-                        mht = output.data
-                    else:
-                        LogException(f'<< inout: {name} >> No "data" field is provided.')
-
-                    if output.path in Shared:
-                        LogException(f'<< inout: {name} >> Output path {output.path} alredy exist in the shared.')
-
-                    if output.numPartitions and mht.n_partitions() != output.numPartitions:
-                        np = mht.n_partitions()
-                        mht = mht.repartition(output.numPartitions)
-                        Log(f'<< inout: {name} >> Repartitioned from {np} to {output.numPartitions}.')
-
-                    if output.toBeCached:
-                        mht = mht.cache()
-                        Log(f'<< inout: {name} >> Cached.')
-
-                    if output.toBeCounted:
-                        output.count = Count(mht)
-                        Log(f'<< inout: {name} >> Counted.')
-
-                    Shared[output.path] = mht
-                    Log(f'<< inout: {name} >> Added to shared.')
-
-                    if output.format in ['ht', 'mt']:
-                        mht.write(output.path, overwrite=False)
-                        Log(f'<< inout: {name} >> Dumped.')
-                    else:
-                        pass  # Already handled in CheckInout
+            self.ProcessLiveOutput(output)
