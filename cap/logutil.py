@@ -13,7 +13,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 # define file handler and set formatter
 randomStr = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-fn = f'cap.{str(datetime.now())}.{randomStr}.log.tsv'
+now = str(datetime.now().strftime("%Y%m%d-%H%M%S"))
+fn = f'cap.{now}.{randomStr}.log.tsv'
+Shared.logFile = fn
 file_handler = logging.FileHandler(filename=fn,  mode='w')
 formatter = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s')
 file_handler.setFormatter(formatter)

@@ -2,6 +2,8 @@ from munch import Munch
 
 Shared = Munch()
 
+Shared.logFile = 'NoLogFile'
+
 Shared.fileSystem = None
 
 Shared.vepCheckWaitTime = 5
