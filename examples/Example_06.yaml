@@ -93,7 +93,7 @@ stages:
         spec:
             function: AddId
         arg:
-            dummy: true
+            sampleId: s
         inout:
             inGt:
                 direction: input

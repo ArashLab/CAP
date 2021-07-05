@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 VCF=$1
 JSON=$2

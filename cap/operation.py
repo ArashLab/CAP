@@ -93,6 +93,7 @@ def SplitMulti(stage):
 @D_General
 def AddId(stage):
     inout = stage.inout
+    arg = stage.arg
 
     # >>>>>>> Input/Output <<<<<<<<
     inGt = inout.inGt
@@ -105,10 +106,8 @@ def AddId(stage):
 
     # >>>>>>> STAGE Code <<<<<<<<
     # Add indexes
-    mt = mt.add_col_index(name='sampleId')
-    mt = mt.add_row_index(name='variantId')
-    mt = mt.annotate_cols(sampleId=mt.sampleId+1)
-    mt = mt.annotate_rows(variantId=mt.variantId+1)
+    mt = mt.annotate_rows(variantId=hl.str(':').join(hl.array([mt.locus.contig, hl.str(mt.locus.position)]).extend(mt.alleles)))
+    mt = mt.annotate_cols(sampleId=mt[arg.sampleId])
 
     mt = mt.key_cols_by('sampleId')
 
@@ -482,19 +481,19 @@ def VepLoadTables(stage):
     try:  # TBF it currently check if the folder exist or not. should find a way to check all parquet files
         tblList = AbsPath(path + '/part-*.var.parquet')
         htVar = ImportMultipleTable(tblList)
-        htVar = htVar.annotate(varId=hl.int(htVar.varId))
+        #htVar = htVar.annotate(varId=hl.int(htVar.varId))
 
         tblList = AbsPath(path + '/part-*.clvar.parquet')
         htClVar = ImportMultipleTable(tblList, addFileNumber=True)
-        htClVar = htClVar.annotate(varId=hl.int(htClVar.varId))
+        #htClVar = htClVar.annotate(varId=hl.int(htClVar.varId))
 
         tblList = AbsPath(path + '/part-*.freq.parquet')
         htFreq = ImportMultipleTable(tblList)
-        htFreq = htFreq.annotate(varId=hl.int(htFreq.varId))
+        #htFreq = htFreq.annotate(varId=hl.int(htFreq.varId))
 
         tblList = AbsPath(path + '/part-*.conseq.parquet')
         htConseq = ImportMultipleTable(tblList)
-        htConseq = htConseq.annotate(varId=hl.int(htConseq.varId))
+        #htConseq = htConseq.annotate(varId=hl.int(htConseq.varId))
     except:
         LogException(f'Can not read parquet files')
 

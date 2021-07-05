@@ -4,6 +4,8 @@ stages:
     ADDID:
         spec:
             function: AddId
+        arg:
+            sampleId: s
         inout:
             inGt:
                 direction: input

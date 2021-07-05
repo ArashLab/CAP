@@ -13,7 +13,6 @@ config:
 
     vepVcfPath: &vepVcfPath 1kg.forVep.vcf.bgz  # Exported genotype to for VEP annotations. 
     vepOutPath: &vepOutPath 1kg.outVep # Output of VEP and CAP VEP Parser
-    tempDir: &tempDir 1kg.tempVep # Where to stor Temporary data
 
     ### VEP Output in HailTable Foramt
     htVepVar: &htVepVar 1kg.vep.var.ht
@@ -76,7 +75,7 @@ stages:
         spec:
             function: AddId
         arg:
-            dummy: true
+            sampleId: s
         inout:
             inGt:
                 direction: input
@@ -95,7 +94,7 @@ stages:
             function: ExportGenotype
         arg:
             exportParam:
-                parallel: separate_header
+                parallel: header_per_shard
             forVep: true
             outputFormat: vcf
         inout:
@@ -135,8 +134,6 @@ stages:
     VEPLT:
         spec:
             function: VepLoadTables
-        arg:
-            tempDir: *tempDir
         inout:
             inData:
                 direction: input

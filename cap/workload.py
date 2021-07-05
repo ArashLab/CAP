@@ -218,37 +218,36 @@ class Workload(PyObj):
 
     @D_General
     def ProcessLiveInput(self, input):
-        if input.direction == 'input':
-            Log(f'<< inout: {input.name} >> is {JsonDumps(input)}.')
-            if 'isAlive' in input and input.isAlive:
-                if input.path not in Shared:
-                    Log(f'<< inout: {input.name} >> Loading.')
-                    try:
-                        if input.format == 'ht':
-                            mht = hl.read_table(input.path)
-                        elif input.format == 'mt':
-                            mht = hl.read_matrix_table(input.path)
-                        else:
-                            pass  # Already handled in CheckInout
-                    except:
-                        LogException(f'<< inout: {input.name} >> Cannot read input form {input.path}.')
+        Log(f'<< inout: {input.name} >> is {JsonDumps(input)}.')
+        if 'isAlive' in input and input.isAlive:
+            if input.path not in Shared:
+                Log(f'<< inout: {input.name} >> Loading.')
+                try:
+                    if input.format == 'ht':
+                        mht = hl.read_table(input.path)
+                    elif input.format == 'mt':
+                        mht = hl.read_matrix_table(input.path)
                     else:
-                        Shared[input.path] = mht
-                        Log('<< inout: {name} >> Loaded.')
+                        pass  # Already handled in CheckInout
+                except:
+                    LogException(f'<< inout: {input.name} >> Cannot read input form {input.path}.')
                 else:
-                    mht = Shared[input.path]
-                    Log(f'<< inout: {input.name} >> Preloaded.')
+                    Shared[input.path] = mht
+                    Log('<< inout: {name} >> Loaded.')
+            else:
+                mht = Shared[input.path]
+                Log(f'<< inout: {input.name} >> Preloaded.')
 
-                if input.numPartitions and mht.n_partitions() != input.numPartitions:
-                    np = mht.n_partitions()
-                    mht = mht.repartition(input.numPartitions)
-                    Log(f'<< inout: {input.name} >> Repartitioned from {np} to {input.numPartitions}.')
-                if input.toBeCached:
-                    mht = mht.cache()
-                    Log(f'<< inout: {input.name} >> Cached.')
-                if input.toBeCounted:
-                    input.count = Count(mht)
-                    Log(f'<< inout: {input.name} >> Counted.')
+            if input.numPartitions and mht.n_partitions() != input.numPartitions:
+                np = mht.n_partitions()
+                mht = mht.repartition(input.numPartitions)
+                Log(f'<< inout: {input.name} >> Repartitioned from {np} to {input.numPartitions}.')
+            if input.toBeCached:
+                mht = mht.cache()
+                Log(f'<< inout: {input.name} >> Cached.')
+            if input.toBeCounted:
+                input.count = Count(mht)
+                Log(f'<< inout: {input.name} >> Counted.')
 
     @D_General
     def ProcessLiveInputs(self, stage):
@@ -261,44 +260,45 @@ class Workload(PyObj):
         numInput = len([1 for inout in stage.inout.values() if inout.direction == 'input'])
         Log(f'Out of {len(stage.inout)} inouts {numInput} are inputs.')
 
-        for name, input in stage.inout.items():
-            self.ProcessLiveInput(input)
+        for input in stage.inout.values():
+            if input.direction == 'input':
+                self.ProcessLiveInput(input)
 
     @D_General
     def ProcessLiveOutput(self, output):
-        if output.direction == 'output':
-            Log(f'<< inout: {output.name} >> is {JsonDumps(output)}')
+        
+        Log(f'<< inout: {output.name} >> is {JsonDumps(output)}')
 
-            if 'isAlive' in output and output.isAlive:
-                if 'data' in output:
-                    mht = output.data
-                else:
-                    LogException(f'<< inout: {output.name} >> No "data" field is provided.')
+        if 'isAlive' in output and output.isAlive:
+            if 'data' in output:
+                mht = output.data
+            else:
+                LogException(f'<< inout: {output.name} >> No "data" field is provided.')
 
-                if output.path in Shared:
-                    LogException(f'<< inout: {output.name} >> Output path {output.path} alredy exist in the shared.')
+            if output.path in Shared:
+                LogException(f'<< inout: {output.name} >> Output path {output.path} alredy exist in the shared.')
 
-                if output.numPartitions and mht.n_partitions() != output.numPartitions:
-                    np = mht.n_partitions()
-                    mht = mht.repartition(output.numPartitions)
-                    Log(f'<< inout: {output.name} >> Repartitioned from {np} to {output.numPartitions}.')
+            if output.numPartitions and mht.n_partitions() != output.numPartitions:
+                np = mht.n_partitions()
+                mht = mht.repartition(output.numPartitions)
+                Log(f'<< inout: {output.name} >> Repartitioned from {np} to {output.numPartitions}.')
 
-                if output.toBeCached:
-                    mht = mht.cache()
-                    Log(f'<< inout: {output.name} >> Cached.')
+            if output.toBeCached:
+                mht = mht.cache()
+                Log(f'<< inout: {output.name} >> Cached.')
 
-                if output.toBeCounted:
-                    output.count = Count(mht)
-                    Log(f'<< inout: {output.name} >> Counted.')
+            if output.toBeCounted:
+                output.count = Count(mht)
+                Log(f'<< inout: {output.name} >> Counted.')
 
-                Shared[output.path] = mht
-                Log(f'<< inout: {output.name} >> Added to shared.')
+            Shared[output.path] = mht
+            Log(f'<< inout: {output.name} >> Added to shared.')
 
-                if output.format in ['ht', 'mt']:
-                    mht.write(output.path, overwrite=False)
-                    Log(f'<< inout: {output.name} >> Dumped.')
-                else:
-                    pass  # Already handled in CheckInout
+            if output.format in ['ht', 'mt']:
+                mht.write(output.path, overwrite=False)
+                Log(f'<< inout: {output.name} >> Dumped.')
+            else:
+                pass  # Already handled in CheckInout
 
     @D_General
     def ProcessLiveOutputs(self, stage):
@@ -311,5 +311,6 @@ class Workload(PyObj):
         numOutput = len([1 for inout in stage.inout.values() if inout.direction == 'output'])
         logger.info(f'Out of {len(stage.inout)} inouts {numOutput} are outputs')
 
-        for name, output in stage.inout.items():
-            self.ProcessLiveOutput(output)
+        for output in stage.inout.values():
+            if output.direction == 'output':
+                self.ProcessLiveOutput(output)

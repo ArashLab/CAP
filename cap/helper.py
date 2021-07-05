@@ -2,7 +2,7 @@ import glob
 from hail.expr.functions import log
 from pyspark.sql import SQLContext
 from functools import reduce
-from pyspark.sql.functions import lit
+from pyspark.sql.functions import lit, overlay
 from hail import Table
 
 import subprocess
@@ -218,6 +218,7 @@ def FlattenTable(ht):
                 else:
                     Log(f'{k} of type {t} can not be flattend beacuase its length is variable min:{minLen} max:{maxLen}.', level='WARNING')
                     Log(f'Variable length array {k} is converted to string with " ~#^#~ " as a seperator', level='WARNING')
+                    expr = dict()
                     expr[k] = hl.str(' ~#^#~ ').join(ht[k])
                     try:
                         ht = ht.annotate(**expr)
@@ -273,6 +274,7 @@ def ImportMultipleTable(files, addFileNumber=False):
     ht = Table.from_spark(df)
 
     Count(ht)
+    
     return ht
 
 
