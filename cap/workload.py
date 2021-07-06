@@ -23,14 +23,13 @@ class Workload(PyObj):
         if reset:
             self.Clear()
 
-        if 'globConfig' in self.obj:
-            self.globConfig = self.obj.globConfig
-        else:
-            self.globConfig = Munch()
-        if 'config' in self.obj:
-            self.config = self.obj.config
-        else:
-            self.config = Munch()
+        if 'globConfig' not in self.obj:
+            self.obj.globConfig = Munch()
+        if 'config' not in self.obj:
+            self.obj.config = Munch()
+
+        self.globConfig = self.obj.globConfig
+        self.config = self.obj.config
         self.order = self.obj.order
         self.stages = self.obj.stages
 

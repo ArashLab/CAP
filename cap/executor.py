@@ -17,14 +17,27 @@ if __name__ == '__main__':
 class Executor:
 
     @D_General
-    def __init__(self, workload):
+    def __init__(self, workload, hailLog=None):
 
         if not isinstance(workload, Workload):
             LogException('workload must be of type Workload')
         self.workload = workload
 
         try:
-            hl.init()
+            if hailLog:
+                hl.init(log=hailLog)
+                Shared.hailLog = hailLog
+                Log(f'Hail Log is written to {Shared.hailLog}')
+            else:
+                hl.init()
+                Shared.hailLog = "NotAvailable (To Be Fixed)" #TBF
+
+        
+
+            workload.globConfig.hailLog = Shared.hailLog
+            workload.globConfig.capLog = Shared.capLog
+            workload.Update()
+
             LogPrint("+++++++++++++++++++++++++++++++")
             LogPrint("+++++++++++++++++++++++++++++++")
             LogPrint("+++++++++++++++++++++++++++++++")
