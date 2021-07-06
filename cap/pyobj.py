@@ -1,5 +1,5 @@
 import json
-from ruamel.yaml import YAML
+import yaml
 from munch import munchify
 import jsonschema
 import importlib.resources
@@ -13,7 +13,7 @@ if __name__ == '__main__':
     print('This module is not executable. Please import this module in your program.')
     exit(0)
 
-yaml = YAML()
+
 class PyObj:
 
     @D_General
@@ -90,7 +90,7 @@ class PyObj:
             if self.format == 'json':
                 obj = json.load(inFile)
             elif self.format == 'yaml':
-                obj = yaml.load(inFile)
+                obj = yaml.load(inFile)#, Loader=yaml.FullLoader)
             self.obj = munchify(obj)
 
     @D_General
@@ -117,7 +117,7 @@ class PyObj:
             if self.format == 'json':
                 json.dump(obj, outfile, indent=4, sort_keys=True, default=str)
             elif self.format == 'yaml':
-                yaml.dump(obj, outfile)
+                yaml.dump(obj, outfile, indent=4)#, sort_keys=True)
 
     @D_General
     def UpdateInternal(self, name):

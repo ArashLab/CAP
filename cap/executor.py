@@ -61,7 +61,7 @@ class Executor:
         func(stage)
         workload.ProcessLiveOutputs(stage)
         stage.spec.endTime = datetime.now()
-        stage.spec.execTime = stage.spec.endTime - stage.spec.startTime
+        stage.spec.execTime = str(stage.spec.endTime - stage.spec.startTime)
         stage.spec.status = 'Completed'
         LogPrint(f'Completed in {stage.spec.execTime}')
         Shared.CurrentStageForLogging = None

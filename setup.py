@@ -15,6 +15,6 @@ setuptools.setup(
         'Programming Language :: Python :: 3',
     ],
     include_package_data=True,
-    install_requires=['hail', 'munch', 'jsonschema', 'pyarrow', 'fastparquet', 'ruamel.yaml'],
+    install_requires=['hail', 'munch', 'jsonschema', 'pyarrow', 'fastparquet'],# 'ruamel.yaml'],
     packages=setuptools.find_packages()
 )
