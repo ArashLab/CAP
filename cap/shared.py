@@ -2,6 +2,8 @@ from munch import Munch
 
 Shared = Munch()
 
+Shared.data = Munch()
+
 Shared.logFile = 'NoLogFile'
 
 Shared.fileSystem = None

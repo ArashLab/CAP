@@ -72,7 +72,7 @@ def SplitMulti(stage):
     outGt = inout.outGt
 
     # >>>>>>> Live Input <<<<<<<<
-    mt = Shared[inGt.path]
+    mt = Shared.data[inGt.path]
 
     # >>>>>>> STAGE Code <<<<<<<<
     # Split multi allelic site
@@ -102,7 +102,7 @@ def AddId(stage):
     outRow = inout.outRow
 
     # >>>>>>> Live Input <<<<<<<<
-    mt = Shared[inGt.path]
+    mt = Shared.data[inGt.path]
 
     # >>>>>>> STAGE Code <<<<<<<<
     # Add indexes
@@ -140,7 +140,7 @@ def ExportGenotype(stage):
     outGt = inout.outGt
 
     # >>>>>>> Live Input <<<<<<<<
-    mt = Shared[inGt.path]
+    mt = Shared.data[inGt.path]
 
     # >>>>>>> STAGE Code <<<<<<<<
 
@@ -210,7 +210,7 @@ def ImportPhenotype(stage):
     outPt = inout.outPt
 
     # >>>>>>> Live Input <<<<<<<<
-    htS = Shared[inS.path]
+    htS = Shared.data[inS.path]
 
     # >>>>>>> STAGE Code <<<<<<<<
     try:
@@ -253,7 +253,7 @@ def PcaHweNorm(stage):
     outPcaScore = inout.outPcaScore
 
     # >>>>>>> Live Input <<<<<<<<
-    mt = Shared[inGt.path]
+    mt = Shared.data[inGt.path]
 
     # >>>>>>> STAGE Code <<<<<<<<
     if 'minMaf' in arg:
@@ -307,7 +307,7 @@ def CalcQC(stage):
     outQc = inout.outQc
 
     # >>>>>>> Live Input <<<<<<<<
-    mt = Shared[inGt.path]
+    mt = Shared.data[inGt.path]
 
     # >>>>>>> STAGE Code <<<<<<<<
     try:
@@ -337,7 +337,7 @@ def ToMySql(stage):
     inHt = inout.inHt
 
     # >>>>>>> Live Input <<<<<<<<
-    ht = Shared[inHt.path]
+    ht = Shared.data[inHt.path]
 
     # >>>>>>> STAGE Code <<<<<<<<
     ht = FlattenTable(ht)
@@ -363,7 +363,7 @@ def ToText(stage):
     outText = inout.outText
 
     # >>>>>>> Live Input <<<<<<<<
-    ht = Shared[inHt.path]
+    ht = Shared.data[inHt.path]
 
     # >>>>>>> STAGE Code <<<<<<<<
     ht = FlattenTable(ht)

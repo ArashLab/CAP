@@ -220,7 +220,7 @@ class Workload(PyObj):
     def ProcessLiveInput(self, input):
         Log(f'<< inout: {input.name} >> is {JsonDumps(input)}.')
         if 'isAlive' in input and input.isAlive:
-            if input.path not in Shared:
+            if input.path not in Shared.data:
                 Log(f'<< inout: {input.name} >> Loading.')
                 try:
                     if input.format == 'ht':
@@ -232,10 +232,10 @@ class Workload(PyObj):
                 except:
                     LogException(f'<< inout: {input.name} >> Cannot read input form {input.path}.')
                 else:
-                    Shared[input.path] = mht
+                    Shared.data[input.path] = mht
                     Log('<< inout: {name} >> Loaded.')
             else:
-                mht = Shared[input.path]
+                mht = Shared.data[input.path]
                 Log(f'<< inout: {input.name} >> Preloaded.')
 
             if input.numPartitions and mht.n_partitions() != input.numPartitions:
@@ -275,7 +275,7 @@ class Workload(PyObj):
             else:
                 LogException(f'<< inout: {output.name} >> No "data" field is provided.')
 
-            if output.path in Shared:
+            if output.path in Shared.data:
                 LogException(f'<< inout: {output.name} >> Output path {output.path} alredy exist in the shared.')
 
             if output.numPartitions and mht.n_partitions() != output.numPartitions:
@@ -291,7 +291,7 @@ class Workload(PyObj):
                 output.count = Count(mht)
                 Log(f'<< inout: {output.name} >> Counted.')
 
-            Shared[output.path] = mht
+            Shared.data[output.path] = mht
             Log(f'<< inout: {output.name} >> Added to shared.')
 
             if output.format in ['ht', 'mt']:
