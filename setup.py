@@ -3,7 +3,7 @@ from pathlib import Path
 
 setuptools.setup(
     name='cap-genomics',
-    version='0.1.14',
+    version='0.1.15',
     description='Cohort Analysis Platform',
     long_description=Path('README.md').read_text(),
     long_description_content_type='text/markdown',
@@ -15,6 +15,6 @@ setuptools.setup(
         'Programming Language :: Python :: 3',
     ],
     include_package_data=True,
-    install_requires=['hail', 'munch', 'jsonschema', 'pyarrow', 'fastparquet'],# 'ruamel.yaml'],
+    install_requires=['hail', 'munch', 'jsonschema', 'pyarrow', 'fastparquet'],
     packages=setuptools.find_packages()
 )
