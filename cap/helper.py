@@ -323,3 +323,27 @@ def InferColumnTypes(df):
     df = pd.read_csv(memFile, delimiter='\t')
     Log(df.dtypes)
     return df
+
+@D_General
+def YamlUpdate(y, m): # y for yaml and m for munch
+    for k in m:
+        if k not in y:
+            y[k] = m[k]
+        else:
+            dm = m[k]
+            dy = y[k]
+            if isinstance(dm, list):
+                if not isinstance(dy, list):
+                    LogException('Type Mismatch')
+                for item in dm:
+                    if item not in dy:
+                        dy.append(item)
+                    else:
+                        if isinstance(item, dict):
+                            LogException('List of dict not supported')
+            elif isinstance(dm, dict):
+                if not isinstance(dy, dict):
+                    LogException('Type Mismatch')
+                YamlUpdate(y[k], m[k])
+            else:
+                y[k] = m[k]
