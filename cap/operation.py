@@ -470,6 +470,7 @@ def VepAnnotation(stage):
 @D_General
 def VepLoadTables(stage):
     inout = stage.inout
+    arg = stage.arg
 
     # >>>>>>> Input/Output <<<<<<<<
     inData = inout.inData
@@ -477,63 +478,73 @@ def VepLoadTables(stage):
     # >>>>>>> Live Input <<<<<<<<
 
     # >>>>>>> STAGE Code <<<<<<<<
+    if 'all' in arg.tables:
+        arg.tables = ['var', 'clvar', 'freq', 'conseq']
+
     path = inData.path
     try:  # TBF it currently check if the folder exist or not. should find a way to check all parquet files
-        tblList = AbsPath(path + '/part-*.var.parquet')
-        htVar = ImportMultipleTable(tblList)
-        #htVar = htVar.annotate(varId=hl.int(htVar.varId))
+        if 'var' in arg.tables:
+            tblList = AbsPath(path + '/part-*.var.parquet')
+            htVar = ImportMultipleTable(tblList)
 
-        tblList = AbsPath(path + '/part-*.clvar.parquet')
-        htClVar = ImportMultipleTable(tblList, addFileNumber=True)
-        #htClVar = htClVar.annotate(varId=hl.int(htClVar.varId))
+        if 'clvar' in arg.tables:
+            tblList = AbsPath(path + '/part-*.clvar.parquet')
+            htClVar = ImportMultipleTable(tblList, addFileNumber=True)
 
-        tblList = AbsPath(path + '/part-*.freq.parquet')
-        htFreq = ImportMultipleTable(tblList)
-        #htFreq = htFreq.annotate(varId=hl.int(htFreq.varId))
+        if 'freq' in arg.tables:
+            tblList = AbsPath(path + '/part-*.freq.parquet')
+            htFreq = ImportMultipleTable(tblList)
 
-        tblList = AbsPath(path + '/part-*.conseq.parquet')
-        htConseq = ImportMultipleTable(tblList)
-        #htConseq = htConseq.annotate(varId=hl.int(htConseq.varId))
+        if 'conseq' in arg.tables:
+            tblList = AbsPath(path + '/part-*.conseq.parquet')
+            htConseq = ImportMultipleTable(tblList)
     except:
         LogException(f'Can not read parquet files')
 
     try:
-        # Process colocated-variants table
-        htClVar = htClVar.annotate(clVarId=(htClVar.fileNumber * 2**32) + htClVar.clVarId)
-        # Process consequences table and group consequences
-        # Select all columns except 'varId' to group by (remove duplicate)
-        groupBykeys = list(dict(htConseq.row).keys())
-        groupBykeys.remove('varId')
-        # Put all 'varId' for each uniq consequence into an array
-        htConseq = htConseq.group_by(*list(groupBykeys)).aggregate(varIds=hl.agg.collect(htConseq.varId))
-        htConseq = htConseq.add_index('conseqId')
-        htConseq = htConseq.key_by('conseqId')
-        # create a table for many to many relationship between consequences and variants
-        htConseqToVar = htConseq.select('varIds')
-        htConseqToVar = htConseqToVar.explode('varIds')
-        htConseqToVar = htConseqToVar.rename({'varIds': 'varId'})
-        # create a table to list consequence terms per consequence
-        htConseqTerms = htConseq.select('consequence_terms', 'varIds')
-        htConseqTerms = htConseqTerms.annotate(consequence_terms=hl.array(htConseqTerms.consequence_terms.replace('\[', '').replace('\]', '').replace('\'', '').split(',')))
-        htConseqTerms = htConseqTerms.explode('consequence_terms')
-        # create a table to list consequence terms per variant (this is for performance only but can be done by linking terms to consequences and then consequences to the variant).
-        htVarTerms = htConseqTerms.explode('varIds')
-        htVarTerms = htVarTerms.rename({'varIds': 'varId'})
-        # drop un-neccessary field of each table
-        htConseqTerms = htConseqTerms.select('consequence_terms')
-        htVarTerms = htVarTerms.key_by('varId')
-        htVarTerms = htVarTerms.select('consequence_terms')
-        htConseq = htConseq.drop('consequence_terms', 'varIds')
+        if 'clvar' in arg.tables:
+            # Process colocated-variants table
+            htClVar = htClVar.annotate(clVarId=(htClVar.fileNumber * 2**32) + htClVar.clVarId)
+        
+        if 'conseq' in arg.tables:
+            # Process consequences table and group consequences
+            # Select all columns except 'varId' to group by (remove duplicate)
+            groupBykeys = list(dict(htConseq.row).keys())
+            groupBykeys.remove('varId')
+            # Put all 'varId' for each uniq consequence into an array
+            htConseq = htConseq.group_by(*list(groupBykeys)).aggregate(varIds=hl.agg.collect(htConseq.varId))
+            htConseq = htConseq.add_index('conseqId')
+            htConseq = htConseq.key_by('conseqId')
+            # create a table for many to many relationship between consequences and variants
+            htConseqToVar = htConseq.select('varIds')
+            htConseqToVar = htConseqToVar.explode('varIds')
+            htConseqToVar = htConseqToVar.rename({'varIds': 'varId'})
+            # create a table to list consequence terms per consequence
+            htConseqTerms = htConseq.select('consequence_terms', 'varIds')
+            htConseqTerms = htConseqTerms.annotate(consequence_terms=hl.array(htConseqTerms.consequence_terms.replace('\[', '').replace('\]', '').replace('\'', '').split(',')))
+            htConseqTerms = htConseqTerms.explode('consequence_terms')
+            # create a table to list consequence terms per variant (this is for performance only but can be done by linking terms to consequences and then consequences to the variant).
+            htVarTerms = htConseqTerms.explode('varIds')
+            htVarTerms = htVarTerms.rename({'varIds': 'varId'})
+            # drop un-neccessary field of each table
+            htConseqTerms = htConseqTerms.select('consequence_terms')
+            htVarTerms = htVarTerms.key_by('varId')
+            htVarTerms = htVarTerms.select('consequence_terms')
+            htConseq = htConseq.drop('consequence_terms', 'varIds')
     except:
         LogException('Cannot process tables.')
 
     Log(f'VEP parquet files are converted to hail tables.')
 
     # >>>>>>> Live Output <<<<<<<<
-    inout.outVar.data = htVar
-    inout.outClVar.data = htClVar
-    inout.outFreq.data = htFreq
-    inout.outConseq.data = htConseq
-    inout.outConseqToVar.data = htConseqToVar
-    inout.outConseqTerms.data = htConseqTerms
-    inout.outVarTerms.data = htVarTerms
+    if 'var' in arg.tables:
+        inout.outVar.data = htVar
+    if 'clvar' in arg.tables:
+        inout.outClVar.data = htClVar
+    if 'freq' in arg.tables:
+        inout.outFreq.data = htFreq
+    if 'conseq' in arg.tables:
+        inout.outConseq.data = htConseq
+        inout.outConseqToVar.data = htConseqToVar
+        inout.outConseqTerms.data = htConseqTerms
+        inout.outVarTerms.data = htVarTerms

@@ -368,22 +368,15 @@
   "VepLoadTables": {
     "arg": {
       "type": "object",
-      "required": ["tempDir"],
+      "required": ["tables"],
       "properties": {
-        "tempDir": { "type": "string" }
+        "tables": { "type": "array", "items": {"type": "string"}}
       }
     },
     "inout": {
       "type": "object",
       "required": [
-        "inData",
-        "outVar",
-        "outClVar",
-        "outFreq",
-        "outConseq",
-        "outConseqToVar",
-        "outConseqTerms",
-        "outVarTerms"
+        "inData"
       ],
       "properties": {
         "inData": { "$ref": "#/definitions/inoutTemplate" },

@@ -38,7 +38,11 @@ order:
     - ADDID # Add numeric id for samples and variants
     - EGTVEP # Export Genotype for VEP in VCF format
     - VEPANN # Run VEP and CAP VEP Parser
-    - VEPLT # Read Parsed VEP annotations (from TSV files) and generate HialTables for annotations
+    # - VEPLTALL # Read Parsed VEP annotations (from TSV files) and generate HialTables for annotations
+    - VEPLT1
+    - VEPLT2
+    - VEPLT3
+    - VEPLT4
     # Write Vep annotations to TSV files
     - TSVVEPVAR
     - TSVVEPCLVAR
@@ -131,17 +135,26 @@ stages:
                 direction: output
                 format: tsv # TBF
                 path: *vepOutPath
-    VEPLT:
+    VEPLTALL:
         spec:
             function: VepLoadTables
+        arg:
+            tables:
+                - all
         inout:
             inData:
                 direction: input
                 format: tsv #TBF
                 path: *vepOutPath
+            outVar:
+                direction: output
+                path: *htVepVar
             outClVar:
                 direction: output
                 path: *htVepClVar
+            outFreq:
+                direction: output
+                path: *htVepFreq
             outConseq:
                 direction: output
                 path: *htVepConseq
@@ -151,12 +164,72 @@ stages:
             outConseqToVar:
                 direction: output
                 path: *htVepConseqToVar
-            outFreq:
+            outVarTerms:
                 direction: output
-                path: *htVepFreq
+                path: *htVepVarTerms
+    VEPLT1:
+        spec:
+            function: VepLoadTables
+        arg:
+            tables:
+                - var
+        inout:
+            inData:
+                direction: input
+                format: tsv #TBF
+                path: *vepOutPath
             outVar:
                 direction: output
                 path: *htVepVar
+            
+    VEPLT2:
+        spec:
+            function: VepLoadTables
+        arg:
+            tables:
+                - clvar
+        inout:
+            inData:
+                direction: input
+                format: tsv #TBF
+                path: *vepOutPath
+            outClVar:
+                direction: output
+                path: *htVepClVar
+    VEPLT3:
+        spec:
+            function: VepLoadTables
+        arg:
+            tables:
+                - freq
+        inout:
+            inData:
+                direction: input
+                format: tsv #TBF
+                path: *vepOutPath
+            outFreq:
+                direction: output
+                path: *htVepFreq
+    VEPLT4:
+        spec:
+            function: VepLoadTables
+        arg:
+            tables:
+                - conseq
+        inout:
+            inData:
+                direction: input
+                format: tsv #TBF
+                path: *vepOutPath
+            outConseq:
+                direction: output
+                path: *htVepConseq
+            outConseqTerms:
+                direction: output
+                path: *htVepConseqTerms
+            outConseqToVar:
+                direction: output
+                path: *htVepConseqToVar
             outVarTerms:
                 direction: output
                 path: *htVepVarTerms
