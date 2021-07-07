@@ -25,13 +25,14 @@ class Executor:
 
         try:
             if hailLog:
-                hl.init(log=hailLog)
                 Shared.hailLog = hailLog
-                Log(f'Hail Log is written to {Shared.hailLog}')
             else:
-                hl.init()
-                Shared.hailLog = "NotAvailable (To Be Fixed)" #TBF
+                randomStr = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+                now = str(datetime.now().strftime("%Y%m%d-%H%M%S"))
+                Shared.hailLog = f'hail.{now}.{randomStr}.log'
 
+            hl.init(log=Shared.hailLog)
+            Log(f'Hail Log is written to {Shared.hailLog}')
         
 
             workload.globConfig.hailLog = Shared.hailLog
