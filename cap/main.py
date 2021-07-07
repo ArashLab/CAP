@@ -26,15 +26,11 @@ def Main():
     parser.add_argument('-l', '--capLog', type=str, help='CAP log file')
     parser.add_argument('-hl', '--hailLog', type=str, help='Hail log file')
     args = parser.parse_args()
-
-    if 'capLog' not in args:
-        args.capLog = None
-    else:
+ 
+    if args.capLog:
         args.capLog = os.path.abspath(args.capLog)
 
-    if 'hailLog' not in args:
-        args.hailLog = None
-    else:
+    if args.hailLog:
         args.hailLog = os.path.abspath(args.hailLog)
 
     InitLogger(capLog=args.capLog)

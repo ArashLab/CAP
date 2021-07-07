@@ -4,7 +4,8 @@ Shared = Munch()
 
 Shared.data = Munch()
 
-Shared.logFile = 'NoLogFile'
+Shared.capLog = 'NoLogFile'
+Shared.hailLog = 'NoLogFile'
 
 Shared.fileSystem = None
 

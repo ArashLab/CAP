@@ -69,7 +69,8 @@ class Executor:
         workload.CheckStage(stage)  # Check the stage right before execution to make sure no dynamic error occurs
         LogPrint(f'Started')
         func = getattr(Operation, stage.spec.function)
-        stage.spec.logFile = Shared.logFile
+        stage.spec.capLog = Shared.capLog
+        stage.spec.hailLog = Shared.hailLog
         stage.spec.startTime = datetime.now()
         workload.ProcessLiveInputs(stage)
         func(stage)
