@@ -5,6 +5,9 @@ from .common import *
 from .logutil import *
 from .shared import Shared
 
+import importlib.resources
+from pathlib import Path
+
 
 import hail as hl
 from munch import Munch
@@ -32,11 +35,25 @@ class Executor:
                 Shared.hailLog = f'hail.{now}.{randomStr}.log'
 
             hl.init(log=Shared.hailLog)
-            Log(f'Hail Log is written to {Shared.hailLog}')
-        
 
-            workload.globConfig.hailLog = Shared.hailLog
+            with importlib.resources.path('cap', 'VERSION') as path:
+                Shared.capVersion = Path(path).read_text()
+            Shared.hailVersion = hl.version()
+            sc = hl.spark_context()
+            Shared.sparkVersion = sc.version
+
+            Log(f'CAP Version: {Shared.capVersion}')
+            Log(f'Hail Version: {Shared.hailVersion}')
+            Log(f'Spark Version {Shared.sparkVersion}')
+            Log(f'CAP Log {Shared.capLog}')
+            Log(f'Hail Log {Shared.hailLog}')
+
+
+            workload.globConfig.capVersion = Shared.capVersion
+            workload.globConfig.hailVersion = Shared.hailVersion
+            workload.globConfig.sparkVersion = Shared.sparkVersion
             workload.globConfig.capLog = Shared.capLog
+            workload.globConfig.hailLog = Shared.hailLog
             workload.Update()
 
             LogPrint("+++++++++++++++++++++++++++++++")
