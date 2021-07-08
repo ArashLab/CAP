@@ -90,7 +90,7 @@ class PyObj:
             if self.format == 'json':
                 obj = json.load(inFile)
             elif self.format == 'yaml':
-                obj = yaml.load(inFile)#, Loader=yaml.FullLoader)
+                obj = yaml.load(inFile, Loader=yaml.FullLoader)
             self.obj = munchify(obj)
 
     @D_General

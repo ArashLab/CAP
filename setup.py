@@ -7,8 +7,8 @@ def GetVersion():
     version = Path('cap/VERSION').read_text().split('-')[0]
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
     commit = str(commit, "utf-8").strip()
-    version = f'{version}-{commit}'
-    Path('cap/VERSION').write_text(version)
+    versionCommit = f'{version}-{commit}'
+    Path('cap/VERSION').write_text(versionCommit)
     return version
 
 setuptools.setup(

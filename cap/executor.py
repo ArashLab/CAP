@@ -54,7 +54,6 @@ class Executor:
             runtime = Shared.runtime
             runtime.dateTime = str(datetime.now().strftime("%Y/%m/%d-%H:%M:%S"))
             workload.globConfig.runtimes.append(runtime)
-
             workload.Update()
 
             LogPrint("+++++++++++++++++++++++++++++++")
@@ -77,7 +76,6 @@ class Executor:
                 stage = workload.stages[stageId]
                 if stage.spec.status != 'Completed' or reset:
                     self.ExecuteStage(stage)
-                    workload.Update()
 
     @D_General
     def ExecuteStage(self, stage):
@@ -87,12 +85,17 @@ class Executor:
         LogPrint(f'Started')
         func = getattr(Operation, stage.spec.function)
         stage.spec.runtime = Shared.runtime
-        stage.spec.startTime = datetime.now()
+        stage.spec.runtime.startTime = datetime.now()
+        workload.Update()
         workload.ProcessLiveInputs(stage)
+        workload.Update()
         func(stage)
+        workload.Update()
         workload.ProcessLiveOutputs(stage)
-        stage.spec.endTime = datetime.now()
-        stage.spec.execTime = str(stage.spec.endTime - stage.spec.startTime)
+        workload.Update()
+        stage.spec.runtime.endTime = datetime.now()
+        stage.spec.runtime.execTime = str(stage.spec.runtime.endTime - stage.spec.runtime.startTime)
         stage.spec.status = 'Completed'
-        LogPrint(f'Completed in {stage.spec.execTime}')
+        workload.Update()
+        LogPrint(f'Completed in {stage.spec.runtime.execTime}')
         Shared.CurrentStageForLogging = None
