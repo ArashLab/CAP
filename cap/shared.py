@@ -4,8 +4,12 @@ Shared = Munch()
 
 Shared.data = Munch()
 
-Shared.capLog = 'NoLogFile'
-Shared.hailLog = 'NoLogFile'
+Shared.runtime = Munch()
+Shared.runtime.capLog = 'ToBeSet'
+Shared.runtime.hailLog = 'ToBeSet'
+Shared.runtime.capVersion = 'ToBeSet'
+Shared.runtime.hailVersion = 'ToBeSet'
+Shared.runtime.sparkVersion = 'ToBeSet'
 
 Shared.fileSystem = None
 

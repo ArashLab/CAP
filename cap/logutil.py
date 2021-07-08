@@ -19,19 +19,19 @@ def InitLogger(capLog=None):
         now = str(datetime.now().strftime("%Y%m%d-%H%M%S"))
         fileName = f'cap.{now}.{randomStr}.log.tsv'
     
-    Shared.capLog = fileName
+    Shared.runtime.capLog = fileName
 
     # Gets or creates a logger
     # logger = logging.getLogger(__name__)
     # set log level
     logger.setLevel(logging.DEBUG)
     # define file handler and set formatter
-    file_handler = logging.FileHandler(filename=Shared.capLog,  mode='w')
+    file_handler = logging.FileHandler(filename=Shared.runtime.capLog,  mode='w')
     formatter = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s')
     file_handler.setFormatter(formatter)
     # add file handler to logger
     logger.addHandler(file_handler)
-    print(f'*** logger is initialised to write to {Shared.capLog}')
+    print(f'*** logger is initialised to write to {Shared.runtime.capLog}')
 
 # IMPORTANT You may not include other cap modules in this module
 

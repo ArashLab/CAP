@@ -13,6 +13,8 @@ import hail as hl
 from munch import Munch
 from datetime import datetime
 
+from cap import shared
+
 if __name__ == '__main__':
     print('This module is not executable. Please import this module in your program.')
     exit(0)
@@ -25,35 +27,34 @@ class Executor:
         if not isinstance(workload, Workload):
             LogException('workload must be of type Workload')
         self.workload = workload
-
         try:
             if hailLog:
-                Shared.hailLog = hailLog
+                Shared.runtime.hailLog = hailLog
             else:
                 randomStr = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
                 now = str(datetime.now().strftime("%Y%m%d-%H%M%S"))
-                Shared.hailLog = f'hail.{now}.{randomStr}.log'
-
-            hl.init(log=Shared.hailLog)
+                Shared.runtime.hailLog = f'hail.{now}.{randomStr}.log'
+     
+            hl.init(log=Shared.runtime.hailLog)
 
             with importlib.resources.path('cap', 'VERSION') as path:
-                Shared.capVersion = Path(path).read_text()
-            Shared.hailVersion = hl.version()
+                Shared.runtime.capVersion = Path(path).read_text()
+            Shared.runtime.hailVersion = hl.version()
             sc = hl.spark_context()
-            Shared.sparkVersion = sc.version
+            Shared.runtime.sparkVersion = sc.version
+     
+            Log(f'CAP Version: {Shared.runtime.capVersion}')
+            Log(f'Hail Version: {Shared.runtime.hailVersion}')
+            Log(f'Spark Version {Shared.runtime.sparkVersion}')
+            Log(f'CAP Log {Shared.runtime.capLog}')
+            Log(f'Hail Log {Shared.runtime.hailLog}')
 
-            Log(f'CAP Version: {Shared.capVersion}')
-            Log(f'Hail Version: {Shared.hailVersion}')
-            Log(f'Spark Version {Shared.sparkVersion}')
-            Log(f'CAP Log {Shared.capLog}')
-            Log(f'Hail Log {Shared.hailLog}')
+            if 'runtimes' not in workload.globConfig:
+                workload.globConfig.runtimes = list()
+            runtime = Shared.runtime
+            runtime.dateTime = str(datetime.now().strftime("%Y/%m/%d-%H:%M:%S"))
+            workload.globConfig.runtimes.append(runtime)
 
-
-            workload.globConfig.capVersion = Shared.capVersion
-            workload.globConfig.hailVersion = Shared.hailVersion
-            workload.globConfig.sparkVersion = Shared.sparkVersion
-            workload.globConfig.capLog = Shared.capLog
-            workload.globConfig.hailLog = Shared.hailLog
             workload.Update()
 
             LogPrint("+++++++++++++++++++++++++++++++")
@@ -64,8 +65,7 @@ class Executor:
             LogPrint("+++++++++++++++++++++++++++++++")
             LogPrint("+++++++++++++++++++++++++++++++")
         except:
-            pass  # hail throw exception when you call init() more than once but it is ok
-            # TBF: what about other exceptions
+            LogException('Something wrong')
 
         self.initialised = True
 
@@ -86,8 +86,7 @@ class Executor:
         workload.CheckStage(stage)  # Check the stage right before execution to make sure no dynamic error occurs
         LogPrint(f'Started')
         func = getattr(Operation, stage.spec.function)
-        stage.spec.capLog = Shared.capLog
-        stage.spec.hailLog = Shared.hailLog
+        stage.spec.runtime = Shared.runtime
         stage.spec.startTime = datetime.now()
         workload.ProcessLiveInputs(stage)
         func(stage)

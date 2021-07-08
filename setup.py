@@ -1,9 +1,19 @@
 import setuptools
 from pathlib import Path
+import subprocess
+
+def GetVersion():
+
+    version = Path('cap/VERSION').read_text().split('-')[0]
+    commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+    commit = str(commit, "utf-8").strip()
+    version = f'{version}-{commit}'
+    Path('cap/VERSION').write_text(version)
+    return version
 
 setuptools.setup(
     name='cap-genomics',
-    version=Path('cap/VERSION').read_text(),
+    version=GetVersion(),
     description='Cohort Analysis Platform',
     long_description=Path('README.md').read_text(),
     long_description_content_type='text/markdown',

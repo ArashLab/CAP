@@ -117,7 +117,7 @@ class PyObj:
             if self.format == 'json':
                 json.dump(obj, outfile, indent=4, sort_keys=True, default=str)
             elif self.format == 'yaml':
-                yaml.dump(obj, outfile, indent=4)#, sort_keys=True)
+                yaml.dump(obj, outfile, indent=4, sort_keys=True)
 
     @D_General
     def UpdateInternal(self, name):
