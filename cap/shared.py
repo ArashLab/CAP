@@ -1,15 +1,23 @@
 from munch import Munch
+from datetime import datetime
+import importlib.resources
+from pathlib import Path
+import random
+import string
 
 Shared = Munch()
 
 Shared.data = Munch()
 
 Shared.runtime = Munch()
+Shared.runtime.base = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
 Shared.runtime.capLog = 'ToBeSet'
 Shared.runtime.hailLog = 'ToBeSet'
-Shared.runtime.capVersion = 'ToBeSet'
+with importlib.resources.path('cap', 'VERSION') as path:
+    Shared.runtime.capVersion = Path(path).read_text()
 Shared.runtime.hailVersion = 'ToBeSet'
 Shared.runtime.sparkVersion = 'ToBeSet'
+Shared.runtime.dateTime = str(datetime.now().strftime("%Y/%m/%d-%H:%M:%S"))
 
 Shared.fileSystem = None
 

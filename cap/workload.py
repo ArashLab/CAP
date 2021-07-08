@@ -33,6 +33,11 @@ class Workload(PyObj):
         self.order = self.obj.order
         self.stages = self.obj.stages
 
+        if 'runtimes' not in self.globConfig:
+            self.globConfig.runtimes = list()
+        self.globConfig.runtimes.append(Shared.runtime)
+        self.Update()
+
         CheckShared()
         Shared.update(self.globConfig)
         CheckShared()

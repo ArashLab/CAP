@@ -5,9 +5,6 @@ from .common import *
 from .logutil import *
 from .shared import Shared
 
-import importlib.resources
-from pathlib import Path
-
 
 import hail as hl
 from munch import Munch
@@ -37,11 +34,10 @@ class Executor:
      
             hl.init(log=Shared.runtime.hailLog)
 
-            with importlib.resources.path('cap', 'VERSION') as path:
-                Shared.runtime.capVersion = Path(path).read_text()
             Shared.runtime.hailVersion = hl.version()
             sc = hl.spark_context()
             Shared.runtime.sparkVersion = sc.version
+            workload.Update()
      
             Log(f'CAP Version: {Shared.runtime.capVersion}')
             Log(f'Hail Version: {Shared.runtime.hailVersion}')
@@ -49,12 +45,7 @@ class Executor:
             Log(f'CAP Log {Shared.runtime.capLog}')
             Log(f'Hail Log {Shared.runtime.hailLog}')
 
-            if 'runtimes' not in workload.globConfig:
-                workload.globConfig.runtimes = list()
-            runtime = deepcopy(Shared.runtime)
-            runtime.dateTime = str(datetime.now().strftime("%Y/%m/%d-%H:%M:%S"))
-            workload.globConfig.runtimes.append(runtime)
-            workload.Update()
+            
 
             LogPrint("+++++++++++++++++++++++++++++++")
             LogPrint("+++++++++++++++++++++++++++++++")
@@ -84,7 +75,8 @@ class Executor:
         workload.CheckStage(stage)  # Check the stage right before execution to make sure no dynamic error occurs
         LogPrint(f'Started')
         func = getattr(Operation, stage.spec.function)
-        runtime = deepcopy(Shared.runtime)
+        runtime = Munch()
+        runtime.base = Shared.runtime.base
         if 'runtimes' not in stage.spec:
             stage.spec.runtimes = list()
         stage.spec.runtimes.append(runtime)
