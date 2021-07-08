@@ -3,3 +3,4 @@ include LICENSE
 include cap/FunctionsSchema.json
 include cap/StageSchema.json
 include cap/WorkloadSchema.json
+include cap/VERSION
