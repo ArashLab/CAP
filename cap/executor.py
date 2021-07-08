@@ -13,7 +13,7 @@ import hail as hl
 from munch import Munch
 from datetime import datetime
 
-from cap import shared
+from copy import deepcopy
 
 if __name__ == '__main__':
     print('This module is not executable. Please import this module in your program.')
@@ -51,7 +51,7 @@ class Executor:
 
             if 'runtimes' not in workload.globConfig:
                 workload.globConfig.runtimes = list()
-            runtime = Shared.runtime
+            runtime = deepcopy(Shared.runtime)
             runtime.dateTime = str(datetime.now().strftime("%Y/%m/%d-%H:%M:%S"))
             workload.globConfig.runtimes.append(runtime)
             workload.Update()
@@ -84,8 +84,11 @@ class Executor:
         workload.CheckStage(stage)  # Check the stage right before execution to make sure no dynamic error occurs
         LogPrint(f'Started')
         func = getattr(Operation, stage.spec.function)
-        stage.spec.runtime = Shared.runtime
-        stage.spec.runtime.startTime = datetime.now()
+        runtime = deepcopy(Shared.runtime)
+        if 'runtimes' not in stage.spec:
+            stage.spec.runtimes = list()
+        stage.spec.runtimes.append(runtime)
+        runtime.startTime = datetime.now()
         workload.Update()
         workload.ProcessLiveInputs(stage)
         workload.Update()
@@ -93,9 +96,10 @@ class Executor:
         workload.Update()
         workload.ProcessLiveOutputs(stage)
         workload.Update()
-        stage.spec.runtime.endTime = datetime.now()
-        stage.spec.runtime.execTime = str(stage.spec.runtime.endTime - stage.spec.runtime.startTime)
+        runtime.endTime = datetime.now()
+        runtime.execTime = str(runtime.endTime - runtime.startTime)
+        runtime.status = 'Completed'
         stage.spec.status = 'Completed'
         workload.Update()
-        LogPrint(f'Completed in {stage.spec.runtime.execTime}')
+        LogPrint(f'Completed in {runtime.execTime}')
         Shared.CurrentStageForLogging = None
