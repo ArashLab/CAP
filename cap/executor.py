@@ -41,10 +41,8 @@ class Executor:
             Shared.runtime.sparkVersion = sc.version
             workload.Update()
      
-            Log(f'CAP Version: {Shared.runtime.capVersion}')
             Log(f'Hail Version: {Shared.runtime.hailVersion}')
             Log(f'Spark Version {Shared.runtime.sparkVersion}')
-            Log(f'CAP Log {Shared.runtime.capLog}')
             Log(f'Hail Log {Shared.runtime.hailLog}')
 
             
