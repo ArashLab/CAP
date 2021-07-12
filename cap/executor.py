@@ -31,8 +31,10 @@ class Executor:
                 randomStr = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
                 now = str(datetime.now().strftime("%Y%m%d-%H%M%S"))
                 Shared.runtime.hailLog = f'hail.{now}.{randomStr}.log'
+
+            appName = f'CAP - {Shared.runtime.hailLog}'
      
-            hl.init(log=Shared.runtime.hailLog)
+            hl.init(log=Shared.runtime.hailLog, app_name=appName)
 
             Shared.runtime.hailVersion = hl.version()
             sc = hl.spark_context()

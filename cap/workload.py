@@ -252,6 +252,7 @@ class Workload(PyObj):
             if input.toBeCounted:
                 input.count = Count(mht)
                 Log(f'<< inout: {input.name} >> Counted.')
+                self.Update()
 
     @D_General
     def ProcessLiveInputs(self, stage):
@@ -294,6 +295,7 @@ class Workload(PyObj):
             if output.toBeCounted:
                 output.count = Count(mht)
                 Log(f'<< inout: {output.name} >> Counted.')
+                self.Update()
 
             Shared.data[output.path] = mht
             Log(f'<< inout: {output.name} >> Added to shared.')
