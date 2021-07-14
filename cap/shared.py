@@ -18,6 +18,7 @@ with importlib.resources.path('cap', 'VERSION') as path:
     Shared.runtime.capVersion = Path(path).read_text()
 Shared.runtime.hailVersion = 'ToBeSet'
 Shared.runtime.sparkVersion = 'ToBeSet'
+Shared.runtime.sparkConfig = 'ToBeSet'
 Shared.runtime.dateTime = str(datetime.now().strftime("%Y/%m/%d-%H:%M:%S"))
 Shared.runtime.environment = Munch()
 Shared.runtime.environment.CAP_DIR = os.environ['CAP_DIR']
