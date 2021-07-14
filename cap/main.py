@@ -34,8 +34,7 @@ def Main():
         args.hailLog = os.path.abspath(args.hailLog)
 
     InitLogger(capLog=args.capLog)
-    Log(f'CAP Version: {Shared.runtime.capVersion}')
-    Log(f'CAP Log {Shared.runtime.capLog}')
+    Log(f'Runtime Information: {Shared.runtime}')
     
     CapMain(args)
 

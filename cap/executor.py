@@ -39,18 +39,14 @@ class Executor:
             Shared.runtime.hailVersion = hl.version()
             sc = hl.spark_context()
             Shared.runtime.sparkVersion = sc.version
+            Shared.runtime.sparkConfig = sc.getConf().getAll()
             workload.Update()
      
-            Log(f'Hail Version: {Shared.runtime.hailVersion}')
-            Log(f'Spark Version {Shared.runtime.sparkVersion}')
-            Log(f'Hail Log {Shared.runtime.hailLog}')
-
-            
 
             LogPrint("+++++++++++++++++++++++++++++++")
             LogPrint("+++++++++++++++++++++++++++++++")
             LogPrint("+++++++++++++++++++++++++++++++")
-            LogPrint(hl.spark_context().getConf().getAll())
+            Log(f'Runtime Information: {Shared.runtime}')
             LogPrint("+++++++++++++++++++++++++++++++")
             LogPrint("+++++++++++++++++++++++++++++++")
             LogPrint("+++++++++++++++++++++++++++++++")

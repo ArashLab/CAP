@@ -4,6 +4,7 @@ import importlib.resources
 from pathlib import Path
 import random
 import string
+import os
 
 Shared = Munch()
 
@@ -18,7 +19,11 @@ with importlib.resources.path('cap', 'VERSION') as path:
 Shared.runtime.hailVersion = 'ToBeSet'
 Shared.runtime.sparkVersion = 'ToBeSet'
 Shared.runtime.dateTime = str(datetime.now().strftime("%Y/%m/%d-%H:%M:%S"))
-
+Shared.runtime.environment = Munch()
+Shared.runtime.environment.CAP_DIR = os.environ['CAP_DIR']
+Shared.runtime.environment.PYSPARK_PYTHON = os.environ['PYSPARK_PYTHON']
+Shared.runtime.environment.HAIL_HOME = os.environ['HAIL_HOME']
+Shared.runtime.environment.CAPSPARK_HOME_DIR = os.environ['SPARK_HOME']
 
 Shared.fileSystem = None
 
