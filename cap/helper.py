@@ -26,6 +26,12 @@ if __name__ == '__main__':
 
 
 def AbsPath(path):
+
+    inpath=path
+    
+    # replace ~ and ${VAR} with actual values
+    path=os.path.expandvars(path)
+
     if path.lower().startswith('hdfs://'):
         abspath = path
     elif path.lower().startswith('file://'):
@@ -41,7 +47,7 @@ def AbsPath(path):
         else:
             abspath = os.path.abspath(path)
 
-    Log(f'Absolute path of {path} is {abspath}')
+    Log(f'Absolute path of {inpath} is {abspath}')
     return abspath
 
 # not to have D_General as these function may be called in a wait loop in VEP annotation function
