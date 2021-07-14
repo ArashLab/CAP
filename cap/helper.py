@@ -60,8 +60,11 @@ def GetLocalPath(path, silent=False):
 
 # not to have D_General as these function may be called in a wait loop in VEP annotation function
 def FileExist(path, silent=False):
-    path = GetLocalPath(path, silent)
-    return os.path.exists(path)
+    if path.lower().startswith('hdfs://'):
+        return not subprocess.run(['hdfs', 'dfs', '-test', '-e', path]).returncode
+    else:
+        path = GetLocalPath(path, silent)
+        return os.path.exists(path)
 
 def WildCardPath(path):
     path = GetLocalPath(path)
