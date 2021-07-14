@@ -5,6 +5,7 @@ from pathlib import Path
 import random
 import string
 import os
+import platform
 
 Shared = Munch()
 
@@ -12,14 +13,15 @@ Shared.data = Munch()
 
 Shared.runtime = Munch()
 Shared.runtime.base = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-Shared.runtime.capLog = 'ToBeSet'
-Shared.runtime.hailLog = 'ToBeSet'
 with importlib.resources.path('cap', 'VERSION') as path:
     Shared.runtime.capVersion = Path(path).read_text()
+Shared.runtime.capLog = 'ToBeSet'
+Shared.runtime.hailLog = 'ToBeSet'
 Shared.runtime.hailVersion = 'ToBeSet'
 Shared.runtime.sparkVersion = 'ToBeSet'
 Shared.runtime.sparkConfig = 'ToBeSet'
 Shared.runtime.dateTime = str(datetime.now().strftime("%Y/%m/%d-%H:%M:%S"))
+Shared.runtime.host = platform.node()
 Shared.runtime.environment = Munch()
 
 for envVar in ['CAP_DIR', 'PYSPARK_PYTHON', 'PYSPARK_PYTHON', 'HAIL_HOME', 'SPARK_HOME']:
