@@ -11,7 +11,6 @@ if __name__ == '__main__':
 
 def D_General(func):
     def W_General(*args, **kwargs):
-        Shared.CurrentFunctionForLogging.append(func)
         Log(f'Starts with args {JsonDumps(locals())}.', level='DEBUG')
         start = time.time()
         try:
@@ -20,6 +19,5 @@ def D_General(func):
             LogException('Unknown exception occurs.')
         end = time.time()
         Log(f'Ends in {end - start} seconds.', level='DEBUG')
-        Shared.CurrentFunctionForLogging.pop()
         return ret
     return W_General

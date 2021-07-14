@@ -21,10 +21,12 @@ Shared.runtime.sparkVersion = 'ToBeSet'
 Shared.runtime.sparkConfig = 'ToBeSet'
 Shared.runtime.dateTime = str(datetime.now().strftime("%Y/%m/%d-%H:%M:%S"))
 Shared.runtime.environment = Munch()
-Shared.runtime.environment.CAP_DIR = os.environ['CAP_DIR']
-Shared.runtime.environment.PYSPARK_PYTHON = os.environ['PYSPARK_PYTHON']
-Shared.runtime.environment.HAIL_HOME = os.environ['HAIL_HOME']
-Shared.runtime.environment.CAPSPARK_HOME_DIR = os.environ['SPARK_HOME']
+
+for envVar in ['CAP_DIR', 'PYSPARK_PYTHON', 'PYSPARK_PYTHON', 'HAIL_HOME', 'SPARK_HOME']:
+    if envVar in os.environ:
+        Shared.runtime.environment[envVar] = os.environ[envVar]
+    else:
+        Shared.runtime.environment[envVar] = '__NOT_SET__'
 
 Shared.fileSystem = None
 
