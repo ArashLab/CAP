@@ -39,7 +39,7 @@ class Executor:
             Shared.runtime.hailVersion = hl.version()
             sc = hl.spark_context()
             Shared.runtime.sparkVersion = sc.version
-            Shared.runtime.sparkConfig = sc.getConf().getAll()
+            Shared.runtime.sparkConfig = dict(sc.getConf().getAll())
             workload.Update()
      
 
