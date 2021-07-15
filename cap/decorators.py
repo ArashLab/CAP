@@ -2,7 +2,7 @@ from .common import *
 from .logutil import *
 from .shared import Shared
 
-import time
+from datetime import datetime
 
 if __name__ == '__main__':
     print('This module is not executable. Please import this module in your program.')
@@ -12,12 +12,12 @@ if __name__ == '__main__':
 def D_General(func):
     def W_General(*args, **kwargs):
         Log(f'Starts with args {JsonDumps(locals())}.', level='DEBUG')
-        start = time.time()
+        start = datetime.now()
         try:
             ret = func(*args, **kwargs)
         except:
             LogException('Unknown exception occurs.')
-        end = time.time()
-        Log(f'Ends in {end - start} seconds.', level='DEBUG')
+        end = datetime.now()
+        Log(f'Ends in {end - start}', level='DEBUG')
         return ret
     return W_General
