@@ -24,7 +24,7 @@ Shared.runtime.dateTime = str(datetime.now().strftime("%Y/%m/%d-%H:%M:%S"))
 Shared.runtime.host = platform.node()
 Shared.runtime.environment = Munch()
 
-for envVar in ['CAP_DIR', 'PYSPARK_PYTHON', 'PYSPARK_PYTHON', 'HAIL_HOME', 'SPARK_HOME']:
+for envVar in ['CAP_DIR', 'PYSPARK_PYTHON', 'PYSPARK_PYTHON', 'HAIL_HOME', 'SPARK_HOME', 'HDFS_HOME']:
     if envVar in os.environ:
         Shared.runtime.environment[envVar] = os.environ[envVar]
     else:
