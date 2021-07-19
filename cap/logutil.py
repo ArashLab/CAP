@@ -67,7 +67,7 @@ def FixMsg(msg, caller=None):
     return msg
 
 
-def LogException(msg='An error occurred.'):
+def LogException(msg='An error occurred.', caller=None):
     """Log and raise the exception.
 
     Note:
@@ -77,7 +77,8 @@ def LogException(msg='An error occurred.'):
         msg (str, optional): Error message. Defaults to 'An error occurred.'.
     """
 
-    caller = getframeinfo(stack()[1][0])
+    if not caller:
+        caller = getframeinfo(stack()[1][0])
 
     stage = Shared.CurrentStageForLogging
     if stage:
@@ -127,11 +128,13 @@ def LogOptionalPrint(msg, level='INFO', file=None, doPrint=True, caller=None):
     logger.log(getattr(logging, level),  msg)
 
 
-def Log(msg, level='INFO'):
-    caller = getframeinfo(stack()[1][0])
+def Log(msg, level='INFO', caller=None):
+    if not caller:
+        caller = getframeinfo(stack()[1][0])
     LogOptionalPrint(msg, level, file=None, doPrint=False, caller=caller)
 
 
-def LogPrint(msg, level='INFO', file=None):
-    caller = getframeinfo(stack()[1][0])
+def LogPrint(msg, level='INFO', file=None, caller=None):
+    if not caller:
+        caller = getframeinfo(stack()[1][0])
     LogOptionalPrint(msg, level, file, doPrint=True, caller=caller)
