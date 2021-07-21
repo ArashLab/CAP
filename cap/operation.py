@@ -121,6 +121,9 @@ def AddId(stage):
     dropKeys = (set(mt.row).union(set(mt.col)))-{'alleles', 'locus', 'sampleId', 'variantId'}
     mt = mt.drop(*list(dropKeys))
 
+    if 'gtOnly' in arg and arg.gtOnly==True:
+        mt = mt.select_entries('GT')
+
     # >>>>>>> Live Output <<<<<<<<
     outGt.data = mt
     outCol.data = ht_col

@@ -1,5 +1,6 @@
 from munch import Munch, munchify
 import jsonschema
+import os
 
 import hail as hl
 from .logutil import *
@@ -32,6 +33,11 @@ class Workload(PyObj):
         self.config = self.obj.config
         self.order = self.obj.order
         self.stages = self.obj.stages
+
+        if 'ENVIRONMENT_VARIABLES' in self.config:
+            envVars = self.config.ENVIRONMENT_VARIABLES
+            for envVar in envVars:
+                os.environ[envVar] = str(envVars[envVar])
 
         if 'runtimes' not in self.globConfig:
             self.globConfig.runtimes = list()
@@ -189,22 +195,23 @@ class Workload(PyObj):
             stage (Stage): the stage to be processed.
         """
 
-        # Compelete stage schema template by adding arg and inout field for the specific function.
-        try:
-            functionsSchema = self.functionsSchema.obj
-            stageSchema = self.stageSchema.obj
+        ### Compelete stage schema template by adding arg and inout field for the specific function.
+        if False:
+            try:
+                functionsSchema = self.functionsSchema.obj
+                stageSchema = self.stageSchema.obj
 
-            for key in ['arg', 'inout']:
-                if key not in functionsSchema[stage.spec.function]:
-                    LogException(f'The FunctionSchema does not include {key} for {stage.spec.function}')
-                stageSchema['properties'][key] = functionsSchema[stage.spec.function][key]
+                for key in ['arg', 'inout']:
+                    if key not in functionsSchema[stage.spec.function]:
+                        LogException(f'The FunctionSchema does not include {key} for {stage.spec.function}')
+                    stageSchema['properties'][key] = functionsSchema[stage.spec.function][key]
 
-            jsonschema.Draft7Validator.check_schema(stageSchema)
-            jsonschema.validate(instance=stage, schema=stageSchema)
-        except jsonschema.exceptions.SchemaError:
-            LogException(f'StageSchema is invalid')
-        except jsonschema.exceptions.ValidationError:
-            LogException(f'Stage is not validated by the schema')
+                jsonschema.Draft7Validator.check_schema(stageSchema)
+                jsonschema.validate(instance=stage, schema=stageSchema)
+            except jsonschema.exceptions.SchemaError:
+                LogException(f'StageSchema is invalid')
+            except jsonschema.exceptions.ValidationError:
+                LogException(f'Stage is not validated by the schema')
 
         # Step 3: Check each Input/Output (inout).
         self.CheckInout(stage)

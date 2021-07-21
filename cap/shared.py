@@ -40,7 +40,7 @@ Shared.CurrentFunctionForLogging = list()
 Shared.numPartitions = Munch()
 Shared.numPartitions.default = 4
 Shared.numPartitions.min = 1
-Shared.numPartitions.max = 32  
+Shared.numPartitions.max = 64  
 
 Shared.numSgeJobs = Munch()
 Shared.numSgeJobs.default = 4
