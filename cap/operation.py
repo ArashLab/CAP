@@ -50,13 +50,9 @@ def ImportGenotype(stage):
         LogException('Hail cannot read genotype data.')
     Log(f'Genotypes are loaded from "{inGt.path}".')
 
-    # Rename requested fields
-    if 'rename' in arg:
-        try:
-            mt = mt.rename(arg.rename)
-        except:
-            LogException(f'Hail cannot rename MatrixTable using {arg.rename}.')
-        Log(f'Renaming is done {arg.rename}.')
+    # Perform Common Operation if presented
+    if 'commonOperations' in arg:
+        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
 
     # >>>>>>> Live Output <<<<<<<<
     outGt.data = mt
@@ -75,6 +71,11 @@ def SplitMulti(stage):
     mt = Shared.data[inGt.path]
 
     # >>>>>>> STAGE Code <<<<<<<<
+
+    # Perform Common Operation if presented
+    if 'commonOperations' in arg:
+        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
+
     # Split multi allelic site
     try:
         before = Count(mt)
@@ -105,6 +106,11 @@ def AddId(stage):
     mt = Shared.data[inGt.path]
 
     # >>>>>>> STAGE Code <<<<<<<<
+
+    # Perform Common Operation if presented
+    if 'commonOperations' in arg:
+        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
+
     # Add indexes
     mt = mt.annotate_rows(variantId=hl.str(':').join(hl.array([mt.locus.contig, hl.str(mt.locus.position)]).extend(mt.alleles)))
     mt = mt.annotate_cols(sampleId=mt[arg.sampleId])
@@ -120,9 +126,6 @@ def AddId(stage):
 
     dropKeys = (set(mt.row).union(set(mt.col)))-{'alleles', 'locus', 'sampleId', 'variantId'}
     mt = mt.drop(*list(dropKeys))
-
-    if 'gtOnly' in arg and arg.gtOnly==True:
-        mt = mt.select_entries('GT')
 
     # >>>>>>> Live Output <<<<<<<<
     outGt.data = mt
@@ -147,10 +150,12 @@ def ExportGenotype(stage):
 
     # >>>>>>> STAGE Code <<<<<<<<
 
+    # Perform Common Operation if presented
+    if 'commonOperations' in arg:
+        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
+
     # If epxorting for VEP Overwire all other parameters
     if 'forVep' in arg and arg.forVep:
-        if 'drop' in arg:
-            LogException('When exporting for VEP (forVep=True) drop argument must not presented')
         #TBF arg may not present
         # if arg.outputFormat != 'vcf' or outGt.format != 'vcf' or outGt.compression != 'bgz':
         #     LogException('When exporting for VEP (forVep=True) arg.outputFormat and outGt.format must be "vcf" and outGt.compression must be "bgz"')
@@ -168,17 +173,6 @@ def ExportGenotype(stage):
     else:
         mt = mt.annotate_cols(ID=hl.str(mt.sampleId))
         mt = mt.key_cols_by(mt.ID)
-
-    # Drop fileds as requested before export
-    if 'drop' in arg:
-        validFields = list(mt.row) + list(mt.row) + list(mt.globals) + list(mt.entry)
-        for field in arg.drop:
-            if field in validFields:
-                try:
-                    mt = mt.drop(field)
-                except:
-                    LogException(f'Cannot drop {field} form tables. Valid fields include {validFields}.')
-        Log(f'Fields are droped from the MatrixTable {arg.drop}.')
 
     # Export Genotypes
     try:
@@ -259,25 +253,10 @@ def PcaHweNorm(stage):
     mt = Shared.data[inGt.path]
 
     # >>>>>>> STAGE Code <<<<<<<<
-    if 'minMaf' in arg:
-        minMaf = arg.minMaf
-        if not isinstance(minMaf, float) or not (0 <= minMaf <= 0.5):
-            LogException('minMaf parameter is not valid.')
-        Log(f'Filter for minor allele frequency with minimum threshold of {minMaf}')
-        mt = mt.annotate_rows(maf=hl.min(hl.agg.call_stats(mt.GT, mt.alleles).AF))
-        mt = mt.filter_rows(mt.maf >= minMaf, keep=True)
 
-    if 'ldR2' in arg:
-        ldR2 = arg.ldR2
-        if not isinstance(ldR2, float) or not (0 <= ldR2 <= 0.5):
-            LogException('ldR2 parameter is not valid.')
-        Log(f'LD pruning with r2={ldR2}')
-        prunList = hl.ld_prune(mt.GT, r2=ldR2)
-        mt = mt.filter_rows(hl.is_defined(prunList[mt.row_key]))
-
-    if 'subSample' in arg:
-        subSample = arg.subSample
-        mt = SampleRows(mt, subSample)
+    # Perform Common Operation if presented
+    if 'commonOperations' in arg:
+        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
 
     try:
         cl = dict()
@@ -313,6 +292,11 @@ def CalcQC(stage):
     mt = Shared.data[inGt.path]
 
     # >>>>>>> STAGE Code <<<<<<<<
+    
+    # Perform Common Operation if presented
+    if 'commonOperations' in arg:
+        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
+
     try:
         if arg.axis == 'sample':
             mt = hl.sample_qc(mt, name='qc')

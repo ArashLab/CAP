@@ -356,3 +356,72 @@ def YamlUpdate(y, m): # y for yaml and m for munch
                 YamlUpdate(y[k], m[k])
             else:
                 y[k] = m[k]
+
+@D_General
+def CommonMatrixTableOperations(mt, operations):
+
+    # The order is important
+    supportedOperations = ['gtOnly', 'drop', 'rename', 'annotateRows', 'annotateCols', 'annotateGlobals','annotateEntries', 'maf', 'ldPrune', 'subSample']
+    
+    for op in operations:
+        if op not in supportedOperations:
+            LogException(f'Operation {op} is not supported')
+
+    for op in supportedOperations: # The order is important
+        if op in operations:
+            args = operations[op]
+            try:
+                if op=='rename':
+                    mt = mt.rename(args)
+                elif op=='drop':
+                    mt = mt.drop(*args)
+                elif op=='gtOnly' and args==True:
+                    mt = mt.select_entries('GT')
+                elif op=='annotateRows':
+                    mt = mt.annotate_rows(**args)
+                elif op=='annotateCols':
+                    mt = mt.annotate_cols(**args)
+                elif op=='annotateGlobals':
+                    mt = mt.annotate_globals(**args)
+                elif op=='annotateEntries':
+                    mt = mt.annotate_entries(**args)
+                elif op=='maf':
+                    # Calculate MAF in a coloum (avoid writing on existing cols by using a random col name)
+                    mafColName = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+                    mafExpr = {mafColName : hl.min(hl.agg.call_stats(mt.GT, mt.alleles).AF)}
+                    mt = mt.annotate_rows(**mafExpr)
+                    # Apply filter
+                    mt = mt.filter_rows((mt[mafColName] >= args.min) & (mt[mafColName] <= args.max), keep=True)
+                elif op=='ldPrune':
+                    prunList = hl.ld_prune(mt.GT, **args)
+                    mt = mt.filter_rows(hl.is_defined(prunList[mt.row_key]))
+                elif op=='subSample':
+                    mt = SampleRows(mt, args)
+                else:
+                    LogException(f'Something Wrong in the code')
+            except:
+                LogException(f'Hail cannot perfom {op} with args: {args}.')
+            Log(f'{op} done with agrs: {args}.')
+
+
+    return mt
+
+    # if 'minMaf' in arg:
+    #     minMaf = arg.minMaf
+    #     if not isinstance(minMaf, float) or not (0 <= minMaf <= 0.5):
+    #         LogException('minMaf parameter is not valid.')
+    #     Log(f'Filter for minor allele frequency with minimum threshold of {minMaf}')
+    #     mt = mt.annotate_rows(maf=hl.min(hl.agg.call_stats(mt.GT, mt.alleles).AF))
+    #     mt = mt.filter_rows(mt.maf >= minMaf, keep=True)
+
+    # if 'ldR2' in arg:
+    #     ldR2 = arg.ldR2
+    #     if not isinstance(ldR2, float) or not (0 <= ldR2 <= 0.5):
+    #         LogException('ldR2 parameter is not valid.')
+    #     Log(f'LD pruning with r2={ldR2}')
+    #     prunList = hl.ld_prune(mt.GT, r2=ldR2)
+    #     mt = mt.filter_rows(hl.is_defined(prunList[mt.row_key]))
+
+    # if 'subSample' in arg:
+    #     subSample = arg.subSample
+    #     mt = SampleRows(mt, subSample)
