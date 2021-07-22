@@ -184,6 +184,21 @@ def SampleRows(mt, subSample):
     return mt
 
 @D_General
+def SplitMulti(mt, params):
+    if 'withHTS' in params:
+        withHTS = params.withHTS
+        del params.withHTS
+    else:
+        withHTS = False
+
+    if withHTS:
+        mt = hl.split_multi_hts(mt, **params)
+    else:
+        mt = hl.split_multi(mt, **params)
+    
+    return mt
+
+@D_General
 def FlattenTable(ht):
     """Recursively flatten table fields including arrays.
 
@@ -358,70 +373,63 @@ def YamlUpdate(y, m): # y for yaml and m for munch
                 y[k] = m[k]
 
 @D_General
+def CommonMatrixTableOperationsList(mt, operations):
+    if isinstance(operations, list):
+        Log(f'{len(operations)} sets of common operations is given.')
+        for operationsSet in operations:
+            mt = CommonMatrixTableOperations(mt, operationsSet)
+    else:
+        Log(f'Only one set of common operations is given.')
+        mt = CommonMatrixTableOperations(mt, operations)
+        
+    return mt
+
+@D_General
 def CommonMatrixTableOperations(mt, operations):
 
     # The order is important
-    supportedOperations = ['gtOnly', 'drop', 'rename', 'annotateRows', 'annotateCols', 'annotateGlobals','annotateEntries', 'maf', 'ldPrune', 'subSample']
-    
+    supportedOperations = ['gtOnly', 'drop', 'rename', 'annotateRows', 'annotateCols', 'annotateGlobals','annotateEntries', 'maf', 'ldPrune', 'subSample', 'splitMulti']
+
     for op in operations:
         if op not in supportedOperations:
             LogException(f'Operation {op} is not supported')
 
     for op in supportedOperations: # The order is important
         if op in operations:
-            args = operations[op]
+            params = operations[op]
             try:
                 if op=='rename':
-                    mt = mt.rename(args)
+                    mt = mt.rename(params)
                 elif op=='drop':
-                    mt = mt.drop(*args)
-                elif op=='gtOnly' and args==True:
+                    mt = mt.drop(*params)
+                elif op=='gtOnly' and params==True:
                     mt = mt.select_entries('GT')
                 elif op=='annotateRows':
-                    mt = mt.annotate_rows(**args)
+                    mt = mt.annotate_rows(**params)
                 elif op=='annotateCols':
-                    mt = mt.annotate_cols(**args)
+                    mt = mt.annotate_cols(**params)
                 elif op=='annotateGlobals':
-                    mt = mt.annotate_globals(**args)
+                    mt = mt.annotate_globals(**params)
                 elif op=='annotateEntries':
-                    mt = mt.annotate_entries(**args)
+                    mt = mt.annotate_entries(**params)
                 elif op=='maf':
                     # Calculate MAF in a coloum (avoid writing on existing cols by using a random col name)
                     mafColName = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
                     mafExpr = {mafColName : hl.min(hl.agg.call_stats(mt.GT, mt.alleles).AF)}
                     mt = mt.annotate_rows(**mafExpr)
                     # Apply filter
-                    mt = mt.filter_rows((mt[mafColName] >= args.min) & (mt[mafColName] <= args.max), keep=True)
+                    mt = mt.filter_rows((mt[mafColName] >= params.min) & (mt[mafColName] <= params.max), keep=True)
                 elif op=='ldPrune':
-                    prunList = hl.ld_prune(mt.GT, **args)
+                    prunList = hl.ld_prune(mt.GT, **params)
                     mt = mt.filter_rows(hl.is_defined(prunList[mt.row_key]))
                 elif op=='subSample':
-                    mt = SampleRows(mt, args)
+                    mt = SampleRows(mt, params)
+                elif op=='splitMulti':
+                    mt = SplitMulti(mt, params)
                 else:
                     LogException(f'Something Wrong in the code')
             except:
-                LogException(f'Hail cannot perfom {op} with args: {args}.')
-            Log(f'{op} done with agrs: {args}.')
-
+                LogException(f'Hail cannot perfom {op} with args: {params}.')
+            Log(f'{op} done with agrs: {params}.')
 
     return mt
-
-    # if 'minMaf' in arg:
-    #     minMaf = arg.minMaf
-    #     if not isinstance(minMaf, float) or not (0 <= minMaf <= 0.5):
-    #         LogException('minMaf parameter is not valid.')
-    #     Log(f'Filter for minor allele frequency with minimum threshold of {minMaf}')
-    #     mt = mt.annotate_rows(maf=hl.min(hl.agg.call_stats(mt.GT, mt.alleles).AF))
-    #     mt = mt.filter_rows(mt.maf >= minMaf, keep=True)
-
-    # if 'ldR2' in arg:
-    #     ldR2 = arg.ldR2
-    #     if not isinstance(ldR2, float) or not (0 <= ldR2 <= 0.5):
-    #         LogException('ldR2 parameter is not valid.')
-    #     Log(f'LD pruning with r2={ldR2}')
-    #     prunList = hl.ld_prune(mt.GT, r2=ldR2)
-    #     mt = mt.filter_rows(hl.is_defined(prunList[mt.row_key]))
-
-    # if 'subSample' in arg:
-    #     subSample = arg.subSample
-    #     mt = SampleRows(mt, subSample)

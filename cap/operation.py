@@ -52,14 +52,14 @@ def ImportGenotype(stage):
 
     # Perform Common Operation if presented
     if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
+        mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
 
     # >>>>>>> Live Output <<<<<<<<
     outGt.data = mt
 
 
 @D_General
-def SplitMulti(stage):
+def CommonOperations(stage):
     inout = stage.inout
     arg = stage.arg
 
@@ -74,22 +74,12 @@ def SplitMulti(stage):
 
     # Perform Common Operation if presented
     if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
+        mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
 
-    # Split multi allelic site
-    try:
-        before = Count(mt)
-        if arg.withHTS:
-            mt = hl.split_multi_hts(mt)
-        else:
-            mt = hl.split_multi(mt)
-        after = Count(mt)
-    except:
-        LogException('Could not split multi allelic sites.')
-    Log(f'{before.variants} loci result in {after.variants} bi-allelic loci.')
+    ### DO Nothing (Just Common Operation)
+
     # >>>>>>> Live Output <<<<<<<<
     outGt.data = mt
-
 
 @D_General
 def AddId(stage):
@@ -109,7 +99,7 @@ def AddId(stage):
 
     # Perform Common Operation if presented
     if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
+        mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
 
     # Add indexes
     mt = mt.annotate_rows(variantId=hl.str(':').join(hl.array([mt.locus.contig, hl.str(mt.locus.position)]).extend(mt.alleles)))
@@ -152,7 +142,7 @@ def ExportGenotype(stage):
 
     # Perform Common Operation if presented
     if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
+        mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
 
     # If epxorting for VEP Overwire all other parameters
     if 'forVep' in arg and arg.forVep:
@@ -256,7 +246,7 @@ def PcaHweNorm(stage):
 
     # Perform Common Operation if presented
     if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
+        mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
 
     try:
         cl = dict()
@@ -295,7 +285,7 @@ def CalcQC(stage):
     
     # Perform Common Operation if presented
     if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
+        mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
 
     try:
         if arg.axis == 'sample':
