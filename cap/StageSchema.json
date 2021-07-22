@@ -16,7 +16,7 @@
         "path": { "$ref": "#/definitions/strListStr" },
         "pathType": {
           "type": "string",
-          "enum": ["file", "directory", "prefix", "list", "parallel"]
+          "enum": ["file", "directory", "prefix", "fileList", "parallel"]
         },
         "format": {
           "type": "string",

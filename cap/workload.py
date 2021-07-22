@@ -142,10 +142,14 @@ class Workload(PyObj):
 
         for name, inout in stage.inout.items():
             Log(f'<< inout: {name} >> Checking...')
-            inout.path = AbsPath(inout.path)
             
             if 'pathType' not in inout:
                 inout.pathType = 'file'
+            
+            if inout.pathType=='file':
+                inout.path = AbsPath(inout.path)
+            elif inout.pathType=='fileList':
+                inout.path = [AbsPath(f) for f in inout.path]
 
             self.InferFileFormat(inout, name)
 
