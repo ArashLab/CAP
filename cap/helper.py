@@ -199,6 +199,21 @@ def SplitMulti(mt, params):
     return mt
 
 @D_General
+def AddId(mt, params):
+
+    if 'sampleId' in params:
+        mt = mt.annotate_cols(sampleId=mt[params.sampleId])
+        mt = mt.key_cols_by('sampleId')
+    
+    if 'variantId' in params:
+        if params.variantId== 'CHR:POS:ALLELES':
+            mt = mt.annotate_rows(variantId=hl.str(':').join(hl.array([mt.locus.contig, hl.str(mt.locus.position)]).extend(mt.alleles)))
+        else:
+            LogException('VariantId is not Supported')
+    
+    return mt
+
+@D_General
 def FlattenTable(ht):
     """Recursively flatten table fields including arrays.
 
@@ -381,14 +396,27 @@ def CommonMatrixTableOperationsList(mt, operations):
     else:
         Log(f'Only one set of common operations is given.')
         mt = CommonMatrixTableOperations(mt, operations)
-        
+
     return mt
 
 @D_General
 def CommonMatrixTableOperations(mt, operations):
 
     # The order is important
-    supportedOperations = ['gtOnly', 'drop', 'rename', 'annotateRows', 'annotateCols', 'annotateGlobals','annotateEntries', 'maf', 'ldPrune', 'subSample', 'splitMulti']
+    supportedOperations = [
+        'gtOnly',
+        'drop',
+        'rename',
+        'annotateRows',
+        'annotateCols',
+        'annotateGlobals',
+        'annotateEntries',
+        'maf',
+        'ldPrune',
+        'subSample',
+        'splitMulti',
+        'addId'
+    ]
 
     for op in operations:
         if op not in supportedOperations:
@@ -426,6 +454,8 @@ def CommonMatrixTableOperations(mt, operations):
                     mt = SampleRows(mt, params)
                 elif op=='splitMulti':
                     mt = SplitMulti(mt, params)
+                elif op=='addId':
+                    mt = AddId(mt, params)
                 else:
                     LogException(f'Something Wrong in the code')
             except:
