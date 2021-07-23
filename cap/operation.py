@@ -76,10 +76,48 @@ def CommonOperations(stage):
     if 'commonOperations' in arg:
         mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
 
-    ### DO Nothing (Just Common Operation)
+    # DO Nothing (Just Common Operation)
 
     # >>>>>>> Live Output <<<<<<<<
     outGt.data = mt
+
+
+@D_General
+def MergeMatrixTables(stage):
+    inout = stage.inout
+    arg = stage.arg
+
+    # >>>>>>> Input/Output <<<<<<<<
+    inGt = inout.inGt
+    outGt = inout.outGt
+
+    # >>>>>>> Live Input <<<<<<<<
+    mts = [Shared.data[path] for path in inGt.path]
+
+    # >>>>>>> STAGE Code <<<<<<<<
+
+    if 'joinType' in arg:
+        joinType = arg.joinType
+    else:
+        joinType = 'inner'
+
+    mt = mts[0]
+
+    if len(mts) > 1:
+        if arg.direction == 'row':
+            for mt2 in mts[1:]:
+                mt = mt.union_rows(mt2)
+        elif arg.direction == 'col':
+            for mt2 in mts[1:]:
+                mt = mt.union_cols(mt2, row_join_type=joinType)
+
+    # Perform Common Operation if presented
+    if 'commonOperations' in arg:
+        mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
+
+    # >>>>>>> Live Output <<<<<<<<
+    outGt.data = mt
+
 
 @D_General
 def AddId(stage):
@@ -146,7 +184,7 @@ def ExportGenotype(stage):
 
     # If epxorting for VEP Overwire all other parameters
     if 'forVep' in arg and arg.forVep:
-        #TBF arg may not present
+        # TBF arg may not present
         # if arg.outputFormat != 'vcf' or outGt.format != 'vcf' or outGt.compression != 'bgz':
         #     LogException('When exporting for VEP (forVep=True) arg.outputFormat and outGt.format must be "vcf" and outGt.compression must be "bgz"')
         # if 'exportParam' not in arg or 'parallel' not in arg.exportParam or arg.exportParam.parallel != 'separate_header':
@@ -168,10 +206,10 @@ def ExportGenotype(stage):
     try:
         if 'exportParam' not in arg:
             arg.exportParam = dict()
-        #if arg.outputFormat == 'vcf' and outGt.format == 'vcf':
+        # if arg.outputFormat == 'vcf' and outGt.format == 'vcf':
         if outGt.format == 'vcf':
             hl.export_vcf(mt, outGt.path, **arg.exportParam)
-        #elif arg.outputFormat == 'bfile' and outGt.format == 'bfile':
+        # elif arg.outputFormat == 'bfile' and outGt.format == 'bfile':
         elif outGt.format == 'bfile':
             for k in ['call', 'fam_id', 'ind_id', 'pat_id', 'mat_id', 'is_female', 'pheno', 'varid', 'cm_position']:
                 if k in arg.exportParam:
@@ -282,7 +320,7 @@ def CalcQC(stage):
     mt = Shared.data[inGt.path]
 
     # >>>>>>> STAGE Code <<<<<<<<
-    
+
     # Perform Common Operation if presented
     if 'commonOperations' in arg:
         mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
@@ -319,13 +357,14 @@ def ToMySql(stage):
     # >>>>>>> STAGE Code <<<<<<<<
     ht = FlattenTable(ht)
     try:
-        #TBF overwrite? really?
+        # TBF overwrite? really?
         ht.to_spark().write.format('jdbc').options(**arg.mySqlConfig).mode('overwrite').save()
     except:
         LogException('Hail cannot write data into MySQL database')
     Log(f'Data is exported to MySQL')
 
     # >>>>>>> Live Output <<<<<<<<
+
 
 @D_General
 def ToText(stage):
@@ -482,7 +521,7 @@ def VepLoadTables(stage):
         if 'clvar' in arg.tables:
             # Process colocated-variants table
             htClVar = htClVar.annotate(clVarId=(htClVar.fileNumber * 2**32) + htClVar.clVarId)
-        
+
         if 'conseq' in arg.tables:
             # Process consequences table and group consequences
             # Select all columns except 'varId' to group by (remove duplicate)

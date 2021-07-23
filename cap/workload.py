@@ -235,35 +235,40 @@ class Workload(PyObj):
     def ProcessLiveInput(self, input):
         Log(f'<< inout: {input.name} >> is {JsonDumps(input)}.')
         if 'isAlive' in input and input.isAlive:
-            if input.path not in Shared.data:
-                Log(f'<< inout: {input.name} >> Loading.')
-                try:
-                    if input.format == 'ht':
-                        mht = hl.read_table(input.path)
-                    elif input.format == 'mt':
-                        mht = hl.read_matrix_table(input.path)
-                    else:
-                        pass  # Already handled in CheckInout
-                except:
-                    LogException(f'<< inout: {input.name} >> Cannot read input form {input.path}.')
-                else:
-                    Shared.data[input.path] = mht
-                    Log('<< inout: {name} >> Loaded.')
+            if input.pathType!='fileList':
+                paths = [input.path]
             else:
-                mht = Shared.data[input.path]
-                Log(f'<< inout: {input.name} >> Preloaded.')
+                paths = input.path
+            for path in paths:    
+                if path not in Shared.data:
+                    Log(f'<< inout: {input.name} >> Loading.')
+                    try:
+                        if input.format == 'ht':
+                            mht = hl.read_table(path)
+                        elif input.format == 'mt':
+                            mht = hl.read_matrix_table(path)
+                        else:
+                            pass  # Already handled in CheckInout
+                    except:
+                        LogException(f'<< inout: {input.name} >> Cannot read input form {path}.')
+                    else:
+                        Shared.data[path] = mht
+                        Log('<< inout: {name} >> Loaded.')
+                else:
+                    mht = Shared.data[path]
+                    Log(f'<< inout: {input.name} >> Preloaded.')
 
-            if input.numPartitions and mht.n_partitions() != input.numPartitions:
-                np = mht.n_partitions()
-                mht = mht.repartition(input.numPartitions)
-                Log(f'<< inout: {input.name} >> Repartitioned from {np} to {input.numPartitions}.')
-            if input.toBeCached:
-                mht = mht.cache()
-                Log(f'<< inout: {input.name} >> Cached.')
-            if input.toBeCounted:
-                input.count = Count(mht)
-                Log(f'<< inout: {input.name} >> Counted.')
-                self.Update()
+                if input.numPartitions and mht.n_partitions() != input.numPartitions:
+                    np = mht.n_partitions()
+                    mht = mht.repartition(input.numPartitions)
+                    Log(f'<< inout: {input.name} >> Repartitioned from {np} to {input.numPartitions}.')
+                if input.toBeCached:
+                    mht = mht.cache()
+                    Log(f'<< inout: {input.name} >> Cached.')
+                if input.toBeCounted:
+                    input.count = Count(mht)
+                    Log(f'<< inout: {input.name} >> Counted.')
+                    self.Update()
 
     @D_General
     def ProcessLiveInputs(self, stage):
