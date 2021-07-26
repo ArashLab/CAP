@@ -157,10 +157,10 @@ class Workload(PyObj):
                 if io.isAlive:
                     ### TBF what if the user dont want to repartition at all
                     if 'numPartitions' not in io:
-                        io.numPartitions = Shared.numPartitions.default
+                        io.numPartitions = Shared.defaults.numPartitions.default
 
-                    if not (Shared.numPartitions.min <= io.numPartitions <= Shared.numPartitions.max):
-                        LogException(f'<< io: {name} >> numPartitions {io.numPartitions} must be in range [{Shared.numPartitions.min}, {Shared.numPartitions.max}]')
+                    if not (Shared.defaults.numPartitions.min <= io.numPartitions <= Shared.defaults.numPartitions.max):
+                        LogException(f'<< io: {name} >> numPartitions {io.numPartitions} must be in range [{Shared.defaults.numPartitions.min}, {Shared.defaults.numPartitions.max}]')
 
                     for key in ['toBeCached', 'toBeCounted']:
                         if key not in io:

@@ -16,113 +16,46 @@ if __name__ == '__main__':
 
 #TBF add to be deleted flag to io and delete files after sucessfull compeletion of the workload
 class IO(PyObj):
+    
+    @D_General
+    def __init__(self, io):
+        if isinstance(io, Munch):
+            self.io = io
+        elif isinstance(io, dict):
+            self.io = munchify(dict(io))
 
     @D_General
-    def __init__(self, path, format=None, reset=False):
-        super().__init__(path, format, reset)
-
-        if reset:
-            self.Clear()
-
-        if 'globConfig' not in self.obj:
-            self.obj.globConfig = Munch()
-        if 'config' not in self.obj:
-            self.obj.config = Munch()
-
-        self.globConfig = self.obj.globConfig
-        self.config = self.obj.config
-        self.order = self.obj.order
-        self.stages = self.obj.stages
-
-        if 'ENVIRONMENT_VARIABLES' in self.config:
-            envVars = self.config.ENVIRONMENT_VARIABLES
-            for envVar in envVars:
-                os.environ[envVar] = str(envVars[envVar])
-
-        if 'runtimes' not in self.globConfig:
-            self.globConfig.runtimes = list()
-        self.globConfig.runtimes.append(Shared.runtime)
-        self.Update()
-
-        CheckShared()
-        Shared.update(self.globConfig)
-        CheckShared()
-        
-        if self.order:
-            for stageId in self.order:
-                if stageId not in self.stages:
-                    LogException(f'{stageId} is listed in the "order" but not defined in "stages".')
-
-        for stageId, stage in self.stages.items():
-            if 'spec' not in stage:
-                print(stage)
-                LogException(f'stage {stageId} does not have the "spec"')
-            
-            # Push stage id and io name into the structure
-            stage.spec.id = stageId
-            if 'io' in stage:
-                for name, io in stage.io.items():
-                    io.name = name
-
-            if 'status' not in stage.spec:
-                stage.spec.status = 'Initiated'
-
-        self.stageSchema = PyObj(path='StageSchema.json', isInternal=True, isSchema=True)
-        self.functionsSchema = PyObj(path='FunctionsSchema.json', isInternal=True)
-        
-        self.workloadSchema = PyObj(path='WorkloadSchema.json', isInternal=True, isSchema=True)
-        self.schema = self.workloadSchema.obj
-        self.CheckObject()
-
-        self.Update()
-
-        self.CheckStages()
-
-        Log('Initialised')
+    def TestFormat(io, name, suffix, format, compression):
+        if io.path.endswith(suffix):
+            io.format = format
+            io.compression = compression
+            Log(f'<< io: {name} >> Inferred Format:Compression is {format}:{compression}.')
 
     @D_General
-    def Clear(self):
-        obj = {
-            'globConfig': dict(),
-            'config': dict(),
-            'order': list(),
-            'stages': dict()
-        }
-        self.obj = munchify(obj)
-        self.Update()
-        Log('Cleared')
-
-    @D_General
-    def InferFileFormat(self, io, name):
-
-        def TestFormat(io, name, suffix, format, compression):
-            if io.path.endswith(suffix):
-                io.format = format
-                io.compression = compression
-                Log(f'<< io: {name} >> Inferred Format:Compression is {format}:{compression}.')
+    def Infer(self):
 
         if io.pathType == 'file' and 'format' not in io:
 
             if 'compression' in io:
                 LogException(f'<< io: {name} >> When format is not provided (infer format) compression should not be provided.')
 
-            TestFormat(io, name, '.mt', 'mt', 'None')
-            TestFormat(io, name, '.ht', 'ht', 'None')
-            TestFormat(io, name, '.vcf', 'vcf', 'None')
-            TestFormat(io, name, '.vcf.gz', 'vcf', 'gz')
-            TestFormat(io, name, '.vcf.bgz', 'vcf', 'bgz')
-            TestFormat(io, name, '.tsv', 'tsv', 'None')
-            TestFormat(io, name, '.tsv.gz', 'tsv', 'gz')
-            TestFormat(io, name, '.tsv.bgz', 'tsv', 'bgz')
-            TestFormat(io, name, '.csv', 'csv', 'None')
-            TestFormat(io, name, '.csv.gz', 'csv', 'gz')
-            TestFormat(io, name, '.csv.bgz', 'csv', 'bgz')
-            TestFormat(io, name, '.json', 'json', 'None')
-            TestFormat(io, name, '.json.gz', 'json', 'gz')
-            TestFormat(io, name, '.json.bgz', 'json', 'bgz')
-            TestFormat(io, name, '.bed', 'bed', 'None')
-            TestFormat(io, name, '.bim', 'bim', 'None')
-            TestFormat(io, name, '.fam', 'fam', 'None')
+            self.TestFormat(io, name, '.mt', 'mt', 'None')
+            self.TestFormat(io, name, '.ht', 'ht', 'None')
+            self.TestFormat(io, name, '.vcf', 'vcf', 'None')
+            self.TestFormat(io, name, '.vcf.gz', 'vcf', 'gz')
+            self.TestFormat(io, name, '.vcf.bgz', 'vcf', 'bgz')
+            self.TestFormat(io, name, '.tsv', 'tsv', 'None')
+            self.TestFormat(io, name, '.tsv.gz', 'tsv', 'gz')
+            self.TestFormat(io, name, '.tsv.bgz', 'tsv', 'bgz')
+            self.TestFormat(io, name, '.csv', 'csv', 'None')
+            self.TestFormat(io, name, '.csv.gz', 'csv', 'gz')
+            self.TestFormat(io, name, '.csv.bgz', 'csv', 'bgz')
+            self.TestFormat(io, name, '.json', 'json', 'None')
+            self.TestFormat(io, name, '.json.gz', 'json', 'gz')
+            self.TestFormat(io, name, '.json.bgz', 'json', 'bgz')
+            self.TestFormat(io, name, '.bed', 'bed', 'None')
+            self.TestFormat(io, name, '.bim', 'bim', 'None')
+            self.TestFormat(io, name, '.fam', 'fam', 'None')
 
         if 'format' not in io:
             LogException(f'<< io: {name} >> Format is not provided and cannot be inferred.')
@@ -131,7 +64,7 @@ class IO(PyObj):
             io.compression = 'None'
 
     @D_General
-    def Checkio(self, stage):
+    def Check(self):
 
         Log(f'There are {len(stage.io)} io/s to be checked.')
 
@@ -183,51 +116,9 @@ class IO(PyObj):
                     if cond:
                         LogException(f'<< io: {name} >> Output path (or plink bfile prefix) {io.path} already exist in the file system')
 
-    @D_General
-    def CheckStage(self, stage):
-        """Check if stage is ok to be executed.
-
-        Note:
-            - This function should be called just before executing the stage beacuase it checks if the output file exist and prevent overwriting before executing stage.
-
-        Args:
-            stage (Stage): the stage to be processed.
-        """
-
-        ### Compelete stage schema template by adding arg and io field for the specific function.
-        if False:
-            try:
-                functionsSchema = self.functionsSchema.obj
-                stageSchema = self.stageSchema.obj
-
-                for key in ['arg', 'io']:
-                    if key not in functionsSchema[stage.spec.function]:
-                        LogException(f'The FunctionSchema does not include {key} for {stage.spec.function}')
-                    stageSchema['properties'][key] = functionsSchema[stage.spec.function][key]
-
-                jsonschema.Draft7Validator.check_schema(stageSchema)
-                jsonschema.validate(instance=stage, schema=stageSchema)
-            except jsonschema.exceptions.SchemaError:
-                LogException(f'StageSchema is invalid')
-            except jsonschema.exceptions.ValidationError:
-                LogException(f'Stage is not validated by the schema')
-
-        ##### Check each Input/Output (io).
-        self.Checkio(stage)
-
-        LogPrint(f'Stage is Checked')
 
     @D_General
-    def CheckStages(self):
-        if self.order:
-            for stageId in self.order:
-                stage = self.stages[stageId]
-                Shared.CurrentStageForLogging = stage
-                self.CheckStage(stage)
-                Shared.CurrentStageForLogging = None
-
-    @D_General
-    def ProcessLiveInput(self, input):
+    def ProcessAsInput(self, input):
         Log(f'<< io: {input.name} >> is {JsonDumps(input)}.')
         if 'isAlive' in input and input.isAlive:
             if input.pathType!='fileList':
@@ -265,23 +156,9 @@ class IO(PyObj):
                     Log(f'<< io: {input.name} >> Counted.')
                     self.Update()
 
-    @D_General
-    def ProcessLiveInputs(self, stage):
-        """Make sure that live input files are loaded in the shared object.
-
-        Args:
-            stage (Stage): To be Processed.
-        """
-
-        numInput = len([1 for io in stage.io.values() if io.direction == 'input'])
-        Log(f'Out of {len(stage.io)} ios {numInput} are inputs.')
-
-        for input in stage.io.values():
-            if input.direction == 'input':
-                self.ProcessLiveInput(input)
 
     @D_General
-    def ProcessLiveOutput(self, output):
+    def ProcessAsOutput(self, output):
         
         Log(f'<< io: {output.name} >> is {JsonDumps(output)}')
 
@@ -317,17 +194,4 @@ class IO(PyObj):
             else:
                 pass  # Already handled in Checkio
 
-    @D_General
-    def ProcessLiveOutputs(self, stage):
-        """Write live output to disk.
-
-        Args:
-            stage (Stage): To be processed
-        """
-
-        numOutput = len([1 for io in stage.io.values() if io.direction == 'output'])
-        logger.info(f'Out of {len(stage.io)} ios {numOutput} are outputs')
-
-        for output in stage.io.values():
-            if output.direction == 'output':
-                self.ProcessLiveOutput(output)
+    

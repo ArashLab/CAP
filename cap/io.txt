@@ -1,5 +1,6 @@
 XXX:
     - storageType: disk, memory
+    - isReady
 
     - File (if disk)
         - path: Mandatory
@@ -45,7 +46,8 @@ XXX:
 
 IO:
     XXX:
+        id: XXX
         type: input/outptu
         overwrite: true,False
-        
+
 

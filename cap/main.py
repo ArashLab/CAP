@@ -1,8 +1,5 @@
 import argparse
-from os import path
-from posixpath import abspath
 
-from yaml import compose_all
 
 from .logutil import *
 from .common import *
@@ -18,6 +15,7 @@ def CapMain(args):
     executor.Execute()
 
 
+
 def Main():
     parser = argparse.ArgumentParser(
         description='Execute CAP workload'
@@ -27,12 +25,14 @@ def Main():
     parser.add_argument('-hl', '--hailLog', type=str, help='Hail log file')
     args = parser.parse_args()
  
+    ##### Note that logger has not been initialised yet.
+    ##### Functions that uses the logger should NOT be used.
     if args.capLog:
-        args.capLog = os.path.abspath(args.capLog)
-
+        args.capLog = os.path.abspath(os.path.expandvars(args.capLog))
     if args.hailLog:
-        args.hailLog = os.path.abspath(args.hailLog)
+        args.hailLog = os.path.abspath(os.path.expandvars(args.hailLog))
 
+    ##### Initialise Logger
     InitLogger(capLog=args.capLog)
     Log(f'Runtime Information: {Shared.runtime}')
     
@@ -40,5 +40,15 @@ def Main():
 
 
 if __name__ == '__main__':
-    Log('Collect logs for Main module.')
+
+    print('============================================')
+    print('============================================')
+    print('============================================')
+    print('CAP is executed as an standalon application.')
+
     Main()
+
+    print('CAP execution is compeleted.')
+    print('============================================')
+    print('============================================')
+    print('============================================')

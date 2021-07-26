@@ -39,10 +39,10 @@ def AbsPath(path):
         abspath = os.path.abspath(abspath)
         abspath = f'file://{abspath}'
     else:
-        if Shared['fileSystem'] == 'file':
+        if Shared.defaults.fileSystem == 'file':
             abspath = os.path.abspath(path)
             abspath = f'file://{abspath}'
-        elif Shared['fileSystem'] == 'hdfs':
+        elif Shared.defaults.fileSystem == 'hdfs':
             abspath = f'hdfs://{path}'
         else:
             abspath = os.path.abspath(path)
