@@ -1,0 +1,51 @@
+XXX:
+    - storageType: disk, memory
+
+    - File (if disk)
+        - path: Mandatory
+
+        - inferred:
+            - format
+            - compression
+            - fileSystem
+            - isList
+            - isParallel
+
+        - format: mt, ht, json, yaml, csv, tsv, vcf, plink-bfile, parquet, dir, none
+        - compression: gz, bgz, none
+        - fileSystem: hadoop, local
+        - isList
+        - isParallel (for tsv, csv and vcf)
+
+        - loadOptions
+            - importParam
+            - OtherOptions
+
+    - Memory
+        - format: mt, ht, obj, pandas
+        - persistence: (as in spark)
+        - numPartitions:
+        - data (where the actual data is stored)
+
+    - CommonOperations
+
+    - Metadata
+        - count:
+            - rows
+            - cols
+            - rowFields
+            - colFields
+            - Len
+            - size (memory footprint in byte)
+        - dtypes:
+            - col
+            - row
+
+
+
+IO:
+    XXX:
+        type: input/outptu
+        overwrite: true,False
+        
+

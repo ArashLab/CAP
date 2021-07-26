@@ -19,7 +19,7 @@ import io
 import pandas as pd
 
 if __name__ == '__main__':
-    print('This module is not executable. Please import this module in your program.')
+    print('This module is not executable. Import this module in your program.')
     exit(0)
 
 # TBF: Live JSON Input/Output are not supported yet. (Like PCA Eigen)
@@ -362,30 +362,6 @@ def InferColumnTypes(df):
     df = pd.read_csv(memFile, delimiter='\t')
     Log(df.dtypes)
     return df
-
-@D_General
-def YamlUpdate(y, m): # y for yaml and m for munch
-    for k in m:
-        if k not in y:
-            y[k] = m[k]
-        else:
-            dm = m[k]
-            dy = y[k]
-            if isinstance(dm, list):
-                if not isinstance(dy, list):
-                    LogException('Type Mismatch')
-                for item in dm:
-                    if item not in dy:
-                        dy.append(item)
-                    else:
-                        if isinstance(item, dict):
-                            LogException('List of dict not supported')
-            elif isinstance(dm, dict):
-                if not isinstance(dy, dict):
-                    LogException('Type Mismatch')
-                YamlUpdate(y[k], m[k])
-            else:
-                y[k] = m[k]
 
 @D_General
 def CommonMatrixTableOperations(mt, operations):

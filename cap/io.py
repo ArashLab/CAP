@@ -15,7 +15,7 @@ if __name__ == '__main__':
     exit(0)
 
 #TBF add to be deleted flag to io and delete files after sucessfull compeletion of the workload
-class Workload(PyObj):
+class IO(PyObj):
 
     @D_General
     def __init__(self, path, format=None, reset=False):
