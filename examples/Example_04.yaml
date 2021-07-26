@@ -6,11 +6,11 @@ stages:
             function: AddId
         arg:
             sampleId: s
-        inout:
-            inGt:
+        io:
+            input:
                 direction: input
                 path: 1kg.ba.mt
-            outGt:
+            output:
                 direction: output
                 path: 1kg.mt
             outCol:

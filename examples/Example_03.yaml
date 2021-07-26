@@ -7,11 +7,11 @@ stages:
     IGTVCF:
         spec:
             function: ImportGenotype
-        inout:
-            inGt:
+        io:
+            input:
                 direction: input
                 path: 1kg.micro.vcf.bgz
-            outGt:
+            output:
                 direction: output
                 path: *mtPathMa
     BRKMA:
@@ -19,10 +19,10 @@ stages:
             function: SplitMulti
         arg:
             withHTS: true
-        inout:
-            inGt:
+        io:
+            input:
                 direction: input
                 path: *mtPathMa
-            outGt:
+            output:
                 direction: output
                 path: 1kg.ba.mt

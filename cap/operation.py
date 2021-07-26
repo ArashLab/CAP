@@ -14,179 +14,82 @@ if __name__ == '__main__':
     print('This module is not executable. Please import this module in your program.')
     exit(0)
 
-# TBF: to include ref genome as parameter
+@D_General
+def CommonOperations(stage):
+    spec, arg, io = UnpackStage(stage)
 
+    ##### >>>>>>> Input/Output <<<<<<<<
+    input = io.input
+    output = io.output
+
+    ##### >>>>>>> Live Input <<<<<<<<
+    mht = Shared.data[input.path]
+
+    ##### >>>>>>> STAGE Code <<<<<<<<
+    # DO Nothing (Just Common Operation)
+
+    ##### >>>>>>> Live Output <<<<<<<<
+    output.data = mht
 
 @D_General
-def ImportGenotype(stage):
-    inout = stage.inout
-    if 'arg' in stage:
-        arg = stage.arg
-    else:
-        arg = Munch()
+def ImportMatrixTable(stage):
+    spec, arg, io = UnpackStage(stage)
 
-    # >>>>>>> Input/Output <<<<<<<<
-    inGt = inout.inGt
-    outGt = inout.outGt
+    ##### >>>>>>> Input/Output <<<<<<<<
+    input = io.input
+    output = io.output
 
-    # >>>>>>> Live Input <<<<<<<<
+    ##### >>>>>>> Live Input <<<<<<<<
 
-    # >>>>>>> STAGE Code <<<<<<<<
+    ##### >>>>>>> STAGE Code <<<<<<<<
     # Loading input genotype
     try:
         if 'importParam' not in arg:
             arg.importParam = dict()
         if 'inputFormat' in arg:
-            if arg.inputFormat != inGt.format:
-                LogException(f'input format mentioned in arg {arg.inputFormat} is different from input format of the inout inGt {inGt.format}')
+            if arg.inputFormat != input.format:
+                LogException(f'input format mentioned in arg {arg.inputFormat} is different from input format of the io input {input.format}')
 
-        if inGt.format == 'vcf':
-            mt = hl.import_vcf(inGt.path, **arg.importParam)
-        elif inGt.format == 'bfile':
-            mt = hl.import_plink(bed=f'{inGt.path}.bed', bim=f'{inGt.path}.bim', fam=f'{inGt.path}.fam', **arg.importParam)
+        if input.format == 'vcf':
+            mt = hl.import_vcf(input.path, **arg.importParam)
+        elif input.format == 'bfile':
+            mt = hl.import_plink(bed=f'{input.path}.bed', bim=f'{input.path}.bim', fam=f'{input.path}.fam', **arg.importParam)
         else:
-            LogException(f'inGt.format ({inGt.format}) is not supported')
+            LogException(f'input.format ({input.format}) is not supported')
     except:
         LogException('Hail cannot read genotype data.')
-    Log(f'Genotypes are loaded from "{inGt.path}".')
+    Log(f'Genotypes are loaded from "{input.path}".')
 
     # Perform Common Operation if presented
     if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
+        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
 
-    # >>>>>>> Live Output <<<<<<<<
-    outGt.data = mt
+    ##### >>>>>>> Live Output <<<<<<<<
+    output.data = mt
 
 
 @D_General
-def CommonOperations(stage):
-    inout = stage.inout
-    arg = stage.arg
+def ExportMatrixTable(stage):
+    spec, arg, io = UnpackStage(stage)
 
-    # >>>>>>> Input/Output <<<<<<<<
-    inGt = inout.inGt
-    outGt = inout.outGt
+    ##### >>>>>>> Input/Output <<<<<<<<
+    input = io.input
+    output = io.output
 
-    # >>>>>>> Live Input <<<<<<<<
-    mt = Shared.data[inGt.path]
+    ##### >>>>>>> Live Input <<<<<<<<
+    mt = Shared.data[input.path]
 
-    # >>>>>>> STAGE Code <<<<<<<<
-
-    # Perform Common Operation if presented
-    if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
-
-    # DO Nothing (Just Common Operation)
-
-    # >>>>>>> Live Output <<<<<<<<
-    outGt.data = mt
-
-
-@D_General
-def MergeMatrixTables(stage):
-    inout = stage.inout
-    arg = stage.arg
-
-    # >>>>>>> Input/Output <<<<<<<<
-    inGt = inout.inGt
-    outGt = inout.outGt
-
-    # >>>>>>> Live Input <<<<<<<<
-    mts = [Shared.data[path] for path in inGt.path]
-
-    # >>>>>>> STAGE Code <<<<<<<<
-
-    if 'joinType' in arg:
-        joinType = arg.joinType
-    else:
-        joinType = 'inner'
-
-    mt = mts[0]
-
-    if len(mts) > 1:
-        if arg.direction == 'row':
-            for mt2 in mts[1:]:
-                mt = mt.union_rows(mt2)
-        elif arg.direction == 'col':
-            for mt2 in mts[1:]:
-                mt = mt.union_cols(mt2, row_join_type=joinType)
+    ##### >>>>>>> STAGE Code <<<<<<<<
 
     # Perform Common Operation if presented
     if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
-
-    # >>>>>>> Live Output <<<<<<<<
-    outGt.data = mt
-
-
-@D_General
-def AddId(stage):
-    inout = stage.inout
-    arg = stage.arg
-
-    # >>>>>>> Input/Output <<<<<<<<
-    inGt = inout.inGt
-    outGt = inout.outGt
-    outCol = inout.outCol
-    outRow = inout.outRow
-
-    # >>>>>>> Live Input <<<<<<<<
-    mt = Shared.data[inGt.path]
-
-    # >>>>>>> STAGE Code <<<<<<<<
-
-    # Perform Common Operation if presented
-    if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
-
-    # Add indexes
-    mt = mt.annotate_rows(variantId=hl.str(':').join(hl.array([mt.locus.contig, hl.str(mt.locus.position)]).extend(mt.alleles)))
-    mt = mt.annotate_cols(sampleId=mt[arg.sampleId])
-
-    mt = mt.key_cols_by('sampleId')
-
-    # extract row and col table and drop them from matrix table
-    ht_col = mt.cols()
-    ht_col = ht_col.key_by('sampleId')
-
-    ht_row = mt.rows()
-    ht_row = ht_row.key_by('variantId')
-
-    dropKeys = (set(mt.row).union(set(mt.col)))-{'alleles', 'locus', 'sampleId', 'variantId'}
-    mt = mt.drop(*list(dropKeys))
-
-    # >>>>>>> Live Output <<<<<<<<
-    outGt.data = mt
-    outCol.data = ht_col
-    outRow.data = ht_row
-
-
-@D_General
-def ExportGenotype(stage):
-    inout = stage.inout
-    if 'arg' in stage:
-        arg = stage.arg
-    else:
-        arg = Munch()
-
-    # >>>>>>> Input/Output <<<<<<<<
-    inGt = inout.inGt
-    outGt = inout.outGt
-
-    # >>>>>>> Live Input <<<<<<<<
-    mt = Shared.data[inGt.path]
-
-    # >>>>>>> STAGE Code <<<<<<<<
-
-    # Perform Common Operation if presented
-    if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
+        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
 
     # If epxorting for VEP Overwire all other parameters
     if 'forVep' in arg and arg.forVep:
         # TBF arg may not present
-        # if arg.outputFormat != 'vcf' or outGt.format != 'vcf' or outGt.compression != 'bgz':
-        #     LogException('When exporting for VEP (forVep=True) arg.outputFormat and outGt.format must be "vcf" and outGt.compression must be "bgz"')
+        # if arg.outputFormat != 'vcf' or output.format != 'vcf' or output.compression != 'bgz':
+        #     LogException('When exporting for VEP (forVep=True) arg.outputFormat and output.format must be "vcf" and output.compression must be "bgz"')
         # if 'exportParam' not in arg or 'parallel' not in arg.exportParam or arg.exportParam.parallel != 'separate_header':
         #     LogException('When exporting for VEP (forVep=True) arg.exportParam.parallel must be set to "separate_header"')
 
@@ -206,38 +109,74 @@ def ExportGenotype(stage):
     try:
         if 'exportParam' not in arg:
             arg.exportParam = dict()
-        # if arg.outputFormat == 'vcf' and outGt.format == 'vcf':
-        if outGt.format == 'vcf':
-            hl.export_vcf(mt, outGt.path, **arg.exportParam)
-        # elif arg.outputFormat == 'bfile' and outGt.format == 'bfile':
-        elif outGt.format == 'bfile':
+        # if arg.outputFormat == 'vcf' and output.format == 'vcf':
+        if output.format == 'vcf':
+            hl.export_vcf(mt, output.path, **arg.exportParam)
+        # elif arg.outputFormat == 'bfile' and output.format == 'bfile':
+        elif output.format == 'bfile':
             for k in ['call', 'fam_id', 'ind_id', 'pat_id', 'mat_id', 'is_female', 'pheno', 'varid', 'cm_position']:
                 if k in arg.exportParam:
                     arg.exportParam[k] = HailPath([mt]+arg.exportParam[k])
-            hl.export_plink(mt, outGt.path, **arg.exportParam)
+            hl.export_plink(mt, output.path, **arg.exportParam)
         else:
-            LogException(f'Output format is not properly set. Make sure arg.outputFormat ({arg.outputFormat}) and outGt.format ({outGt.format}) are consistent.')
+            LogException(f'Output format is not properly set. Make sure arg.outputFormat ({arg.outputFormat}) and output.format ({output.format}) are consistent.')
 
     except:
         LogException('Hail cannot write genotype data.')
-    Log(f'Genotypes are stored from "{outGt.path}".')
+    Log(f'Genotypes are stored from "{output.path}".')
 
-    # >>>>>>> Live Output <<<<<<<<
+    ##### >>>>>>> Live Output <<<<<<<<
 
 
 @D_General
-def ImportPhenotype(stage):
-    spec, arg, inout = stage.spec, stage.arg, stage.inout
+def MergeMatrixTables(stage):
+    spec, arg, io = UnpackStage(stage)
 
-    # >>>>>>> Input/Output <<<<<<<<
-    inPt = inout.inPt
-    inS = inout.inS  # input samples with sample IDs
-    outPt = inout.outPt
+    ##### >>>>>>> Input/Output <<<<<<<<
+    input = io.input
+    output = io.output
 
-    # >>>>>>> Live Input <<<<<<<<
+    ##### >>>>>>> Live Input <<<<<<<<
+    mts = [Shared.data[path] for path in input.path]
+
+    ##### >>>>>>> STAGE Code <<<<<<<<
+
+    if 'joinType' in arg:
+        joinType = arg.joinType
+    else:
+        joinType = 'inner'
+
+    mt = mts[0]
+
+    if len(mts) > 1:
+        if arg.direction == 'row':
+            for mt2 in mts[1:]:
+                mt = mt.union_rows(mt2)
+        elif arg.direction == 'col':
+            for mt2 in mts[1:]:
+                mt = mt.union_cols(mt2, row_join_type=joinType)
+
+    # Perform Common Operation if presented
+    if 'commonOperations' in arg:
+        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
+
+    ##### >>>>>>> Live Output <<<<<<<<
+    output.data = mt
+
+
+@D_General
+def ImportTable(stage):
+    spec, arg, io = UnpackStage(stage)
+
+    ##### >>>>>>> Input/Output <<<<<<<<
+    inPt = io.inPt
+    inS = io.inS  # input samples with sample IDs
+    outPt = io.outPt
+
+    ##### >>>>>>> Live Input <<<<<<<<
     htS = Shared.data[inS.path]
 
-    # >>>>>>> STAGE Code <<<<<<<<
+    ##### >>>>>>> STAGE Code <<<<<<<<
     try:
         if 'importParam' not in arg:
             arg.importParam = dict()
@@ -265,30 +204,75 @@ def ImportPhenotype(stage):
 
     Log('Sample ids are added.')
 
-    # >>>>>>> Live Output <<<<<<<<
+    ##### >>>>>>> Live Output <<<<<<<<
     outPt.data = ht
 
 
 @D_General
+def ToMySql(stage):
+    spec, arg, io = UnpackStage(stage)
+
+    ##### >>>>>>> Input/Output <<<<<<<<
+    inHt = io.inHt
+
+    ##### >>>>>>> Live Input <<<<<<<<
+    ht = Shared.data[inHt.path]
+
+    ##### >>>>>>> STAGE Code <<<<<<<<
+    ht = FlattenTable(ht)
+    try:
+        # TBF overwrite? really?
+        ht.to_spark().write.format('jdbc').options(**arg.mySqlConfig).mode('overwrite').save()
+    except:
+        LogException('Hail cannot write data into MySQL database')
+    Log(f'Data is exported to MySQL')
+
+    ##### >>>>>>> Live Output <<<<<<<<
+
+
+@D_General
+def ToText(stage):
+    spec, arg, io = UnpackStage(stage)
+
+    ##### >>>>>>> Input/Output <<<<<<<<
+    inHt = io.inHt
+    outText = io.outText
+
+    ##### >>>>>>> Live Input <<<<<<<<
+    ht = Shared.data[inHt.path]
+
+    ##### >>>>>>> STAGE Code <<<<<<<<
+    ht = FlattenTable(ht)
+    try:
+        if 'exportParam' not in arg:
+            arg.exportParam = dict()
+        ht.export(outText.path, **arg.exportParam)
+    except:
+        LogException(f'Hail cannot write data into a file {outText.path}')
+    Log(f'Data is exported to {outText.path}')
+
+    ##### >>>>>>> Live Output <<<<<<<<
+
+@D_General
 def PcaHweNorm(stage):
-    spec, arg, inout = stage.spec, stage.arg, stage.inout
+    spec, arg, io = UnpackStage(stage)
 
-    # >>>>>>> Input/Output <<<<<<<<
-    inGt = inout.inGt
-    outPcaScore = inout.outPcaScore
+    ##### >>>>>>> Input/Output <<<<<<<<
+    input = io.input
+    outPcaScore = io.outPcaScore
 
-    # >>>>>>> Live Input <<<<<<<<
-    mt = Shared.data[inGt.path]
+    ##### >>>>>>> Live Input <<<<<<<<
+    mt = Shared.data[input.path]
 
-    # >>>>>>> STAGE Code <<<<<<<<
+    ##### >>>>>>> STAGE Code <<<<<<<<
 
     # Perform Common Operation if presented
     if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
+        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
 
     try:
         cl = dict()
-        if 'outPcaLoading' in inout:
+        if 'outPcaLoading' in io:
             cl['compute_loadings'] = True
         else:
             cl['compute_loadings'] = False
@@ -298,32 +282,31 @@ def PcaHweNorm(stage):
 
     logger.info(f'PCA is computed')
 
-    # >>>>>>> Live Output <<<<<<<<
+    ##### >>>>>>> Live Output <<<<<<<<
     outPcaScore.data = pcs
-    if 'outPcaEigen' in inout:
-        inout.outPcaEigen.data = eigenvalues
-    if 'outPcaLoading' in inout:
-        inout.outPcaLoading.data = loading
-    if 'outPcaVarList' in inout:
-        inout.outPcaVarList.data = mt.rows().select()
-
+    if 'outPcaEigen' in io:
+        io.outPcaEigen.data = eigenvalues
+    if 'outPcaLoading' in io:
+        io.outPcaLoading.data = loading
+    if 'outPcaVarList' in io:
+        io.outPcaVarList.data = mt.rows().select()
 
 @D_General
 def CalcQC(stage):
-    spec, arg, inout = stage.spec, stage.arg, stage.inout
+    spec, arg, io = UnpackStage(stage)
 
-    # >>>>>>> Input/Output <<<<<<<<
-    inGt = inout.inGt
-    outQc = inout.outQc
+    ##### >>>>>>> Input/Output <<<<<<<<
+    input = io.input
+    outQc = io.outQc
 
-    # >>>>>>> Live Input <<<<<<<<
-    mt = Shared.data[inGt.path]
+    ##### >>>>>>> Live Input <<<<<<<<
+    mt = Shared.data[input.path]
 
-    # >>>>>>> STAGE Code <<<<<<<<
+    ##### >>>>>>> STAGE Code <<<<<<<<
 
     # Perform Common Operation if presented
     if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperationsList(mt=mt, operations=arg.commonOperations)
+        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
 
     try:
         if arg.axis == 'sample':
@@ -340,71 +323,21 @@ def CalcQC(stage):
         LogException(f'Hail cannot compute QC metrics for {arg.axis}')
     Log(f'PCA is computed')
 
-    # >>>>>>> Live Output <<<<<<<<
+    ##### >>>>>>> Live Output <<<<<<<<
     outQc.data = ht
 
 
 @D_General
-def ToMySql(stage):
-    spec, arg, inout = stage.spec, stage.arg, stage.inout
-
-    # >>>>>>> Input/Output <<<<<<<<
-    inHt = inout.inHt
-
-    # >>>>>>> Live Input <<<<<<<<
-    ht = Shared.data[inHt.path]
-
-    # >>>>>>> STAGE Code <<<<<<<<
-    ht = FlattenTable(ht)
-    try:
-        # TBF overwrite? really?
-        ht.to_spark().write.format('jdbc').options(**arg.mySqlConfig).mode('overwrite').save()
-    except:
-        LogException('Hail cannot write data into MySQL database')
-    Log(f'Data is exported to MySQL')
-
-    # >>>>>>> Live Output <<<<<<<<
-
-
-@D_General
-def ToText(stage):
-    inout = stage.inout
-    if 'arg' in stage:
-        arg = stage.arg
-    else:
-        arg = Munch()
-
-    # >>>>>>> Input/Output <<<<<<<<
-    inHt = inout.inHt
-    outText = inout.outText
-
-    # >>>>>>> Live Input <<<<<<<<
-    ht = Shared.data[inHt.path]
-
-    # >>>>>>> STAGE Code <<<<<<<<
-    ht = FlattenTable(ht)
-    try:
-        if 'exportParam' not in arg:
-            arg.exportParam = dict()
-        ht.export(outText.path, **arg.exportParam)
-    except:
-        LogException(f'Hail cannot write data into a file {outText.path}')
-    Log(f'Data is exported to {outText.path}')
-
-    # >>>>>>> Live Output <<<<<<<<
-
-
-@D_General
 def VepAnnotation(stage):
-    spec, arg, inout = stage.spec, stage.arg, stage.inout
+    spec, arg, io = UnpackStage(stage)
 
-    # >>>>>>> Input/Output <<<<<<<<
-    inVar = inout.inVar
-    outData = inout.outData  # use the path for the output files
+    ##### >>>>>>> Input/Output <<<<<<<<
+    inVar = io.inVar
+    outData = io.outData  # use the path for the output files
 
-    # >>>>>>> Live Input <<<<<<<<
+    ##### >>>>>>> Live Input <<<<<<<<
 
-    # >>>>>>> STAGE Code <<<<<<<<
+    ##### >>>>>>> STAGE Code <<<<<<<<
     try:
         path = inVar.path
         templateCommand = arg.vepCli
@@ -480,20 +413,19 @@ def VepAnnotation(stage):
         LogException(f'Can not extract vcf file list.')
     Log(f'VEP JSON and TBL files are created.')
 
-    # >>>>>>> Live Output <<<<<<<<
+    ##### >>>>>>> Live Output <<<<<<<<
 
 
 @D_General
 def VepLoadTables(stage):
-    inout = stage.inout
-    arg = stage.arg
+    spec, arg, io = UnpackStage(stage)
 
-    # >>>>>>> Input/Output <<<<<<<<
-    inData = inout.inData
+    ##### >>>>>>> Input/Output <<<<<<<<
+    inData = io.inData
 
-    # >>>>>>> Live Input <<<<<<<<
+    ##### >>>>>>> Live Input <<<<<<<<
 
-    # >>>>>>> STAGE Code <<<<<<<<
+    ##### >>>>>>> STAGE Code <<<<<<<<
     if 'all' in arg.tables:
         arg.tables = ['var', 'clvar', 'freq', 'conseq']
 
@@ -552,15 +484,57 @@ def VepLoadTables(stage):
 
     Log(f'VEP parquet files are converted to hail tables.')
 
-    # >>>>>>> Live Output <<<<<<<<
+    ##### >>>>>>> Live Output <<<<<<<<
     if 'var' in arg.tables:
-        inout.outVar.data = htVar
+        io.outVar.data = htVar
     if 'clvar' in arg.tables:
-        inout.outClVar.data = htClVar
+        io.outClVar.data = htClVar
     if 'freq' in arg.tables:
-        inout.outFreq.data = htFreq
+        io.outFreq.data = htFreq
     if 'conseq' in arg.tables:
-        inout.outConseq.data = htConseq
-        inout.outConseqToVar.data = htConseqToVar
-        inout.outConseqTerms.data = htConseqTerms
-        inout.outVarTerms.data = htVarTerms
+        io.outConseq.data = htConseq
+        io.outConseqToVar.data = htConseqToVar
+        io.outConseqTerms.data = htConseqTerms
+        io.outVarTerms.data = htVarTerms
+
+
+
+@D_General
+def AddId(stage):
+    spec, arg, io = UnpackStage(stage)
+
+    ##### >>>>>>> Input/Output <<<<<<<<
+    input = io.input
+    output = io.output
+    outCol = io.outCol
+    outRow = io.outRow
+
+    ##### >>>>>>> Live Input <<<<<<<<
+    mt = Shared.data[input.path]
+
+    ##### >>>>>>> STAGE Code <<<<<<<<
+
+    # Perform Common Operation if presented
+    if 'commonOperations' in arg:
+        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
+
+    # Add indexes
+    mt = mt.annotate_rows(variantId=hl.str(':').join(hl.array([mt.locus.contig, hl.str(mt.locus.position)]).extend(mt.alleles)))
+    mt = mt.annotate_cols(sampleId=mt[arg.sampleId])
+
+    mt = mt.key_cols_by('sampleId')
+
+    # extract row and col table and drop them from matrix table
+    ht_col = mt.cols()
+    ht_col = ht_col.key_by('sampleId')
+
+    ht_row = mt.rows()
+    ht_row = ht_row.key_by('variantId')
+
+    dropKeys = (set(mt.row).union(set(mt.col)))-{'alleles', 'locus', 'sampleId', 'variantId'}
+    mt = mt.drop(*list(dropKeys))
+
+    ##### >>>>>>> Live Output <<<<<<<<
+    output.data = mt
+    outCol.data = ht_col
+    outRow.data = ht_row

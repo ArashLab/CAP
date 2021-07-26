@@ -73,17 +73,17 @@
         }
       ]
     },
-    "inout": {
+    "io": {
       "type": "object",
-      "required": ["inGt", "outGt"],
+      "required": ["input", "output"],
       "properties": {
-        "inGt": {
+        "input": {
           "anyOf": [
-            { "$ref": "#/definitions/inoutVcf" },
-            { "$ref": "#/definitions/inoutPlink" }
+            { "$ref": "#/definitions/ioVcf" },
+            { "$ref": "#/definitions/ioPlink" }
           ]
         },
-        "outGt": { "$ref": "#/definitions/inoutMT" }
+        "output": { "$ref": "#/definitions/ioMT" }
       }
     }
   },
@@ -94,12 +94,12 @@
         "withHTS": { "type": "boolean" }
       }
     },
-    "inout": {
+    "io": {
       "type": "object",
-      "required": ["inGt", "outGt"],
+      "required": ["input", "output"],
       "properties": {
-        "inGt": { "$ref": "#/definitions/inoutMT" },
-        "outGt": { "$ref": "#/definitions/inoutMT" }
+        "input": { "$ref": "#/definitions/ioMT" },
+        "output": { "$ref": "#/definitions/ioMT" }
       }
     }
   },
@@ -110,14 +110,14 @@
         "dummy": { "type": "boolean" }
       }
     },
-    "inout": {
+    "io": {
       "type": "object",
-      "required": ["inGt", "outGt", "outCol", "outRow"],
+      "required": ["input", "output", "outCol", "outRow"],
       "properties": {
-        "inGt": { "$ref": "#/definitions/inoutMT" },
-        "outGt": { "$ref": "#/definitions/inoutMT" },
-        "outCol": { "$ref": "#/definitions/inoutHT" },
-        "outRow": { "$ref": "#/definitions/inoutHT" }
+        "input": { "$ref": "#/definitions/ioMT" },
+        "output": { "$ref": "#/definitions/ioMT" },
+        "outCol": { "$ref": "#/definitions/ioHT" },
+        "outRow": { "$ref": "#/definitions/ioHT" }
       }
     }
   },
@@ -192,15 +192,15 @@
         }
       ]
     },
-    "inout": {
+    "io": {
       "type": "object",
-      "required": ["inGt", "outGt"],
+      "required": ["input", "output"],
       "properties": {
-        "inGt": { "$ref": "#/definitions/inoutMT" },
-        "outGt": {
+        "input": { "$ref": "#/definitions/ioMT" },
+        "output": {
           "anyOf": [
-            { "$ref": "#/definitions/inoutVcf" },
-            { "$ref": "#/definitions/inoutPlink" }
+            { "$ref": "#/definitions/ioVcf" },
+            { "$ref": "#/definitions/ioPlink" }
           ]
         }
       }
@@ -233,18 +233,18 @@
         }
       }
     },
-    "inout": {
+    "io": {
       "type": "object",
       "required": ["inPt", "inS", "outPt"],
       "properties": {
         "inPt": {
           "anyOf": [
-            { "$ref": "#/definitions/inoutTsv" },
-            { "$ref": "#/definitions/inoutCsv" }
+            { "$ref": "#/definitions/ioTsv" },
+            { "$ref": "#/definitions/ioCsv" }
           ]
         },
-        "inS": { "$ref": "#/definitions/inoutHT" },
-        "outPt": { "$ref": "#/definitions/inoutHT" }
+        "inS": { "$ref": "#/definitions/ioHT" },
+        "outPt": { "$ref": "#/definitions/ioHT" }
       }
     }
   },
@@ -259,15 +259,15 @@
         "subsample": { "type": "number" }
       }
     },
-    "inout": {
+    "io": {
       "type": "object",
-      "required": ["inGt", "outPcaScore"],
+      "required": ["input", "outPcaScore"],
       "properties": {
-        "inGt": { "$ref": "#/definitions/inoutMT" },
-        "outPcaScore": { "$ref": "#/definitions/inoutHT" },
-        "outPcaEigen": { "$ref": "#/definitions/inoutJSON" },
-        "outPcaLoading": { "$ref": "#/definitions/inoutHT" },
-        "outPcaVarList": { "$ref": "#/definitions/inoutHT" }
+        "input": { "$ref": "#/definitions/ioMT" },
+        "outPcaScore": { "$ref": "#/definitions/ioHT" },
+        "outPcaEigen": { "$ref": "#/definitions/ioJSON" },
+        "outPcaLoading": { "$ref": "#/definitions/ioHT" },
+        "outPcaVarList": { "$ref": "#/definitions/ioHT" }
       }
     }
   },
@@ -279,12 +279,12 @@
         "axis": { "type": "string", "enum": ["sample", "variant"] }
       }
     },
-    "inout": {
+    "io": {
       "type": "object",
-      "required": ["inGt", "outQc"],
+      "required": ["input", "outQc"],
       "properties": {
-        "inGt": { "$ref": "#/definitions/inoutMT" },
-        "outQc": { "$ref": "#/definitions/inoutHT" }
+        "input": { "$ref": "#/definitions/ioMT" },
+        "outQc": { "$ref": "#/definitions/ioHT" }
       }
     }
   },
@@ -306,11 +306,11 @@
         }
       }
     },
-    "inout": {
+    "io": {
       "type": "object",
       "required": ["inHt"],
       "properties": {
-        "inHt": { "$ref": "#/definitions/inoutHT" }
+        "inHt": { "$ref": "#/definitions/ioHT" }
       }
     }
   },
@@ -332,15 +332,15 @@
         }
       }
     },
-    "inout": {
+    "io": {
       "type": "object",
       "required": ["inHt", "outText"],
       "properties": {
-        "inHt": { "$ref": "#/definitions/inoutHT" },
+        "inHt": { "$ref": "#/definitions/ioHT" },
         "outText": { 
           "anyof": [
-            { "$ref": "#/definitions/inoutCSV" },
-            { "$ref": "#/definitions/inoutTSV" }
+            { "$ref": "#/definitions/ioCSV" },
+            { "$ref": "#/definitions/ioTSV" }
           ]
         }
       }
@@ -356,12 +356,12 @@
         "numSgeJobs": { "type": "integer" }
       }
     },
-    "inout": {
+    "io": {
       "type": "object",
       "required": ["inVar", "outData"],
       "properties": {
-        "inVar": { "$ref": "#/definitions/inoutVcf" },
-        "outQc": { "$ref": "#/definitions/inoutTemplate" }
+        "inVar": { "$ref": "#/definitions/ioVcf" },
+        "outQc": { "$ref": "#/definitions/ioTemplate" }
       }
     }
   },
@@ -373,20 +373,20 @@
         "tables": { "type": "array", "items": {"type": "string"}}
       }
     },
-    "inout": {
+    "io": {
       "type": "object",
       "required": [
         "inData"
       ],
       "properties": {
-        "inData": { "$ref": "#/definitions/inoutTemplate" },
-        "outVar": { "$ref": "#/definitions/inoutHT" },
-        "outClVar": { "$ref": "#/definitions/inoutHT" },
-        "outFreq": { "$ref": "#/definitions/inoutHT" },
-        "outConseq": { "$ref": "#/definitions/inoutHT" },
-        "outConseqToVar": { "$ref": "#/definitions/inoutHT" },
-        "outConseqTerms": { "$ref": "#/definitions/inoutHT" },
-        "outVarTerms": { "$ref": "#/definitions/inoutHT" }
+        "inData": { "$ref": "#/definitions/ioTemplate" },
+        "outVar": { "$ref": "#/definitions/ioHT" },
+        "outClVar": { "$ref": "#/definitions/ioHT" },
+        "outFreq": { "$ref": "#/definitions/ioHT" },
+        "outConseq": { "$ref": "#/definitions/ioHT" },
+        "outConseqToVar": { "$ref": "#/definitions/ioHT" },
+        "outConseqTerms": { "$ref": "#/definitions/ioHT" },
+        "outVarTerms": { "$ref": "#/definitions/ioHT" }
       }
     }
   }

@@ -25,7 +25,7 @@ cd temp
 Note that hail is a requierment of cap and pyspark is a reqierment of hail. Thus, when you install cap using pip (as described above) pyspark is also installed on your system. If you haven't had previous spark configuration, the newly installed pyspark execute hail in local mode. Otherwise, you may experience difficulties following these examples.
 ## Example 1 (Import Genotype from a VCF)‍
 
-The following is a minimal workload that reads a VCF file and write it to a Hail MatrixTable format (with `.mt` extension). The corresponding cap function to do so is **ImportGenotype**. This function requires input and output genotype file (inGT and outGt). Here is the content of workload file. Note that `IGTVCF` is a unique id for this stage.
+The following is a minimal workload that reads a VCF file and write it to a Hail MatrixTable format (with `.mt` extension). The corresponding cap function to do so is **ImportGenotype**. This function requires input and output genotype file (input and output). Here is the content of workload file. Note that `IGTVCF` is a unique id for this stage.
 Note that **ImportGenotype** can read data from different format (currently VCF and Plink Bfiles are supported). It accepts parameters (`arg`) to be passed to the relevant Hail function. See Documentaition for more details. 
 
 ```yaml
@@ -35,11 +35,11 @@ stages:
     IGTVCF:
         spec:
             function: ImportGenotype
-        inout:
-            inGt:
+        io:
+            input:
                 direction: input
                 path: 1kg.micro.vcf.bgz
-            outGt:
+            output:
                 direction: output
                 path: 1kg.ma.mt
 ```
@@ -67,7 +67,7 @@ The CAP log file contains 5 columns as below:
 * Log message
 
 If you look at the content of the the `Example_01.yaml` file after execution of the workload, you will see information is added to this file.
-Some of this information are default values which are added when the workload file is loaded (i.e. `pathType` in the `inGt`) and some others are information that is dynamically added (i.e. `count` in the `outGt`).
+Some of this information are default values which are added when the workload file is loaded (i.e. `pathType` in the `input`) and some others are information that is dynamically added (i.e. `count` in the `output`).
 The most important one for you to know is the `spec.status` field with is set to `Compeleted`. If you execute the workload once more, it does not execute this stage as it is already marked as `Compeleted`. This feature is quiet handy for the case you have many stages in your workload and it fails at some point. Once you fix the issue, you can execute the workload and make sure only incompleted stages are executed. 
 
 ```yaml
@@ -75,14 +75,14 @@ order:
 - IGTVCF
 stages:
     IGTVCF:
-        inout:
-            inGt:
+        io:
+            input:
                 compression: bgz
                 direction: input
                 format: vcf
                 path: 1kg.micro.vcf.bgz
                 pathType: file
-            outGt:
+            output:
                 compression: None
                 count:
                     samples: 2504
@@ -219,11 +219,11 @@ stages:
             function: SplitMulti
         arg:
             withHTS: true
-        inout:
-            inGt:
+        io:
+            input:
                 direction: input
                 path: 1kg.ma.mt
-            outGt:
+            output:
                 direction: output
                 path: 1kg.ba.mt
 ```
@@ -233,11 +233,11 @@ The updated workload file after this example show that the number of loci increa
 ```yaml
 stages:
     BRKMA:
-        inout:
-            inGt:
+        io:
+            input:
                 count:
                     variants: 193
-            outGt:
+            output:
                 count:
                     variants: 195
 ```
@@ -258,11 +258,11 @@ stages:
     IGTVCF:
         spec:
             function: ImportGenotype
-        inout:
-            inGt:
+        io:
+            input:
                 direction: input
                 path: 1kg.micro.vcf.bgz
-            outGt:
+            output:
                 direction: output
                 path: *mtPathMa
     BRKMA:
@@ -270,11 +270,11 @@ stages:
             function: SplitMulti
         arg:
             withHTS: true
-        inout:
-            inGt:
+        io:
+            input:
                 direction: input
                 path: *mtPathMa
-            outGt:
+            output:
                 direction: output
                 path: 1kg.ba.mt
 ```
@@ -282,7 +282,7 @@ stages:
 If you execute this workload after you execute example 1 and 2, you will get and exception error message as follow. When CAP checks stages, it checks that output files does not exist on the system to prevent overwriting. Since example 1 already produced `1kg.ma.mt` you will get this error.
 
 ```
-Exception: IGTVCF	CheckInout	<< inout: outGt >> Output path (or plink bfile prefix) /Users/arashbayat/newCAP/CAP/temp/1kg.ma.mt already exist in the file system
+Exception: IGTVCF	Checkio	<< io: output >> Output path (or plink bfile prefix) /Users/arashbayat/newCAP/CAP/temp/1kg.ma.mt already exist in the file system
 ```
 
 If you insist to run this workload you need to delete output files first
@@ -302,11 +302,11 @@ stages:
     ADDID:
         spec:
             function: AddId
-        inout:
-            inGt:
+        io:
+            input:
                 direction: input
                 path: 1kg.ba.mt
-            outGt:
+            output:
                 direction: output
                 path: 1kg.mt
             outCol:
@@ -331,7 +331,7 @@ stages:
         arg:
             header: true
             delimiter: "\t"
-        inout:
+        io:
             inHt:
                 direction: input
                 path: 1kg.variants.ht
@@ -409,7 +409,7 @@ stages:
             mySqlConfig:
                 <<: *mySqlConfig
                 dbtable: variant # This is the name of table to be created in your mysql database.
-        inout:
+        io:
             inHt:
                 direction: input
                 path: 1kg.variant.ht
@@ -454,7 +454,7 @@ VEPANN:
                 - NoJobId
                 - __OUT_JOB__
                 - vep
-        inout:
+        io:
             inVar:
                 compression: bgz
                 direction: input

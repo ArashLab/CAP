@@ -14,7 +14,7 @@ if __name__ == '__main__':
     print('This module is not executable. Please import this module in your program.')
     exit(0)
 
-#TBF add to be deleted flag to inout and delete files after sucessfull compeletion of the workload
+#TBF add to be deleted flag to io and delete files after sucessfull compeletion of the workload
 class Workload(PyObj):
 
     @D_General
@@ -58,11 +58,11 @@ class Workload(PyObj):
                 print(stage)
                 LogException(f'stage {stageId} does not have the "spec"')
             
-            # Push stage id and inout name into the structure
+            # Push stage id and io name into the structure
             stage.spec.id = stageId
-            if 'inout' in stage:
-                for name, inout in stage.inout.items():
-                    inout.name = name
+            if 'io' in stage:
+                for name, io in stage.io.items():
+                    io.name = name
 
             if 'status' not in stage.spec:
                 stage.spec.status = 'Initiated'
@@ -93,100 +93,100 @@ class Workload(PyObj):
         Log('Cleared')
 
     @D_General
-    def InferFileFormat(self, inout, name):
+    def InferFileFormat(self, io, name):
 
-        def TestFormat(inout, name, suffix, format, compression):
-            if inout.path.endswith(suffix):
-                inout.format = format
-                inout.compression = compression
-                Log(f'<< inout: {name} >> Inferred Format:Compression is {format}:{compression}.')
+        def TestFormat(io, name, suffix, format, compression):
+            if io.path.endswith(suffix):
+                io.format = format
+                io.compression = compression
+                Log(f'<< io: {name} >> Inferred Format:Compression is {format}:{compression}.')
 
-        if inout.pathType == 'file' and 'format' not in inout:
+        if io.pathType == 'file' and 'format' not in io:
 
-            if 'compression' in inout:
-                LogException(f'<< inout: {name} >> When format is not provided (infer format) compression should not be provided.')
+            if 'compression' in io:
+                LogException(f'<< io: {name} >> When format is not provided (infer format) compression should not be provided.')
 
-            TestFormat(inout, name, '.mt', 'mt', 'None')
-            TestFormat(inout, name, '.ht', 'ht', 'None')
-            TestFormat(inout, name, '.vcf', 'vcf', 'None')
-            TestFormat(inout, name, '.vcf.gz', 'vcf', 'gz')
-            TestFormat(inout, name, '.vcf.bgz', 'vcf', 'bgz')
-            TestFormat(inout, name, '.tsv', 'tsv', 'None')
-            TestFormat(inout, name, '.tsv.gz', 'tsv', 'gz')
-            TestFormat(inout, name, '.tsv.bgz', 'tsv', 'bgz')
-            TestFormat(inout, name, '.csv', 'csv', 'None')
-            TestFormat(inout, name, '.csv.gz', 'csv', 'gz')
-            TestFormat(inout, name, '.csv.bgz', 'csv', 'bgz')
-            TestFormat(inout, name, '.json', 'json', 'None')
-            TestFormat(inout, name, '.json.gz', 'json', 'gz')
-            TestFormat(inout, name, '.json.bgz', 'json', 'bgz')
-            TestFormat(inout, name, '.bed', 'bed', 'None')
-            TestFormat(inout, name, '.bim', 'bim', 'None')
-            TestFormat(inout, name, '.fam', 'fam', 'None')
+            TestFormat(io, name, '.mt', 'mt', 'None')
+            TestFormat(io, name, '.ht', 'ht', 'None')
+            TestFormat(io, name, '.vcf', 'vcf', 'None')
+            TestFormat(io, name, '.vcf.gz', 'vcf', 'gz')
+            TestFormat(io, name, '.vcf.bgz', 'vcf', 'bgz')
+            TestFormat(io, name, '.tsv', 'tsv', 'None')
+            TestFormat(io, name, '.tsv.gz', 'tsv', 'gz')
+            TestFormat(io, name, '.tsv.bgz', 'tsv', 'bgz')
+            TestFormat(io, name, '.csv', 'csv', 'None')
+            TestFormat(io, name, '.csv.gz', 'csv', 'gz')
+            TestFormat(io, name, '.csv.bgz', 'csv', 'bgz')
+            TestFormat(io, name, '.json', 'json', 'None')
+            TestFormat(io, name, '.json.gz', 'json', 'gz')
+            TestFormat(io, name, '.json.bgz', 'json', 'bgz')
+            TestFormat(io, name, '.bed', 'bed', 'None')
+            TestFormat(io, name, '.bim', 'bim', 'None')
+            TestFormat(io, name, '.fam', 'fam', 'None')
 
-        if 'format' not in inout:
-            LogException(f'<< inout: {name} >> Format is not provided and cannot be inferred.')
+        if 'format' not in io:
+            LogException(f'<< io: {name} >> Format is not provided and cannot be inferred.')
 
-        if 'compression' not in inout:
-            inout.compression = 'None'
+        if 'compression' not in io:
+            io.compression = 'None'
 
     @D_General
-    def CheckInout(self, stage):
-        """Check all inout of the `stage`.
+    def Checkio(self, stage):
+        """Check all io of the `stage`.
 
         Args:
             stage (Stage): the stage to be processed.
         """
 
-        Log(f'There are {len(stage.inout)} inout/s to be checked.')
+        Log(f'There are {len(stage.io)} io/s to be checked.')
 
-        for name, inout in stage.inout.items():
-            Log(f'<< inout: {name} >> Checking...')
+        for name, io in stage.io.items():
+            Log(f'<< io: {name} >> Checking...')
             
-            if 'pathType' not in inout:
-                inout.pathType = 'file'
+            if 'pathType' not in io:
+                io.pathType = 'file'
             
-            if inout.pathType=='file':
-                inout.path = AbsPath(inout.path)
-            elif inout.pathType=='fileList':
-                inout.path = [AbsPath(f) for f in inout.path]
+            if io.pathType=='file':
+                io.path = AbsPath(io.path)
+            elif io.pathType=='fileList':
+                io.path = [AbsPath(f) for f in io.path]
 
-            self.InferFileFormat(inout, name)
+            self.InferFileFormat(io, name)
 
-            if inout.format not in ['mt', 'ht']:
-                if 'isAlive' in inout:
-                    LogException(f'<< inout: {name} >> isAlive should not be presented when input format is {inout.format}')
+            if io.format not in ['mt', 'ht']:
+                if 'isAlive' in io:
+                    LogException(f'<< io: {name} >> isAlive should not be presented when input format is {io.format}')
             else:
-                if 'isAlive' not in inout:
-                    inout.isAlive = True
-                if inout.isAlive:
+                if 'isAlive' not in io:
+                    io.isAlive = True
+                if io.isAlive:
                     ### TBF what if the user dont want to repartition at all
-                    if 'numPartitions' not in inout:
-                        inout.numPartitions = Shared.numPartitions.default
+                    if 'numPartitions' not in io:
+                        io.numPartitions = Shared.numPartitions.default
 
-                    if not (Shared.numPartitions.min <= inout.numPartitions <= Shared.numPartitions.max):
-                        LogException(f'<< inout: {name} >> numPartitions {inout.numPartitions} must be in range [{Shared.numPartitions.min}, {Shared.numPartitions.max}]')
+                    if not (Shared.numPartitions.min <= io.numPartitions <= Shared.numPartitions.max):
+                        LogException(f'<< io: {name} >> numPartitions {io.numPartitions} must be in range [{Shared.numPartitions.min}, {Shared.numPartitions.max}]')
 
                     for key in ['toBeCached', 'toBeCounted']:
-                        if key not in inout:
-                            inout[key] = True
+                        if key not in io:
+                            io[key] = True
 
-            if 'isAlive' in inout and not inout.isAlive:
+            if 'isAlive' in io and not io.isAlive:
                 for key in ['numPartitions', 'toBeCached', 'toBeCounted']:
-                    if key in inout:
-                        LogException(f'<< inout: {name} >> When isAlive is explicitly set to false, "{key}" should not be presented at inout.')
+                    if key in io:
+                        LogException(f'<< io: {name} >> When isAlive is explicitly set to false, "{key}" should not be presented at io.')
 
         # TBF this file existance check needs to be reviewd
         if stage.spec.status != 'Completed':
-            for name, inout in stage.inout.items():
-                if inout.direction == 'output':
-                    if inout.format == 'bfile':
-                        cond = any([FileExist(f'{inout.path}{suffix}') for suffix in ['bed', 'bim', 'fam']])
+            for name, io in stage.io.items():
+                if io.direction == 'output':
+                    if io.format == 'bfile':
+                        cond = any([FileExist(f'{io.path}{suffix}') for suffix in ['bed', 'bim', 'fam']])
                     else:
-                        cond = FileExist(inout.path)
+                        cond = FileExist(io.path)
 
                     if cond:
-                        LogException(f'<< inout: {name} >> Output path (or plink bfile prefix) {inout.path} already exist in the file system')
+                        LogException(f'<< io: {name} >> Output path (or plink bfile prefix) {io.path} already exist in the file system')
 
     @D_General
     def CheckStage(self, stage):
@@ -199,13 +199,13 @@ class Workload(PyObj):
             stage (Stage): the stage to be processed.
         """
 
-        ### Compelete stage schema template by adding arg and inout field for the specific function.
+        ### Compelete stage schema template by adding arg and io field for the specific function.
         if False:
             try:
                 functionsSchema = self.functionsSchema.obj
                 stageSchema = self.stageSchema.obj
 
-                for key in ['arg', 'inout']:
+                for key in ['arg', 'io']:
                     if key not in functionsSchema[stage.spec.function]:
                         LogException(f'The FunctionSchema does not include {key} for {stage.spec.function}')
                     stageSchema['properties'][key] = functionsSchema[stage.spec.function][key]
@@ -217,8 +217,8 @@ class Workload(PyObj):
             except jsonschema.exceptions.ValidationError:
                 LogException(f'Stage is not validated by the schema')
 
-        # Step 3: Check each Input/Output (inout).
-        self.CheckInout(stage)
+        # Step 3: Check each Input/Output (io).
+        self.Checkio(stage)
 
         LogPrint(f'Stage is Checked')
 
@@ -233,7 +233,7 @@ class Workload(PyObj):
 
     @D_General
     def ProcessLiveInput(self, input):
-        Log(f'<< inout: {input.name} >> is {JsonDumps(input)}.')
+        Log(f'<< io: {input.name} >> is {JsonDumps(input)}.')
         if 'isAlive' in input and input.isAlive:
             if input.pathType!='fileList':
                 paths = [input.path]
@@ -241,33 +241,33 @@ class Workload(PyObj):
                 paths = input.path
             for path in paths:    
                 if path not in Shared.data:
-                    Log(f'<< inout: {input.name} >> Loading.')
+                    Log(f'<< io: {input.name} >> Loading.')
                     try:
                         if input.format == 'ht':
                             mht = hl.read_table(path)
                         elif input.format == 'mt':
                             mht = hl.read_matrix_table(path)
                         else:
-                            pass  # Already handled in CheckInout
+                            pass  # Already handled in Checkio
                     except:
-                        LogException(f'<< inout: {input.name} >> Cannot read input form {path}.')
+                        LogException(f'<< io: {input.name} >> Cannot read input form {path}.')
                     else:
                         Shared.data[path] = mht
-                        Log('<< inout: {name} >> Loaded.')
+                        Log('<< io: {name} >> Loaded.')
                 else:
                     mht = Shared.data[path]
-                    Log(f'<< inout: {input.name} >> Preloaded.')
+                    Log(f'<< io: {input.name} >> Preloaded.')
 
                 if input.numPartitions and mht.n_partitions() != input.numPartitions:
                     np = mht.n_partitions()
                     mht = mht.repartition(input.numPartitions)
-                    Log(f'<< inout: {input.name} >> Repartitioned from {np} to {input.numPartitions}.')
+                    Log(f'<< io: {input.name} >> Repartitioned from {np} to {input.numPartitions}.')
                 if input.toBeCached:
                     mht = mht.cache()
-                    Log(f'<< inout: {input.name} >> Cached.')
+                    Log(f'<< io: {input.name} >> Cached.')
                 if input.toBeCounted:
                     input.count = Count(mht)
-                    Log(f'<< inout: {input.name} >> Counted.')
+                    Log(f'<< io: {input.name} >> Counted.')
                     self.Update()
 
     @D_General
@@ -278,49 +278,49 @@ class Workload(PyObj):
             stage (Stage): To be Processed.
         """
 
-        numInput = len([1 for inout in stage.inout.values() if inout.direction == 'input'])
-        Log(f'Out of {len(stage.inout)} inouts {numInput} are inputs.')
+        numInput = len([1 for io in stage.io.values() if io.direction == 'input'])
+        Log(f'Out of {len(stage.io)} ios {numInput} are inputs.')
 
-        for input in stage.inout.values():
+        for input in stage.io.values():
             if input.direction == 'input':
                 self.ProcessLiveInput(input)
 
     @D_General
     def ProcessLiveOutput(self, output):
         
-        Log(f'<< inout: {output.name} >> is {JsonDumps(output)}')
+        Log(f'<< io: {output.name} >> is {JsonDumps(output)}')
 
         if 'isAlive' in output and output.isAlive:
             if 'data' in output:
                 mht = output.data
             else:
-                LogException(f'<< inout: {output.name} >> No "data" field is provided.')
+                LogException(f'<< io: {output.name} >> No "data" field is provided.')
 
             if output.path in Shared.data:
-                LogException(f'<< inout: {output.name} >> Output path {output.path} alredy exist in the shared.')
+                LogException(f'<< io: {output.name} >> Output path {output.path} alredy exist in the shared.')
 
             if output.numPartitions and mht.n_partitions() != output.numPartitions:
                 np = mht.n_partitions()
                 mht = mht.repartition(output.numPartitions)
-                Log(f'<< inout: {output.name} >> Repartitioned from {np} to {output.numPartitions}.')
+                Log(f'<< io: {output.name} >> Repartitioned from {np} to {output.numPartitions}.')
 
             if output.toBeCached:
                 mht = mht.cache()
-                Log(f'<< inout: {output.name} >> Cached.')
+                Log(f'<< io: {output.name} >> Cached.')
 
             if output.toBeCounted:
                 output.count = Count(mht)
-                Log(f'<< inout: {output.name} >> Counted.')
+                Log(f'<< io: {output.name} >> Counted.')
                 self.Update()
 
             Shared.data[output.path] = mht
-            Log(f'<< inout: {output.name} >> Added to shared.')
+            Log(f'<< io: {output.name} >> Added to shared.')
 
             if output.format in ['ht', 'mt']:
                 mht.write(output.path, overwrite=False)
-                Log(f'<< inout: {output.name} >> Dumped.')
+                Log(f'<< io: {output.name} >> Dumped.')
             else:
-                pass  # Already handled in CheckInout
+                pass  # Already handled in Checkio
 
     @D_General
     def ProcessLiveOutputs(self, stage):
@@ -330,9 +330,9 @@ class Workload(PyObj):
             stage (Stage): To be processed
         """
 
-        numOutput = len([1 for inout in stage.inout.values() if inout.direction == 'output'])
-        logger.info(f'Out of {len(stage.inout)} inouts {numOutput} are outputs')
+        numOutput = len([1 for io in stage.io.values() if io.direction == 'output'])
+        logger.info(f'Out of {len(stage.io)} ios {numOutput} are outputs')
 
-        for output in stage.inout.values():
+        for output in stage.io.values():
             if output.direction == 'output':
                 self.ProcessLiveOutput(output)

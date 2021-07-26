@@ -56,11 +56,11 @@ stages:
     IGTVCF:
         spec:
             function: ImportGenotype
-        inout:
-            inGt:
+        io:
+            input:
                 direction: input
                 path: *inVcfPath
-            outGt:
+            output:
                 direction: output
                 path: *mtPathMa
     BRKMA:
@@ -68,11 +68,11 @@ stages:
             function: SplitMulti
         arg:
             withHTS: true
-        inout:
-            inGt:
+        io:
+            input:
                 direction: input
                 path: *mtPathMa
-            outGt:
+            output:
                 direction: output
                 path: *mtPathBa
     ADDID:
@@ -80,11 +80,11 @@ stages:
             function: AddId
         arg:
             sampleId: s
-        inout:
-            inGt:
+        io:
+            input:
                 direction: input
                 path: *mtPathBa
-            outGt:
+            output:
                 direction: output
                 path: *mtPath
             outCol:
@@ -101,11 +101,11 @@ stages:
                 parallel: header_per_shard
             forVep: true
             outputFormat: vcf
-        inout:
-            inGt:
+        io:
+            input:
                 direction: input
                 path: *mtPath
-            outGt:
+            output:
                 compression: bgz
                 direction: output
                 format: vcf
@@ -124,7 +124,7 @@ stages:
                 - NoJobId
                 - __OUT_JOB__
                 - vep
-        inout:
+        io:
             inVar:
                 compression: bgz
                 direction: input
@@ -141,7 +141,7 @@ stages:
         arg:
             tables:
                 - all
-        inout:
+        io:
             inData:
                 direction: input
                 format: tsv #TBF
@@ -173,7 +173,7 @@ stages:
         arg:
             tables:
                 - var
-        inout:
+        io:
             inData:
                 direction: input
                 format: tsv #TBF
@@ -188,7 +188,7 @@ stages:
         arg:
             tables:
                 - clvar
-        inout:
+        io:
             inData:
                 direction: input
                 format: tsv #TBF
@@ -202,7 +202,7 @@ stages:
         arg:
             tables:
                 - freq
-        inout:
+        io:
             inData:
                 direction: input
                 format: tsv #TBF
@@ -216,7 +216,7 @@ stages:
         arg:
             tables:
                 - conseq
-        inout:
+        io:
             inData:
                 direction: input
                 format: tsv #TBF
@@ -236,7 +236,7 @@ stages:
     TSVVEPCONSEQ:
         spec:
             function: ToText
-        inout:
+        io:
             inHt:
                 direction: input
                 path: *htVepConseq
@@ -246,7 +246,7 @@ stages:
     TSVVEPCONSEQTERMS:
         spec:
             function: ToText
-        inout:
+        io:
             inHt:
                 direction: input
                 path: *htVepConseqTerms
@@ -256,7 +256,7 @@ stages:
     TSVVEPCONSEQVAR:
         spec:
             function: ToText
-        inout:
+        io:
             inHt:
                 direction: input
                 path: *htVepConseqToVar
@@ -266,7 +266,7 @@ stages:
     TSVVEPFREQ:
         spec:
             function: ToText
-        inout:
+        io:
             inHt:
                 direction: input
                 path: *htVepFreq
@@ -276,7 +276,7 @@ stages:
     TSVVEPVAR:
         spec:
             function: ToText
-        inout:
+        io:
             inHt:
                 direction: input
                 path: *htVepVar
@@ -286,7 +286,7 @@ stages:
     TSVVEPVARTERMS:
         spec:
             function: ToText
-        inout:
+        io:
             inHt:
                 direction: input
                 path: *htVepVarTerms
@@ -296,7 +296,7 @@ stages:
     TSVVEPCLVAR:
         spec:
             function: ToText
-        inout:
+        io:
             inHt:
                 direction: input
                 path: *htVepClVar

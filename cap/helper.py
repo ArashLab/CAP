@@ -14,7 +14,7 @@ from .shared import Shared
 import hail as hl
 import random
 import string
-from munch import munchify
+from munch import Munch, munchify
 import io
 import pandas as pd
 
@@ -388,19 +388,19 @@ def YamlUpdate(y, m): # y for yaml and m for munch
                 y[k] = m[k]
 
 @D_General
-def CommonMatrixTableOperationsList(mt, operations):
+def CommonMatrixTableOperations(mt, operations):
     if isinstance(operations, list):
         Log(f'{len(operations)} sets of common operations is given.')
         for operationsSet in operations:
-            mt = CommonMatrixTableOperations(mt, operationsSet)
+            mt = CommonMatrixTableOperationsSet(mt, operationsSet)
     else:
         Log(f'Only one set of common operations is given.')
-        mt = CommonMatrixTableOperations(mt, operations)
+        mt = CommonMatrixTableOperationsSet(mt, operations)
 
     return mt
 
 @D_General
-def CommonMatrixTableOperations(mt, operations):
+def CommonMatrixTableOperationsSet(mt, operations):
 
     # The order is important
     supportedOperations = [
@@ -463,3 +463,21 @@ def CommonMatrixTableOperations(mt, operations):
             Log(f'{op} done with agrs: {params}.')
 
     return mt
+
+
+@D_General
+def UnpackStage(stage):
+    arg = Munch()
+    io = Munch()
+    spec = Munch()
+
+    if 'spec' in stage:
+        spec = stage.spec
+
+    if 'arg' in stage:
+        arg = stage.arg
+    
+    if 'io' in stage:
+        io = stage.io
+
+    return spec, arg, io

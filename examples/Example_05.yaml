@@ -7,7 +7,7 @@ stages:
         arg:
             header: true
             delimiter: "\t"
-        inout:
+        io:
             inHt:
                 direction: input
                 path: 1kg.variants.ht

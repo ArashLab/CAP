@@ -8,7 +8,7 @@
         { "type": "array", "items": { "type": "string" } }
       ]
     },
-    "inoutTemplate": {
+    "ioTemplate": {
       "type": "object",
       "required": ["direction", "path"],
       "properties": {
@@ -44,9 +44,9 @@
         "toBeCounted": { "type": "boolean" }
       }
     },
-    "inoutMT": {
+    "ioMT": {
       "allOf": [
-        { "$ref": "#/definitions/inoutTemplate" },
+        { "$ref": "#/definitions/ioTemplate" },
         {
           "type": "object",
           "properties": {
@@ -55,9 +55,9 @@
         }
       ]
     },
-    "inoutHT": {
+    "ioHT": {
       "allOf": [
-        { "$ref": "#/definitions/inoutTemplate" },
+        { "$ref": "#/definitions/ioTemplate" },
         {
           "type": "object",
           "properties": {
@@ -66,9 +66,9 @@
         }
       ]
     },
-    "inoutJSON": {
+    "ioJSON": {
       "allOf": [
-        { "$ref": "#/definitions/inoutTemplate" },
+        { "$ref": "#/definitions/ioTemplate" },
         {
           "type": "object",
           "properties": {
@@ -77,9 +77,9 @@
         }
       ]
     },
-    "inoutPlink": {
+    "ioPlink": {
       "allOf": [
-        { "$ref": "#/definitions/inoutTemplate" },
+        { "$ref": "#/definitions/ioTemplate" },
         {
           "type": "object",
           "properties": {
@@ -88,9 +88,9 @@
         }
       ]
     },
-    "inoutVcf": {
+    "ioVcf": {
       "allOf": [
-        { "$ref": "#/definitions/inoutTemplate" },
+        { "$ref": "#/definitions/ioTemplate" },
         {
           "type": "object",
           "properties": {
@@ -99,9 +99,9 @@
         }
       ]
     },
-    "inoutTsv": {
+    "ioTsv": {
       "allOf": [
-        { "$ref": "#/definitions/inoutTemplate" },
+        { "$ref": "#/definitions/ioTemplate" },
         {
           "type": "object",
           "properties": {
@@ -110,9 +110,9 @@
         }
       ]
     },
-    "inoutCsv": {
+    "ioCsv": {
       "allOf": [
-        { "$ref": "#/definitions/inoutTemplate" },
+        { "$ref": "#/definitions/ioTemplate" },
         {
           "type": "object",
           "properties": {
@@ -123,7 +123,7 @@
     }
   },
   "type": "object",
-  "required": ["spec", "inout"],
+  "required": ["spec", "io"],
   "properties": {
     "spec": {
       "type": "object",

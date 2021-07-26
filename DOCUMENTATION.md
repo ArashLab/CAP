@@ -10,5 +10,5 @@ The workload file (see this [example](examples/Example_01.yaml)) describe a dict
 * *order*: an array of stage names that defines the order in which stages must be executed
 * *stages*: used to describe each stage with 3 keys
     * *spec*: Specification of the stage (i.e. which function to execute)
-    * *inout*: Inputs and Outputs of the stage.
+    * *io*: Inputs and Outputs of the stage.
     * *arg*: Arguments (parameters) passed to the stage.

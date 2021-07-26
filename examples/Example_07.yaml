@@ -14,7 +14,7 @@ stages:
             mySqlConfig:
                 <<: *mySqlConfig
                 dbtable: variant # This is the name of table to be created in your mysql database.
-        inout:
+        io:
             inHt:
                 direction: input
                 path: 1kg.variant.ht

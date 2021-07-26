@@ -4,10 +4,10 @@ stages:
     IGTVCF:
         spec:
             function: ImportGenotype
-        inout:
-            inGt:
+        io:
+            input:
                 direction: input
                 path: 1kg.micro.vcf.bgz
-            outGt:
+            output:
                 direction: output
                 path: 1kg.ma.mt
