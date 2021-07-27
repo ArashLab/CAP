@@ -67,10 +67,15 @@ class Executor:
     @D_General
     def ExecuteStage(self, stage):
         workload = self.workload
+        
         Shared.CurrentStageForLogging = stage
+        
         workload.CheckStage(stage)  # Check the stage right before execution to make sure no dynamic error occurs
-        LogPrint(f'Started')
         func = getattr(Operation, stage.spec.function)
+        
+        LogPrint(f'Started')
+        
+        stage.spec.status = 'Running'
         runtime = Munch()
         runtime.base = Shared.runtime.base
         if 'runtimes' not in stage.spec:
@@ -78,16 +83,21 @@ class Executor:
         stage.spec.runtimes.append(runtime)
         runtime.startTime = datetime.now()
         workload.Update()
+
         workload.ProcessLiveInputs(stage)
         workload.Update()
+
         func(stage)
         workload.Update()
+
         workload.ProcessLiveOutputs(stage)
         workload.Update()
+
         runtime.endTime = datetime.now()
         runtime.execTime = str(runtime.endTime - runtime.startTime)
         runtime.status = 'Completed'
         stage.spec.status = 'Completed'
         workload.Update()
+
         LogPrint(f'Completed in {runtime.execTime}')
         Shared.CurrentStageForLogging = None

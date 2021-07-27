@@ -1,6 +1,8 @@
 XXX:
     - storageType: disk, memory
     - isReady
+    - isChecked
+    - isInfered
 
     - File (if disk)
         - path: Mandatory

@@ -18,213 +18,122 @@ if __name__ == '__main__':
 class Workload(PyObj):
 
     @D_General
-    def __init__(self, path, format=None, reset=False):
-        super().__init__(path, format, reset)
+    def __init__(self, path, format=None):
 
-        if reset:
-            self.Clear()
+        ##### Load the workload into the self.obj
+        super().__init__(path, format)
 
-        if 'globConfig' not in self.obj:
-            self.obj.globConfig = Munch()
-        if 'config' not in self.obj:
-            self.obj.config = Munch()
-
-        self.globConfig = self.obj.globConfig
-        self.config = self.obj.config
-        self.order = self.obj.order
-        self.stages = self.obj.stages
-
-        if 'ENVIRONMENT_VARIABLES' in self.config:
-            envVars = self.config.ENVIRONMENT_VARIABLES
-            for envVar in envVars:
-                os.environ[envVar] = str(envVars[envVar])
-
-        if 'runtimes' not in self.globConfig:
-            self.globConfig.runtimes = list()
-        self.globConfig.runtimes.append(Shared.runtime)
-        self.Update()
-
-        CheckShared()
-        Shared.update(self.globConfig)
-        CheckShared()
-        
-        if self.order:
-            for stageId in self.order:
-                if stageId not in self.stages:
-                    LogException(f'{stageId} is listed in the "order" but not defined in "stages".')
-
-        for stageId, stage in self.stages.items():
-            if 'spec' not in stage:
-                print(stage)
-                LogException(f'stage {stageId} does not have the "spec"')
-            
-            # Push stage id and io name into the structure
-            stage.spec.id = stageId
-            if 'io' in stage:
-                for name, io in stage.io.items():
-                    io.name = name
-
-            if 'status' not in stage.spec:
-                stage.spec.status = 'Initiated'
-
-        self.stageSchema = PyObj(path='StageSchema.json', isInternal=True, isSchema=True)
-        self.functionsSchema = PyObj(path='FunctionsSchema.json', isInternal=True)
-        
+        ##### Check against workload schema
         self.workloadSchema = PyObj(path='WorkloadSchema.json', isInternal=True, isSchema=True)
         self.schema = self.workloadSchema.obj
         self.CheckObject()
+        Log('Workload is checked against schema.')
 
+        ##### Loading stage schemas
+        self.stageSchema = PyObj(path='StageSchema.json', isInternal=True, isSchema=True)
+        self.functionsSchema = PyObj(path='FunctionsSchema.json', isInternal=True)
+        Log('Stage schemas are loaded.')
+
+        ##### Handeling default values
+        ##### Defaults are read only values and to be accessed through Shared 
+        if 'defaults' in self.obj:
+            ##### If defaults exist in both workload and shared
+            ##### workload is on proyority
+            Shared.defaults.update(self.obj.defaults)
+        else:
+            self.obj.defaults = Munch()
+        self.obj.defaults.update(Shared.defaults)
+        CheckDefaults()
+        Log('Default values are updated and checked as below.')
+        Log(Shared.defaults)
+
+        ##### Shortcut to stages, files, and executionPlan
+        self.stages = self.obj.stages
+        self.files = self.obj.files
+        if self.obj.executionPlan:
+            self.executionPlan = self.obj.executionPlan
+        else:
+            self.executionPlan = []
+
+        ##### Environmental variables to be set
+        if 'env' in self.obj:
+            envVars = self.obj.env
+            for envVar in envVars:
+                os.environ[envVar] = str(envVars[envVar])
+        Log('Environmental Variables are set.')
+
+        ##### Append runtime information to the runtimes
+        ##### Eachtime Shared.runtime is changed the workload must be updated to save the change in the workload file
+        if 'runtimes' not in self.obj:
+            self.obj.runtimes = list()
+        self.obj.runtimes.append(Shared.runtime)
         self.Update()
-
-        self.CheckStages()
-
-        Log('Initialised')
-
-    @D_General
-    def Clear(self):
-        obj = {
-            'globConfig': dict(),
-            'config': dict(),
-            'order': list(),
-            'stages': dict()
-        }
-        self.obj = munchify(obj)
-        self.Update()
-        Log('Cleared')
-
-    @D_General
-    def InferFileFormat(self, io, name):
-
-        def TestFormat(io, name, suffix, format, compression):
-            if io.path.endswith(suffix):
-                io.format = format
-                io.compression = compression
-                Log(f'<< io: {name} >> Inferred Format:Compression is {format}:{compression}.')
-
-        if io.pathType == 'file' and 'format' not in io:
-
-            if 'compression' in io:
-                LogException(f'<< io: {name} >> When format is not provided (infer format) compression should not be provided.')
-
-            TestFormat(io, name, '.mt', 'mt', 'None')
-            TestFormat(io, name, '.ht', 'ht', 'None')
-            TestFormat(io, name, '.vcf', 'vcf', 'None')
-            TestFormat(io, name, '.vcf.gz', 'vcf', 'gz')
-            TestFormat(io, name, '.vcf.bgz', 'vcf', 'bgz')
-            TestFormat(io, name, '.tsv', 'tsv', 'None')
-            TestFormat(io, name, '.tsv.gz', 'tsv', 'gz')
-            TestFormat(io, name, '.tsv.bgz', 'tsv', 'bgz')
-            TestFormat(io, name, '.csv', 'csv', 'None')
-            TestFormat(io, name, '.csv.gz', 'csv', 'gz')
-            TestFormat(io, name, '.csv.bgz', 'csv', 'bgz')
-            TestFormat(io, name, '.json', 'json', 'None')
-            TestFormat(io, name, '.json.gz', 'json', 'gz')
-            TestFormat(io, name, '.json.bgz', 'json', 'bgz')
-            TestFormat(io, name, '.bed', 'bed', 'None')
-            TestFormat(io, name, '.bim', 'bim', 'None')
-            TestFormat(io, name, '.fam', 'fam', 'None')
-
-        if 'format' not in io:
-            LogException(f'<< io: {name} >> Format is not provided and cannot be inferred.')
-
-        if 'compression' not in io:
-            io.compression = 'None'
-
-    @D_General
-    def Checkio(self, stage):
-
-        Log(f'There are {len(stage.io)} io/s to be checked.')
-
-        for name, io in stage.io.items():
-            Log(f'<< io: {name} >> Checking...')
-            
-            if 'pathType' not in io:
-                io.pathType = 'file'
-            
-            if io.pathType=='file':
-                io.path = AbsPath(io.path)
-            elif io.pathType=='fileList':
-                io.path = [AbsPath(f) for f in io.path]
-
-            self.InferFileFormat(io, name)
-
-            if io.format not in ['mt', 'ht']:
-                if 'isAlive' in io:
-                    LogException(f'<< io: {name} >> isAlive should not be presented when input format is {io.format}')
+        Log('Runtime information is updated in the workload.')
+        
+        ##### Check stages exist and set stage.spec.id
+        for stageId in self.executionPlan:
+            if stageId not in self.stages:
+                LogException(f'{stageId} is listed in the `executionPlan` but not defined in the `stages`.')
             else:
-                if 'isAlive' not in io:
-                    io.isAlive = True
-                if io.isAlive:
-                    ### TBF what if the user dont want to repartition at all
-                    if 'numPartitions' not in io:
-                        io.numPartitions = Shared.defaults.numPartitions.default
-
-                    if not (Shared.defaults.numPartitions.min <= io.numPartitions <= Shared.defaults.numPartitions.max):
-                        LogException(f'<< io: {name} >> numPartitions {io.numPartitions} must be in range [{Shared.defaults.numPartitions.min}, {Shared.defaults.numPartitions.max}]')
-
-                    for key in ['toBeCached', 'toBeCounted']:
-                        if key not in io:
-                            io[key] = True
-
-            if 'isAlive' in io and not io.isAlive:
-                for key in ['numPartitions', 'toBeCached', 'toBeCounted']:
-                    if key in io:
-                        LogException(f'<< io: {name} >> When isAlive is explicitly set to false, "{key}" should not be presented at io.')
-
-        # TBF this file existance check needs to be reviewd
-        if stage.spec.status != 'Completed':
-            for name, io in stage.io.items():
-                if io.direction == 'output':
-                    if io.format == 'bfile':
-                        cond = any([FileExist(f'{io.path}{suffix}') for suffix in ['bed', 'bim', 'fam']])
-                    else:
-                        cond = FileExist(io.path)
-
-                    if cond:
-                        LogException(f'<< io: {name} >> Output path (or plink bfile prefix) {io.path} already exist in the file system')
-
-    @D_General
-    def CheckStage(self, stage):
-        """Check if stage is ok to be executed.
-
-        Note:
-            - This function should be called just before executing the stage beacuase it checks if the output file exist and prevent overwriting before executing stage.
-
-        Args:
-            stage (Stage): the stage to be processed.
-        """
-
-        ### Compelete stage schema template by adding arg and io field for the specific function.
-        if False:
-            try:
-                functionsSchema = self.functionsSchema.obj
-                stageSchema = self.stageSchema.obj
-
-                for key in ['arg', 'io']:
-                    if key not in functionsSchema[stage.spec.function]:
-                        LogException(f'The FunctionSchema does not include {key} for {stage.spec.function}')
-                    stageSchema['properties'][key] = functionsSchema[stage.spec.function][key]
-
-                jsonschema.Draft7Validator.check_schema(stageSchema)
-                jsonschema.validate(instance=stage, schema=stageSchema)
-            except jsonschema.exceptions.SchemaError:
-                LogException(f'StageSchema is invalid')
-            except jsonschema.exceptions.ValidationError:
-                LogException(f'Stage is not validated by the schema')
-
-        ##### Check each Input/Output (io).
-        self.Checkio(stage)
-
-        LogPrint(f'Stage is Checked')
-
-    @D_General
-    def CheckStages(self):
-        if self.order:
-            for stageId in self.order:
                 stage = self.stages[stageId]
+
+                self.InferStage(stage, stageId)
+
                 Shared.CurrentStageForLogging = stage
                 self.CheckStage(stage)
                 Shared.CurrentStageForLogging = None
+                         
+
+        Log('Workload has been nitialised.')
+    
+    @D_General
+    def InferStage(self, stage, stageId):
+        if 'spec' not in stage: # stage has not been checked yet
+            LogException(f'stage `{stageId}` does not have `spec` key.')
+        else:
+            stage.spec.id = stageId
+            if 'status' not in stage.spec:
+                stage.spec.status = 'Initiated'
+        self.Update()
+
+    @D_General
+    def CheckStage(self, stage):
+        
+        ##### Compelete stage schema template by adding arg and io field for the specific function.
+        # try:
+        #     functionsSchema = self.functionsSchema.obj
+        #     stageSchema = self.stageSchema.obj
+
+        #     for key in ['arg', 'io']:
+        #         if key not in functionsSchema[stage.spec.function]:
+        #             LogException(f'The FunctionSchema does not include {key} for {stage.spec.function}')
+        #         stageSchema['properties'][key] = functionsSchema[stage.spec.function][key]
+
+        #     jsonschema.Draft7Validator.check_schema(stageSchema)
+        #     jsonschema.validate(instance=stage, schema=stageSchema)
+        # except jsonschema.exceptions.SchemaError:
+        #     LogException(f'StageSchema is invalid')
+        # except jsonschema.exceptions.ValidationError:
+        #     LogException(f'Stage is not validated by the schema')
+
+        ##### Check each Input/Output (io).
+        self.CheckIO(stage)
+
+        LogPrint(f'Stage `{stage.spec.id}` is Checked') 
+
+    @D_General
+    def InferIOs(self, stage):
+        if 'ios' in stage:
+            for io in stage.io:
+                self.InferIO(io)
+
+    @D_General
+    def CheckIO(self, stage):
+        if 'io' in stage:
+            io = stage.io
+            if 'input' in io:
+                input = io.input
+
 
     @D_General
     def ProcessLiveInput(self, input):

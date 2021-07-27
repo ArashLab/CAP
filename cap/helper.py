@@ -335,23 +335,24 @@ def FlattenJson(iJson):  # TBF: not used currently . To be used in VepJsonToTsv
 
 #TBF: This function shoudl be more generalised
 @D_General
-def CheckRangeShared(varName):
-    if varName not in Shared:
-        LogException(f'{varName} not in shared')
+def CheckRange(varName):
+    if varName not in Shared.defaults:
+        LogException(f'{varName} not in Shared.defaults')
 
-    var = Shared[varName]
+    var = Shared.defaults[varName]
 
     if var.min > var.max:
-        LogException(f'shared.{varName}: minimum {var.min} is greater than maximum {var.max}')
+        LogException(f'Shared.defaults.{varName}: minimum {var.min} is greater than maximum {var.max}')
 
     if not (var.min <= var.default <= var.max):
-        LogException(f'shared.{varName}: default value {var.default} must be in range [{var.min}, {var.max}]')
+        LogException(f'Shared.defaults.{varName}: default value {var.default} must be in range [{var.min}, {var.max}]')
 
-#TBF: This function is dedicated to Shared module and should not be here. However there is a loop dependency as it uses logutils and logutils uses Shared
+#TBF: This function is dedicated to Shared module and should not be here.
+# However there is a loop dependency as it uses logutils and logutils uses Shared
 @D_General
-def CheckShared():
-    CheckRangeShared('numPartitions')
-    CheckRangeShared('numSgeJobs')
+def CheckDefaults():
+    CheckRange('numPartitions')
+    CheckRange('numSgeJobs')
 
 @D_General
 def InferColumnTypes(df):
