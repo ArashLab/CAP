@@ -25,58 +25,6 @@ if __name__ == '__main__':
 # TBF: Live JSON Input/Output are not supported yet. (Like PCA Eigen)
 
 
-def AbsPath(path):
-
-    inpath=path
-    
-    # replace ~ and ${VAR} with actual values
-    path=os.path.expandvars(path)
-
-    if path.lower().startswith('hdfs://'):
-        abspath = path
-    elif path.lower().startswith('file://'):
-        abspath = path[7:]
-        abspath = os.path.abspath(abspath)
-        abspath = f'file://{abspath}'
-    else:
-        if Shared.defaults.fileSystem == 'file':
-            abspath = os.path.abspath(path)
-            abspath = f'file://{abspath}'
-        elif Shared.defaults.fileSystem == 'hdfs':
-            abspath = f'hdfs://{path}'
-        else:
-            abspath = os.path.abspath(path)
-
-    Log(f'Absolute path of {inpath} is {abspath}')
-    return abspath
-
-# not to have D_General as these function may be called in a wait loop in VEP annotation function
-def GetLocalPath(path, silent=False):
-    inPath = path
-    if path.lower().startswith('hdfs://'):
-        LogException(f'hdfs pathes are not local: {path}')
-    elif path.lower().startswith('file://'):
-        if not silent:
-            Log(f'Removeing file:// from {path}')
-        path = path[7:]
-    path = os.path.abspath(path)
-    if not silent:
-        Log(f'Local path of {inPath} is {path}')
-    return path
-
-# not to have D_General as these function may be called in a wait loop in VEP annotation function
-def FileExist(path, silent=False):
-    if path.lower().startswith('hdfs://'):
-        return not subprocess.run(['hdfs', 'dfs', '-test', '-e', path]).returncode
-    else:
-        path = GetLocalPath(path, silent)
-        return os.path.exists(path)
-
-def WildCardPath(path):
-    path = GetLocalPath(path)
-    fileList = glob.glob(path)
-    Log(f'{len(fileList)} files are found in {path}')
-    return fileList
 
 @D_General
 def Bash(command, isPath):

@@ -50,8 +50,9 @@ Shared.data = Munch()
 
 Shared.defaults = Munch()
 
-Shared.defaults.fileSystem = None
+Shared.defaults.fileSystem = 'local'
 Shared.defaults.vepCheckWaitTime = 5
+Shared.defaults.localMode = True
 
 Shared.defaults.numPartitions = Munch()
 Shared.defaults.numPartitions.default = 4

@@ -4,7 +4,7 @@ XXX:
     - isChecked
     - isInfered
 
-    - File (if disk)
+    - disk (if disk)
         - path: Mandatory
 
         - inferred:
@@ -24,7 +24,7 @@ XXX:
             - importParam
             - OtherOptions
 
-    - Memory
+    - memory
         - format: mt, ht, obj, pandas
         - persistence: (as in spark)
         - numPartitions:
