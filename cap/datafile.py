@@ -327,11 +327,87 @@ class DataFile:
         importParam = disk.importParam if 'importParam' in disk else {}
 
         if memory.format == 'mt':
-            if disk.format == 'vcf':
-                self.data = hl.import_vcf(disk.path, **importParam)
+
+            if disk.format == 'mt':
+                if len(disk.path) > 1:
+                    LogException('Not supported')
+                mt = hl.read_matrix_table(disk.path[0])    
+                self.data = mt
+
+            elif disk.format == 'vcf':
+                mt = hl.import_vcf(disk.path, **importParam)
+                self.data = mt
+
             elif disk.format == 'plink-bfile':
-                self.data = hl.import_vcf(disk.path, **importParam)
+                if len(disk.path) > 1:
+                    LogException('Not supported')
+                mt = hl.import_plink(bed=f'{disk.path[0]}.bed', bim=f'{disk.path[0]}.bim', fam=f'{disk.path[0]}.fam', **importParam)
+                self.data = mt
+
+        elif memory.format == 'ht':
+
+            if disk.format == 'ht':
+                if len(disk.path) > 1:
+                    LogException('Not supported')
+                ht = hl.read_table(disk.path[0])    
+                self.data = ht
+
+            elif disk.format == 'tsv':
+                importParam['delimiter'] = '\t'
+                ht = hl.import_table(disk.path, **importParam)
+                self.data = ht
+
+            elif disk.format == 'csv':
+                importParam['delimiter'] = ','
+                ht = hl.import_table(disk.path, **importParam)
+                self.data = ht
+
+    @D_General
+    def Dump(self):
+        file = self.file
+        if 'isDumped' in file and file.isDumped:
+            LogException('Data file is already Dumped.')
+
+        disk = file.disk
+        memory = file.memory
+
+        exportParam = disk.exportParam if 'exportParam' in disk else {}
+
+        if len(disk.path) > 1:
+            LogException('Not supported')
+
+        if memory.format == 'mt':
+
+            if disk.format == 'mt':
+                mt = self.data
+                mt.write(disk.path[0])   
+
+            elif disk.format == 'vcf':
+                mt = self.data
+                hl.export_vcf(mt, disk.path[0], **exportParam)
+
+            elif disk.format == 'plink-bfile':
+                mt = self.data
+                for k in ['call', 'fam_id', 'ind_id', 'pat_id', 'mat_id', 'is_female', 'pheno', 'varid', 'cm_position']:
+                    if k in exportParam:
+                        exportParam[k] = HailPath([mt]+exportParam[k])
+                hl.export_plink(mt, disk.path[0], **exportParam)
+
+        elif memory.format == 'ht':
+
+            if disk.format == 'ht':
+                ht = self.data
+                ht.write(disk.path[0])    
+
+            elif disk.format == 'tsv':
+                exportParam['delimiter'] = '\t'
+                ht = self.data
+                ht.export(disk.path[0], **exportParam)
                 
+            elif disk.format == 'csv':
+                exportParam['delimiter'] = ','
+                ht = self.data
+                ht.export(disk.path[0], **exportParam)
 
 # @D_General
 # def Check(self):
