@@ -56,12 +56,12 @@ class Executor:
         self.initialised = True
 
     @D_General
-    def Execute(self, reset=False):
+    def Execute(self):
         workload = self.workload
-        if workload.order:
-            for stageId in workload.order:
+        if workload.executionPlan:
+            for stageId in workload.executionPlan:
                 stage = workload.stages[stageId]
-                if stage.spec.status != 'Completed' or reset:
+                if stage.spec.status != 'Completed':
                     self.ExecuteStage(stage)
 
     @D_General
@@ -84,13 +84,13 @@ class Executor:
         runtime.startTime = datetime.now()
         workload.Update()
 
-        workload.ProcessLiveInputs(stage)
+        workload.ExecuteInputs(stage)
         workload.Update()
 
         func(stage)
         workload.Update()
 
-        workload.ProcessLiveOutputs(stage)
+        workload.ExecuteOutputs(stage)
         workload.Update()
 
         runtime.endTime = datetime.now()

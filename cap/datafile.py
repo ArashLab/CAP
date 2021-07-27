@@ -14,7 +14,6 @@ if __name__ == '__main__':
     print('This module is not executable. Import this module in your program.')
     exit(0)
 
-
 class DataFile:
 
     @D_General
@@ -55,6 +54,15 @@ class DataFile:
 
         if 'disk' in file and 'path' not in file.disk:
             LogException('`path` must present in `disk`')
+
+        if 'isLoaded' not in file:
+            file.isLoaded = False
+
+        if 'isReady' not in file:
+            file.isReady = False
+
+        if 'isDumped' not in file:
+            file.isDumped = False
 
     suffixMapper = {
         '.mt': ('mt', 'None'),
@@ -208,12 +216,12 @@ class DataFile:
 
     @D_General
     def ExpandWildcardPath(self):
-        if self.file.disk.fileSystem != 'local':
-            LogException('Wildcard only supported for local fileSystem')
 
         disk = self.file.disk
-
         if disk.isWildcard:
+            if self.file.disk.fileSystem != 'local':
+                LogException('Wildcard only supported for local fileSystem')
+
             # keep a copy of original wildcard path
             disk.wildcard = Munch()
             disk.wildcard.path = disk.path
@@ -290,7 +298,7 @@ class DataFile:
 
     @D_General
     def ExistInternal(self, path):
-        fs = self.disk.fileSystem
+        fs = self.file.disk.fileSystem
         if fs in ['aws', 'google']:
             LogException(f'`{fs}` not supported')
         elif fs == 'hadoop':
@@ -302,10 +310,8 @@ class DataFile:
     @D_General
     def Exist(self):
         disk = self.file.disk
-        if disk.isList:
-            return all([self.ExistInternal(p) for p in disk.path])
-        else:
-            return self.ExistInternal(disk.path)
+        return all([self.ExistInternal(p) for p in disk.path])
+        
 
     @D_General
     def ExpandWildcardPathInternal(self, path):
@@ -362,6 +368,8 @@ class DataFile:
                 ht = hl.import_table(disk.path, **importParam)
                 self.data = ht
 
+        file.isLoaded = True
+
     @D_General
     def Dump(self):
         file = self.file
@@ -403,11 +411,19 @@ class DataFile:
                 exportParam['delimiter'] = '\t'
                 ht = self.data
                 ht.export(disk.path[0], **exportParam)
-                
+
             elif disk.format == 'csv':
                 exportParam['delimiter'] = ','
                 ht = self.data
                 ht.export(disk.path[0], **exportParam)
+
+        file.isDumped = True
+
+    @D_General
+    def setData(self, data):
+        self.data = data
+        self.file.isReady = True
+
 
 # @D_General
 # def Check(self):

@@ -19,17 +19,17 @@ def CommonOperations(stage):
     spec, arg, io = UnpackStage(stage)
 
     ##### >>>>>>> Input/Output <<<<<<<<
-    input = io.input
-    output = io.output
+    input = Shared.dataFiles[io.inData.id]
+    output = Shared.dataFiles[io.outData.id]
 
     ##### >>>>>>> Live Input <<<<<<<<
-    mht = Shared.data[input.path]
+    data = input.data
 
     ##### >>>>>>> STAGE Code <<<<<<<<
     # DO Nothing (Just Common Operation)
 
     ##### >>>>>>> Live Output <<<<<<<<
-    output.data = mht
+    output.setData(data)
 
 @D_General
 def ImportMatrixTable(stage):

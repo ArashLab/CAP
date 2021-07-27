@@ -24,8 +24,6 @@ if __name__ == '__main__':
 
 # TBF: Live JSON Input/Output are not supported yet. (Like PCA Eigen)
 
-
-
 @D_General
 def Bash(command, isPath):
 

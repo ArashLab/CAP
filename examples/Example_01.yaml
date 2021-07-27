@@ -1,8 +1,7 @@
 dataFiles:
     inVCF:
         disk:
-            path:
-                - 1kg.micro.vcf.bgz
+            path: 1kg.micro.vcf.bgz
     outMT:
         disk:
             path: 1kg.ma.mt
@@ -13,11 +12,11 @@ executionPlan:
 stages:
     IGTVCF:
         spec:
-            function: ImportGenotype
-        ios:
-            input:
+            function: CommonOperations
+        io:
+            inData:
                 id: inVCF
                 direction: input
-            output:
+            outData:
                 id: outMT
                 direction: output
