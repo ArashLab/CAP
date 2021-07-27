@@ -26,22 +26,22 @@ class Workload(PyObj):
         # Load the workload into the self.obj
         super().__init__(path, format)
 
-        # Check against workload schema
-        self.workloadSchema = PyObj(path='WorkloadSchema.json', isInternal=True, isSchema=True)
-        self.schema = self.workloadSchema.obj
-        self.CheckObject()
+        ##### Check against workload schema
+        # self.workloadSchema = PyObj(path='WorkloadSchema.json', isInternal=True, isSchema=True)
+        # self.schema = self.workloadSchema.obj
+        # self.CheckObject()
         Log('Workload is checked against schema.')
 
-        # Loading stage schemas
+        ##### Loading stage schemas
         self.stageSchema = PyObj(path='StageSchema.json', isInternal=True, isSchema=True)
         self.functionsSchema = PyObj(path='FunctionsSchema.json', isInternal=True)
         Log('Stage schemas are loaded.')
 
-        # Handeling default values
-        # Defaults are read only values and to be accessed through Shared
+        ##### Handeling default values
+        ##### Defaults are read only values and to be accessed through Shared
         if 'defaults' in self.obj:
-            # If defaults exist in both workload and shared
-            # workload is on proyority
+            ##### If defaults exist in both workload and shared
+            ##### workload is on proyority
             Shared.defaults.update(self.obj.defaults)
         else:
             self.obj.defaults = Munch()
@@ -50,30 +50,29 @@ class Workload(PyObj):
         Log('Default values are updated and checked as below.')
         Log(Shared.defaults)
 
-        # Shortcut to stages, files, and executionPlan
+        ##### Shortcut to stages, files, and executionPlan
         self.stages = self.obj.stages
-        self.files = self.obj.files
         if self.obj.executionPlan:
             self.executionPlan = self.obj.executionPlan
         else:
             self.executionPlan = []
 
-        # Environmental variables to be set
+        ##### Environmental variables to be set
         if 'env' in self.obj:
             envVars = self.obj.env
             for envVar in envVars:
                 os.environ[envVar] = str(envVars[envVar])
         Log('Environmental Variables are set.')
 
-        # Append runtime information to the runtimes
-        # Eachtime Shared.runtime is changed the workload must be updated to save the change in the workload file
+        ##### Append runtime information to the runtimes
+        ##### Eachtime Shared.runtime is changed the workload must be updated to save the change in the workload file
         if 'runtimes' not in self.obj:
             self.obj.runtimes = list()
         self.obj.runtimes.append(Shared.runtime)
         self.Update()
         Log('Runtime information is updated in the workload.')
 
-        # Check stages exist and set stage.spec.id
+        ##### Check stages exist and set stage.spec.id
         for stageId in self.executionPlan:
             if stageId not in self.stages:
                 LogException(f'{stageId} is listed in the `executionPlan` but not defined in the `stages`.')
@@ -88,12 +87,13 @@ class Workload(PyObj):
         self.Update()
         Log('All stages are checked.')
 
-        # For all dataFiles which are used in one of the stages of the executionPlan, create the DataFile object and put it in Shared.dataFiles
-        # The dataFile spec in shared.dataFile point to the workload data (self.obj.dataFiles)
+        ##### For all dataFiles which are used in one of the stages of the executionPlan, create the DataFile object and put it in Shared.dataFiles
+        ##### The dataFile spec in shared.dataFile point to the workload data (self.obj.dataFiles)
         for stageId in self.executionPlan:
             stage = self.stages[stageId]
-            if 'io' in stage:
-                for fileId in stage.io:
+            if 'ios' in stage:
+                for io in stage.ios:
+                    fileId = stage.ios[io].id
                     if fileId not in self.obj.dataFiles:
                         LogException(f'`fileId` (`{fileId}`) is used in the `stage` (`{stageId}`) IO but does not exist in `dataFiles`')
                     dataFileSpec = self.obj.dataFiles[fileId]
@@ -118,7 +118,7 @@ class Workload(PyObj):
     @D_General
     def CheckStage(self, stage):
 
-        # Compelete stage schema template by adding arg and io field for the specific function.
+        ##### Compelete stage schema template by adding arg and io field for the specific function.
         # try:
         #     functionsSchema = self.functionsSchema.obj
         #     stageSchema = self.stageSchema.obj
@@ -135,7 +135,7 @@ class Workload(PyObj):
         # except jsonschema.exceptions.ValidationError:
         #     LogException(f'Stage is not validated by the schema')
 
-        # Check each Input/Output (io).
+        ##### Check each Input/Output (io).
 
         LogPrint(f'Stage `{stage.spec.id}` is Checked')
 

@@ -29,6 +29,8 @@ class DataFile:
         self.isInferred = True
         self.ProcessPath()
 
+        self.InferMemory()
+
     @D_General
     def Infer(self):
         file = self.file
@@ -48,8 +50,8 @@ class DataFile:
         if file.storageType == 'memory' and 'disk' in file:
             LogException('`disk` should not present when storage type is `memory`')
 
-        if file.storageType == 'disk' and ('disk' not in file or 'memory' not in file):
-            LogException('`disk` and `memory` should present when storage type is `disk`')
+        if file.storageType == 'disk' and 'disk' not in file:
+            LogException('`disk` should present when storage type is `disk`')
 
         if 'disk' in file and 'path' not in file.disk:
             LogException('`path` must present in `disk`')
@@ -71,7 +73,8 @@ class DataFile:
         '.json.bgz': ('json', 'bgz'),
         '.bed': ('bed', 'None'),
         '.bim': ('bim', 'None'),
-        '.fam': ('fam', 'None')
+        '.fam': ('fam', 'None'),
+        '.parquet': ('parquet', 'None')
     }
 
     @D_General
@@ -91,63 +94,66 @@ class DataFile:
     @D_General
     def InferFileSystem(self, path):
         for prefix in self.prefixMapper:
-            if path.startsswith(prefix):
+            if path.startswith(prefix):
                 return self.prefixMapper[prefix]
         return Shared.defaults.fileSystem
 
     @D_General
     def InferPath(self):
-        Inferred = Munch()
-        Inferred.format = None
-        Inferred.compression = None
-        Inferred.fileSystem = None
-        Inferred.isList = None
-        Inferred.listLen = None
-        Inferred.isParallel = None
+        inferred = Munch()
+        inferred.format = None
+        inferred.compression = None
+        inferred.fileSystem = None
+        inferred.numPath = None
+        inferred.isParallel = False
+        inferred.isWildcard = False
 
-        self.file.disk.inferred = Inferred
+        self.file.disk.inferred = inferred
 
-        path = self.file.disk.path
-
-        # Check if path is a list
-        if isinstance(path, string):
-            Inferred.isList = False
-        elif isinstance(path, list):
-            if not len(path):
-                LogException('path array should not be empty')
-            for p in path:
-                if not isinstance(p, string):
-                    LogException(f'Each path must be of type string but found {p} of type {type(p)}.')
-            Inferred.isList = True
-            Inferred.listLen = len(path)
-        else:
-            LogException(f'Path of type {type(path)} is not supported')
-
-        # If path list, infer the first path in the list
-        if Inferred.isList:
-            Inferred.format, Inferred.compression = self.InferFormat(path[0])
-            Inferred.fileSystem = self.InferFileSystem(path[0])
-        else:
-            Inferred.format, Inferred.compression = self.InferFormat(path)
-            Inferred.fileSystem = self.InferFileSystem(path)
-
-        # If path list, make sure the all paths in the list infered the same
-        if Inferred.isList:
-            for i, p in enumerate(path):
-                # Inffer the i^th path
-                format, compression = self.InferFormat(path)
-                fileSystem = self.InferFileSystem(path)
-
-                # Check consistancy of the infered data
-                if format != Inferred.format:
-                    LogException(f'{i}th path format mismatch: {format} is not {Inferred.format}')
-                if compression != Inferred.compression:
-                    LogException(f'{i}th path compression mismatch: {compression} is not {Inferred.compression}')
-                if fileSystem != Inferred.fileSystem:
-                    LogException(f'{i}th path fileSystem mismatch: {fileSystem} is not {Inferred.fileSystem}')
-
-        # Check consistensy of the inferred and given information
         disk = self.file.disk
+        path = disk.path
+
+        ##### Check if path is a list
+        if isinstance(disk.path, str):
+            disk.path = [disk.path]
+
+        if isinstance(disk.path, list):
+            inferred.numPath = len(disk.path)
+            if not inferred.numPath:
+                LogException('path array should not be empty')
+            for p in disk.path:
+                if not isinstance(p, str):
+                    LogException(f'Each path must be of type string but found {p} of type {type(p)}.')
+        else:
+            LogException(f'path should be of type list but not {type(path)}')
+
+        path = disk.path
+
+        ##### If path list, infer the first path in the list
+        inferred.format, inferred.compression = self.InferFormat(path[0])
+        inferred.fileSystem = self.InferFileSystem(path[0])
+    
+        ##### If path list, make sure the all paths in the list infered the same
+        if inferred.numPath > 1:
+            for i, p in enumerate(path):
+                ##### Inffer the i^th path
+                format, compression = self.InferFormat(p)
+                fileSystem = self.InferFileSystem(p)
+
+                ##### Check consistancy of the infered data
+                if format != inferred.format:
+                    LogException(f'{i}th path format mismatch: {format} is not {inferred.format}')
+                if compression != inferred.compression:
+                    LogException(f'{i}th path compression mismatch: {compression} is not {inferred.compression}')
+                if fileSystem != inferred.fileSystem:
+                    LogException(f'{i}th path fileSystem mismatch: {fileSystem} is not {inferred.fileSystem}')
+
+        if 'isWildcard' not in disk:
+            for p in disk.path:
+                if any([c in p for c in ['*', '?', '[', ']']]):
+                    inferred.isWildcard = True        
+
+        ##### Check consistensy of the inferred and given information
         for k in disk.inferred:
             if k in disk:
                 if disk.inferred[k] and disk[k] != disk.inferred[k]:
@@ -156,76 +162,147 @@ class DataFile:
                 disk[k] = disk.inferred[k]
                 Log(f'Infered `{k}` ({disk.inferred[k]}) is used.')
 
-    @D_General
-    def ProcessPathInternal(self, inPath):
-
-        # replace ~ and ${VAR} with actual values
-        path = os.path.expandvars(inPath)
-
-        # Check if the path has the prefix (i.e. hdfs://)
-        isPrefixed = False
-        for prefix in self.prefixMapper:
-            if path.lower().startswith(prefix):
-                isPrefixed = True
-                break
-
-        # Get the absolute path (for local storage only and if 'file://' prefix is not attached)
-        # Add the prefix based on the fileSystem (if path does not have prefix)
-        if not isPrefixed:
-            fs = self.file.disk.fileSystem
-            fsFound = False
-            for prefix, storage in self.prefixMapper.items():
-                if fs == storage:
-                    if storage == 'local':
-                        path = os.path.abspath(path)
-                    path = f'{prefix}{path}'
-                    fsFound = True
-            if not fsFound:
-                LogException(f'fileSystem `{fs}` is not supported yet.')
-
-        Log(f'Absolute path of {inPath} is {path}')
-        return path
+        ##### if path include wildcard, keep copy of wildcard path
+        if disk.isWildcard:
+            disk.wildcard = Munch()
+            disk.wildcard.path = disk.path
+            disk.wildcard.numPath = disk.numPath
 
     @D_General
     def ProcessPath(self):
         disk = self.file.disk
-        if disk.isList:
-            disk.path = [self.ProcessPathInternal(p) for p in disk.path]
-        else:
-            disk.path = self.ProcessPathInternal(disk.path)
-        disk.isPrefix = True
+    
+        newPath = list()
+
+        for rawPath in disk.path:
+            ##### replace ~ and ${VAR} with actual values
+            path = os.path.expandvars(rawPath)
+
+            ##### Check if the path has the prefix (i.e. hdfs://)
+            isPrefixed = False
+            for prefix in self.prefixMapper:
+                if path.lower().startswith(prefix):
+                    isPrefixed = True
+                    break
+
+            ##### Get the absolute path (for local storage only and if 'file://' prefix is not attached)
+            ##### Add the prefix based on the fileSystem (if path does not have prefix)
+            if not isPrefixed:
+                fs = self.file.disk.fileSystem
+                fsFound = False
+                for prefix, storage in self.prefixMapper.items():
+                    if fs == storage:
+                        if storage == 'local':
+                            path = os.path.abspath(path)
+                        path = f'{prefix}{path}'
+                        fsFound = True
+                if not fsFound:
+                    LogException(f'fileSystem `{fs}` is not supported yet.')
+
+            Log(f'Absolute path of {rawPath} is {path}')
+
+            if disk.isWildcard:
+                if any([c in path for c in ['*', '?', '[', ']']]): # if this particular path in the list has a wildcard char then expand it
+                    paths = self.ExpandWildcardPathInternal(path)
+                    newPath.extend(paths)
+                else:
+                    newPath.append(path)
+            else:
+                newPath.append(path)
+
+        disk.path = list(set(newPath))
+        disk.numPath = len(newPath)
+        
+        disk.fsPrefix = True
 
         if 'localMode' in Shared.defaults and Shared.defaults.localMode:
-            disk.path = self.GetLocalPath()
-            disk.isPrefix = False
+            disk.path = [self.GetLocalPath(p) for p in disk.path]
+            disk.fsPrefix = False
 
     @D_General
-    def GetLocalPath(self):
-        disk = self.file.disk
-        if disk.fileSyste != 'local':
+    def GetLocalPath(self, path):
+        if self.file.disk.fileSystem != 'local':
             LogException('Cannot produce local path for non-local storage type')
 
-        if disk.isList:
-            path = [p[7:] if p.lower().startswith('file://') else p for p in disk.path]
+        return path[7:] if path.lower().startswith('file://') else path
+ 
+
+    formatMapper = {
+        'mt': ['mt'],
+        'ht': ['ht', 'pandas'],
+        'csv': ['ht', 'pandas'],
+        'tsv': ['ht', 'pandas'],
+        'parquet': ['ht', 'pandas'],
+        'json': ['obj', 'pandas', 'ht'],
+        'yaml': ['obj', 'pandas', 'ht'],
+        'vcf': ['mt', 'ht'],
+        'plink-bfile': ['mt', 'ht'],
+        'bim': ['ht', 'pandas'],
+        'fam': ['ht', 'pandas']
+    }
+
+    @D_General
+    def InferMemory(self):
+        file = self.file
+        if file.storageType == 'disk':
+            if not 'memory' in file or not file.memory:  # memory could exist but an empty field
+                file.memory = Munch()
+            memory = file.memory
+
+            if not 'inferred' in memory:
+                memory.inferred = Munch()
+            inferred = memory.inferred
+
+            if file.disk.format in self.formatMapper:
+                inferred.formats = self.formatMapper[file.disk.format]
+            else:
+                inferred.formats = []
+
+            if 'format' not in memory:
+                if inferred.formats:
+                    memory.format = inferred.formats[0]
+                else:
+                    LogException('Could not identify memory format')
+            else:
+                if memory.format not in inferred.formats:
+                    LogException(f'Memory format `{memory.format}` is not supported for disk format `{file.disk.format}`. Acceptable memory formats are `{inferred.formats}`')
         else:
-            path = disk.path[7:] if disk.path.lower().startswith('file://') else disk.path
+            if 'format' not in file.memory:
+                LogException('memory format must present')
 
-        return path
+        memory = file.memory
 
-    # @D_General
-    # def FileExist(path, silent=False):
-    #     if path.lower().startswith('hdfs://'):
-    #         return not subprocess.run(['hdfs', 'dfs', '-test', '-e', path]).returncode
-    #     else:
-    #         path = GetLocalPath(path, silent)
-    #         return os.path.exists(path)
+        if 'persistence' not in memory:
+            memory.persistence = Shared.defaults.persistence
 
-    # @D_General
-    # def WildCardPath(path):
-    #     path = GetLocalPath(path)
-    #     fileList = glob.glob(path)
-    #     Log(f'{len(fileList)} files are found in {path}')
-    #     return fileList
+        if 'numPartitions' not in memory:
+            memory.numPartitions = Shared.defaults.numPartitions.default
+
+    @D_General
+    def ExistInternal(self, path):
+        fs = self.disk.fileSystem
+        if fs in ['aws', 'google']:
+            LogException(f'`{fs}` not supported')
+        elif fs == 'hadoop':
+            return not subprocess.run(['hdfs', 'dfs', '-test', '-e', path]).returncode
+        elif fs == 'local':
+            path = self.GetLocalPath(path)
+            return os.path.exists(path)
+
+    @D_General
+    def Exist(self):
+        disk = self.file.disk
+        if disk.isList:
+            return all([self.ExistInternal(p) for p in disk.path])
+        else:
+            return self.ExistInternal(disk.path)
+
+    @D_General
+    def ExpandWildcardPathInternal(self, path):
+        path = self.GetLocalPath(path)
+        fileList = glob.glob(path)
+        Log(f'{len(fileList)} files are found in {path}')
+        return fileList
 
 # @D_General
 # def Check(self):

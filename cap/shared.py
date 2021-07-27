@@ -42,7 +42,7 @@ Shared.CurrentStageForLogging = None
 ##### input & output (io) of the stages
 #################################################
 
-Shared.data = Munch()
+Shared.dataFiles = Munch()
 
 #################################################
 ##### Default Values
@@ -53,6 +53,7 @@ Shared.defaults = Munch()
 Shared.defaults.fileSystem = 'local'
 Shared.defaults.vepCheckWaitTime = 5
 Shared.defaults.localMode = True
+Shared.defaults.persistence = None
 
 Shared.defaults.numPartitions = Munch()
 Shared.defaults.numPartitions.default = 4

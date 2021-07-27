@@ -1,14 +1,23 @@
+dataFiles:
+    inVCF:
+        disk:
+            path:
+                - 1kg.micro.vcf.bgz
+    outMT:
+        disk:
+            path: 1?g.ma.mt
+        memory:
 
-order:
+executionPlan:
     - IGTVCF
 stages:
     IGTVCF:
         spec:
             function: ImportGenotype
-        io:
+        ios:
             input:
+                id: inVCF
                 direction: input
-                path: 1kg.micro.vcf.bgz
             output:
+                id: outMT
                 direction: output
-                path: 1kg.ma.mt
