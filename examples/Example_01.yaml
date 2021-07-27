@@ -5,7 +5,7 @@ dataFiles:
                 - 1kg.micro.vcf.bgz
     outMT:
         disk:
-            path: 1?g.ma.mt
+            path: 1kg.ma.mt
         memory:
 
 executionPlan:

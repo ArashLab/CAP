@@ -113,7 +113,7 @@ class DataFile:
         disk = self.file.disk
         path = disk.path
 
-        ##### Check if path is a list
+        # Check if path is a list
         if isinstance(disk.path, str):
             disk.path = [disk.path]
 
@@ -129,18 +129,18 @@ class DataFile:
 
         path = disk.path
 
-        ##### If path list, infer the first path in the list
+        # If path list, infer the first path in the list
         inferred.format, inferred.compression = self.InferFormat(path[0])
         inferred.fileSystem = self.InferFileSystem(path[0])
-    
-        ##### If path list, make sure the all paths in the list infered the same
+
+        # If path list, make sure the all paths in the list infered the same
         if inferred.numPath > 1:
             for i, p in enumerate(path):
-                ##### Inffer the i^th path
+                # Inffer the i^th path
                 format, compression = self.InferFormat(p)
                 fileSystem = self.InferFileSystem(p)
 
-                ##### Check consistancy of the infered data
+                # Check consistancy of the infered data
                 if format != inferred.format:
                     LogException(f'{i}th path format mismatch: {format} is not {inferred.format}')
                 if compression != inferred.compression:
@@ -151,9 +151,9 @@ class DataFile:
         if 'isWildcard' not in disk:
             for p in disk.path:
                 if any([c in p for c in ['*', '?', '[', ']']]):
-                    inferred.isWildcard = True        
+                    inferred.isWildcard = True
 
-        ##### Check consistensy of the inferred and given information
+        # Check consistensy of the inferred and given information
         for k in disk.inferred:
             if k in disk:
                 if disk.inferred[k] and disk[k] != disk.inferred[k]:
@@ -162,31 +162,25 @@ class DataFile:
                 disk[k] = disk.inferred[k]
                 Log(f'Infered `{k}` ({disk.inferred[k]}) is used.')
 
-        ##### if path include wildcard, keep copy of wildcard path
-        if disk.isWildcard:
-            disk.wildcard = Munch()
-            disk.wildcard.path = disk.path
-            disk.wildcard.numPath = disk.numPath
-
     @D_General
     def ProcessPath(self):
         disk = self.file.disk
-    
+
         newPath = list()
 
         for rawPath in disk.path:
-            ##### replace ~ and ${VAR} with actual values
+            # replace ~ and ${VAR} with actual values
             path = os.path.expandvars(rawPath)
 
-            ##### Check if the path has the prefix (i.e. hdfs://)
+            # Check if the path has the prefix (i.e. hdfs://)
             isPrefixed = False
             for prefix in self.prefixMapper:
                 if path.lower().startswith(prefix):
                     isPrefixed = True
                     break
 
-            ##### Get the absolute path (for local storage only and if 'file://' prefix is not attached)
-            ##### Add the prefix based on the fileSystem (if path does not have prefix)
+            # Get the absolute path (for local storage only and if 'file://' prefix is not attached)
+            # Add the prefix based on the fileSystem (if path does not have prefix)
             if not isPrefixed:
                 fs = self.file.disk.fileSystem
                 fsFound = False
@@ -201,18 +195,11 @@ class DataFile:
 
             Log(f'Absolute path of {rawPath} is {path}')
 
-            if disk.isWildcard:
-                if any([c in path for c in ['*', '?', '[', ']']]): # if this particular path in the list has a wildcard char then expand it
-                    paths = self.ExpandWildcardPathInternal(path)
-                    newPath.extend(paths)
-                else:
-                    newPath.append(path)
-            else:
-                newPath.append(path)
+            newPath.append(path)
 
-        disk.path = list(set(newPath))
+        disk.path = list(set(newPath))  # remove duplicated path
         disk.numPath = len(newPath)
-        
+
         disk.fsPrefix = True
 
         if 'localMode' in Shared.defaults and Shared.defaults.localMode:
@@ -220,12 +207,35 @@ class DataFile:
             disk.fsPrefix = False
 
     @D_General
+    def ExpandWildcardPath(self):
+        if self.file.disk.fileSystem != 'local':
+            LogException('Wildcard only supported for local fileSystem')
+
+        disk = self.file.disk
+
+        if disk.isWildcard:
+            # keep a copy of original wildcard path
+            disk.wildcard = Munch()
+            disk.wildcard.path = disk.path
+            disk.wildcard.numPath = disk.numPath
+
+            newPath = list()
+            for path in disk.path:
+                paths = self.ExpandWildcardPathInternal(path)
+                newPath.extend(paths)
+
+            disk.path = list(set(newPath))
+            disk.numPath = len(newPath)
+
+        if 'localMode' not in Shared.defaults or not Shared.defaults.localMode:
+            disk.path = [f'file://{p}' for p in disk.path]
+
+    @D_General
     def GetLocalPath(self, path):
         if self.file.disk.fileSystem != 'local':
             LogException('Cannot produce local path for non-local storage type')
 
         return path[7:] if path.lower().startswith('file://') else path
- 
 
     formatMapper = {
         'mt': ['mt'],
@@ -303,6 +313,25 @@ class DataFile:
         fileList = glob.glob(path)
         Log(f'{len(fileList)} files are found in {path}')
         return fileList
+
+    @D_General
+    def Load(self):
+        file = self.file
+        if 'isLoaded' in file and file.isLoaded:
+            Log('Data file is already loaded.')
+            return
+
+        disk = file.disk
+        memory = file.memory
+
+        importParam = disk.importParam if 'importParam' in disk else {}
+
+        if memory.format == 'mt':
+            if disk.format == 'vcf':
+                self.data = hl.import_vcf(disk.path, **importParam)
+            elif disk.format == 'plink-bfile':
+                self.data = hl.import_vcf(disk.path, **importParam)
+                
 
 # @D_General
 # def Check(self):
