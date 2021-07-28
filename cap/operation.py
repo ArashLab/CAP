@@ -19,17 +19,119 @@ def CommonOperations(stage):
     spec, arg, io = UnpackStage(stage)
 
     ##### >>>>>>> Input/Output <<<<<<<<
-    input = Shared.dataFiles[io.inData.id]
-    output = Shared.dataFiles[io.outData.id]
+    inData = GetFile(io.inData)
+    outData = GetFile(io.outData)
 
     ##### >>>>>>> Live Input <<<<<<<<
-    data = input.data
+    data = inData.data
 
     ##### >>>>>>> STAGE Code <<<<<<<<
     # DO Nothing (Just Common Operation)
 
     ##### >>>>>>> Live Output <<<<<<<<
-    output.setData(data)
+    outData.setData(data)
+
+@D_General
+def SplitMatrixTable(stage):
+    spec, arg, io = UnpackStage(stage)
+
+    ##### >>>>>>> Input/Output <<<<<<<<
+    inData = GetFile(io.inData)
+    outData = GetFile(io.outData)
+    outCol = GetFile(io.outCol)
+    outRow = GetFile(io.outRow)
+
+
+    ##### >>>>>>> Live Input <<<<<<<<
+    mt = inData.data
+
+    ##### >>>>>>> STAGE Code <<<<<<<<
+
+    if 'sampleId' not in set(mt.col):
+        LogException('sampleId not presented')
+    if 'variantId' not in set(mt.row):
+        LogException('variantId not presented')
+
+    # extract row and col table and drop them from matrix table
+    ht_col = mt.cols()
+    ht_col = ht_col.key_by('sampleId')
+
+    ht_row = mt.rows()
+    ht_row = ht_row.key_by('variantId')
+
+    dropKeys = (set(mt.row).union(set(mt.col)))-{'alleles', 'locus', 'sampleId', 'variantId'}
+    mt = mt.drop(*list(dropKeys))
+
+    ##### >>>>>>> Live Output <<<<<<<<
+    outData.setData(mt)
+    outCol.setData(ht_col)
+    outRow.setData(ht_row)
+
+@D_General
+def KeyByTable(stage):
+    spec, arg, io = UnpackStage(stage)
+
+    ##### >>>>>>> Input/Output <<<<<<<<
+    inData = GetFile(io.inData)
+    outData = GetFile(io.outData)
+    keyTable = GetFile(io.keyTable)
+
+
+    ##### >>>>>>> Live Input <<<<<<<<
+    ht = inData.data
+    htKey = keyTable.data
+
+    ##### >>>>>>> STAGE Code <<<<<<<<
+    keyCol = arg.keyCol
+    joinColData = arg.joinColData
+    joinColKey = arg.joinColKey
+
+    htKey = htKey.key_by(keyCol)
+    htKey = htKey.select(joinColKey)
+
+    ht = ht.key_by(joinColData)
+    htKey = htKey.key_by(joinColKey)
+
+    ht = ht.join(htKey, how='left')
+    ht = ht.key_by(keyCol)
+
+    ##### >>>>>>> Live Output <<<<<<<<
+    outData.setData(ht)
+
+@D_General
+def PcaHweNorm(stage):
+    spec, arg, io = UnpackStage(stage)
+
+    ##### >>>>>>> Input/Output <<<<<<<<
+    inData = GetFile(io.inData)
+    outScores = GetFile(io.outScores)
+
+    ##### >>>>>>> Live Input <<<<<<<<
+    mt = inData.data
+
+    ##### >>>>>>> STAGE Code <<<<<<<<
+
+    try:
+        cl = dict()
+        if 'outPcaLoading' in io:
+            cl['compute_loadings'] = True
+        else:
+            cl['compute_loadings'] = False
+        eigenvalues, pcs, loading = hl.hwe_normalized_pca(mt.GT, k=arg.numPcaVectors, **cl)
+    except:
+        LogException('Hail cannot perform the pca analysis')
+
+    logger.info(f'PCA is computed')
+
+    ##### >>>>>>> Live Output <<<<<<<<
+    outScores.setData(pcs)
+    # if 'outPcaEigen' in io:
+    #     io.outPcaEigen.data = eigenvalues
+    # if 'outPcaLoading' in io:
+    #     io.outPcaLoading.data = loading
+    # if 'outPcaVarList' in io:
+    #     io.outPcaVarList.data = mt.rows().select()
+
 
 @D_General
 def ImportMatrixTable(stage):
@@ -60,9 +162,7 @@ def ImportMatrixTable(stage):
         LogException('Hail cannot read genotype data.')
     Log(f'Genotypes are loaded from "{input.path}".')
 
-    # Perform Common Operation if presented
-    if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
+   
 
     ##### >>>>>>> Live Output <<<<<<<<
     output.data = mt
@@ -81,9 +181,6 @@ def ExportMatrixTable(stage):
 
     ##### >>>>>>> STAGE Code <<<<<<<<
 
-    # Perform Common Operation if presented
-    if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
 
     # If epxorting for VEP Overwire all other parameters
     if 'forVep' in arg and arg.forVep:
@@ -156,9 +253,6 @@ def MergeMatrixTables(stage):
             for mt2 in mts[1:]:
                 mt = mt.union_cols(mt2, row_join_type=joinType)
 
-    # Perform Common Operation if presented
-    if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
 
     ##### >>>>>>> Live Output <<<<<<<<
     output.data = mt
@@ -253,43 +347,6 @@ def ToText(stage):
 
     ##### >>>>>>> Live Output <<<<<<<<
 
-@D_General
-def PcaHweNorm(stage):
-    spec, arg, io = UnpackStage(stage)
-
-    ##### >>>>>>> Input/Output <<<<<<<<
-    input = io.input
-    outPcaScore = io.outPcaScore
-
-    ##### >>>>>>> Live Input <<<<<<<<
-    mt = Shared.data[input.path]
-
-    ##### >>>>>>> STAGE Code <<<<<<<<
-
-    # Perform Common Operation if presented
-    if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
-
-    try:
-        cl = dict()
-        if 'outPcaLoading' in io:
-            cl['compute_loadings'] = True
-        else:
-            cl['compute_loadings'] = False
-        eigenvalues, pcs, loading = hl.hwe_normalized_pca(mt.GT, k=arg.numPcaVectors, **cl)
-    except:
-        LogException('Hail cannot perform the pca analysis')
-
-    logger.info(f'PCA is computed')
-
-    ##### >>>>>>> Live Output <<<<<<<<
-    outPcaScore.data = pcs
-    if 'outPcaEigen' in io:
-        io.outPcaEigen.data = eigenvalues
-    if 'outPcaLoading' in io:
-        io.outPcaLoading.data = loading
-    if 'outPcaVarList' in io:
-        io.outPcaVarList.data = mt.rows().select()
 
 @D_General
 def CalcQC(stage):
@@ -304,9 +361,6 @@ def CalcQC(stage):
 
     ##### >>>>>>> STAGE Code <<<<<<<<
 
-    # Perform Common Operation if presented
-    if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
 
     try:
         if arg.axis == 'sample':
@@ -499,42 +553,4 @@ def VepLoadTables(stage):
 
 
 
-@D_General
-def AddId(stage):
-    spec, arg, io = UnpackStage(stage)
 
-    ##### >>>>>>> Input/Output <<<<<<<<
-    input = io.input
-    output = io.output
-    outCol = io.outCol
-    outRow = io.outRow
-
-    ##### >>>>>>> Live Input <<<<<<<<
-    mt = Shared.data[input.path]
-
-    ##### >>>>>>> STAGE Code <<<<<<<<
-
-    # Perform Common Operation if presented
-    if 'commonOperations' in arg:
-        mt = CommonMatrixTableOperations(mt=mt, operations=arg.commonOperations)
-
-    # Add indexes
-    mt = mt.annotate_rows(variantId=hl.str(':').join(hl.array([mt.locus.contig, hl.str(mt.locus.position)]).extend(mt.alleles)))
-    mt = mt.annotate_cols(sampleId=mt[arg.sampleId])
-
-    mt = mt.key_cols_by('sampleId')
-
-    # extract row and col table and drop them from matrix table
-    ht_col = mt.cols()
-    ht_col = ht_col.key_by('sampleId')
-
-    ht_row = mt.rows()
-    ht_row = ht_row.key_by('variantId')
-
-    dropKeys = (set(mt.row).union(set(mt.col)))-{'alleles', 'locus', 'sampleId', 'variantId'}
-    mt = mt.drop(*list(dropKeys))
-
-    ##### >>>>>>> Live Output <<<<<<<<
-    output.data = mt
-    outCol.data = ht_col
-    outRow.data = ht_row

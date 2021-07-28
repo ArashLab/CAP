@@ -156,7 +156,7 @@ class Workload(PyObj):
         elif dataFile.file.storageType == 'disk':
             if not dataFile.file.isLoaded:
                 dataFile.ExpandWildcardPath()
-                if not dataFile.Exist():
+                if not dataFile.ExistAll():
                     LogException('Input file does not exist')
                 dataFile.Load()
 
@@ -164,7 +164,7 @@ class Workload(PyObj):
     def ExecuteOutput(self, outFile):
         dataFile = Shared.dataFiles[outFile.id]
 
-        if not dataFile.file.isReady:
+        if not dataFile.file.isLoaded:
             LogException('Output data is not ready yet')
 
         if dataFile.file.storageType == 'memory':
@@ -172,6 +172,8 @@ class Workload(PyObj):
         elif dataFile.file.storageType == 'disk':
             if dataFile.file.disk.isWildcard:
                 LogException('Output file cannot be wildcard')
+            if dataFile.ExistAny():
+                LogException(f'Output path already exist {outFile.id}')
             dataFile.Dump()
 
     @D_General

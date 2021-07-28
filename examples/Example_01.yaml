@@ -2,15 +2,69 @@ dataFiles:
     inVCF:
         disk:
             path: 1kg.micro.vcf.bgz
+        commonOperations:
+            annotateRows:
+                info:
+                    k1: v1
+                    k2: v2
     outMT:
         disk:
             path: 1kg.ma.mt
+        commonOperations:
+            annotateRows:
+                ef23: asf332
+                filters:
+                    - 'f1'
+                    - 'f2'
+                    - 'f3'
+            annotateCols:
+                cohort: xxx
+                asdf: gasdf
+            rename:
+                s: sample
+            addId:
+                sampleId: sample
+                variantId: CHR:POS:ALLELES
+    outVCF:
+        disk:
+            path: 1kg.micro2.vcf.bgz
+        commonOperations:
+            annotateRows:
+                rsid: 'rs123456'
+    outMTx:
+        disk:
+            path: 1kg.xx.mt
+    outRow:
+        disk:
+            path: 1kg.row.ht
+    outCol:
+        disk:
+            path: 1kg.col.ht
+    inPheno:
+        disk:
+            path: 1kg.pheno.tsv
+    outPheno:
+        disk:
+            path: 1kg.pheno.ht
+
+    PcaScore:
         memory:
+            type: ht
+
+    PcaScoreKey:
+        disk:
+            path: 1kg.pca.ht
+
+#gzip -dc 1kg.micro2.vcf.bgz | head -n 98 | tail | cut -f 1-10 | column -t
 
 executionPlan:
-    - IGTVCF
+    - CO1
+    # - CO2
+    - SMT
+    - KBT
+
 stages:
-    IGTVCF:
+    CO1:
         spec:
             function: CommonOperations
         io:
@@ -19,4 +73,63 @@ stages:
                 direction: input
             outData:
                 id: outMT
+                direction: output
+    CO2:
+        spec:
+            function: CommonOperations
+        io:
+            inData:
+                id: outMT
+                direction: input
+            outData:
+                id: outVCF
+                direction: output
+    SMT:
+        spec:
+            function: SplitMatrixTable
+        io:
+            inData:
+                id: outMT
+                direction: input
+            outData:
+                id: outMTx
+                direction: output
+            outCol:
+                id: outCol
+                direction: output
+            outRow:
+                id: outRow
+                direction: output
+    KBT:
+        spec:
+            function: KeyByTable
+        arg:
+            keyCol: sampleId
+            joinColKey: sample
+            joinColData: ID
+        io:
+            inData:
+                id: inPheno
+                direction: input
+            outData:
+                id: outPheno
+                direction: output
+            keyTable:
+                id: outCol
+                direction: input
+    PCA:
+        spec:
+            function: SplitMatrixTable
+        io:
+            inData:
+                id: outMTx
+                direction: input
+            outData:
+                id: outMTx
+                direction: output
+            outCol:
+                id: outCol
+                direction: output
+            outRow:
+                id: outRow
                 direction: output

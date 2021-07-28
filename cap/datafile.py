@@ -3,6 +3,7 @@ import jsonschema
 import os
 
 import hail as hl
+from pandas.core.indexing import is_label_like
 from .logutil import *
 from .common import *
 from .helper import *
@@ -57,9 +58,6 @@ class DataFile:
 
         if 'isLoaded' not in file:
             file.isLoaded = False
-
-        if 'isReady' not in file:
-            file.isReady = False
 
         if 'isDumped' not in file:
             file.isDumped = False
@@ -308,9 +306,14 @@ class DataFile:
             return os.path.exists(path)
 
     @D_General
-    def Exist(self):
+    def ExistAll(self):
         disk = self.file.disk
         return all([self.ExistInternal(p) for p in disk.path])
+
+    @D_General
+    def ExistAny(self):
+        disk = self.file.disk
+        return any([self.ExistInternal(p) for p in disk.path])
         
 
     @D_General
@@ -370,6 +373,8 @@ class DataFile:
 
         file.isLoaded = True
 
+        self.CommonOperations()
+
     @D_General
     def Dump(self):
         file = self.file
@@ -421,8 +426,118 @@ class DataFile:
 
     @D_General
     def setData(self, data):
+        if self.file.isLoaded:
+            LogException('This file is alredy loaded')
         self.data = data
-        self.file.isReady = True
+        self.file.isLoaded = True
+        self.CommonOperations()
+
+    @D_General
+    def CommonOperations(self):
+        file = self.file
+
+        if 'commonOperations' in self.file:
+            if not file.isLoaded:
+                LogException('Data is not ready to perform common operation')
+            if file.isDumped:
+                LogException('Data has been already dumped. Applying common operation will take no effect.')
+
+
+            if file.memory.format == 'mt':
+                self.CommonOperationsMatrixTable()
+            elif file.memory.format == 'ht':
+                self.CommonOperationsTable()
+
+    @D_General
+    def CommonOperationsTable(self):
+        file = self.file
+        if file.memory.format != 'mt':
+            LogException('This function only act on matrix tables')
+        
+        mt = self.data
+        operations = self.file.commonOperations
+
+        print(operations)  # To be implemented
+
+        self.data = mt
+
+    @D_General
+    def CommonOperationsMatrixTable(self):
+
+        file = self.file
+        if file.memory.format != 'mt':
+            LogException('This function only act on matrix tables')
+        
+        mt = self.data
+        operations = self.file.commonOperations
+
+        supportedOperations = [
+            'gtOnly',
+            'drop',
+            'rename',
+            'annotateRows',
+            'annotateCols',
+            'annotateGlobals',
+            'annotateEntries',
+            'maf',
+            'ldPrune',
+            'subSample',
+            'splitMulti',
+            'addId'
+        ]
+
+        for op in operations:
+            if op not in supportedOperations:
+                LogException(f'Operation {op} is not supported')
+
+        for op in operations:
+            params = operations[op]
+            try:
+                if op=='rename':
+                    mt = mt.rename(params)
+                elif op=='drop':
+                    mt = mt.drop(*params)
+                elif op=='gtOnly' and params==True:
+                    mt = mt.select_entries('GT')
+                elif op=='annotateRows': ### TBF so that the type is mentiond and enough data to form expression
+                    for k in params:
+                        if isinstance(params[k], dict):
+                            params[k] = hl.struct(**params[k])
+                        elif isinstance(params[k], list):
+                            if len(params[k]) == len(set(params[k])):
+                                params[k] = hl.set(params[k])
+                            else:
+                                params[k] = hl.array(params[k])
+                    mt = mt.annotate_rows(**params)
+                elif op=='annotateCols':
+                    mt = mt.annotate_cols(**params)
+                elif op=='annotateGlobals':
+                    mt = mt.annotate_globals(**params)
+                elif op=='annotateEntries':
+                    mt = mt.annotate_entries(**params)
+                elif op=='maf':
+                    # Calculate MAF in a coloum (avoid writing on existing cols by using a random col name)
+                    mafColName = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+                    mafExpr = {mafColName : hl.min(hl.agg.call_stats(mt.GT, mt.alleles).AF)}
+                    mt = mt.annotate_rows(**mafExpr)
+                    # Apply filter
+                    mt = mt.filter_rows((mt[mafColName] >= params.min) & (mt[mafColName] <= params.max), keep=True)
+                elif op=='ldPrune':
+                    prunList = hl.ld_prune(mt.GT, **params)
+                    mt = mt.filter_rows(hl.is_defined(prunList[mt.row_key]))
+                elif op=='subSample':
+                    mt = SampleRows(mt, params)
+                elif op=='splitMulti':
+                    mt = SplitMulti(mt, params)
+                elif op=='addId':
+                    mt = AddId(mt, params)
+                else:
+                    LogException(f'Something Wrong in the code')
+            except:
+                LogException(f'Hail cannot perfom {op} with args: {params}.')
+            Log(f'{op} done with agrs: {params}.')
+
+        self.data = mt
 
 
 # @D_General

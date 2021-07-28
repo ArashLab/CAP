@@ -311,82 +311,8 @@ def InferColumnTypes(df):
     return df
 
 @D_General
-def CommonMatrixTableOperations(mt, operations):
-    if isinstance(operations, list):
-        Log(f'{len(operations)} sets of common operations is given.')
-        for operationsSet in operations:
-            mt = CommonMatrixTableOperationsSet(mt, operationsSet)
-    else:
-        Log(f'Only one set of common operations is given.')
-        mt = CommonMatrixTableOperationsSet(mt, operations)
-
-    return mt
-
-@D_General
-def CommonMatrixTableOperationsSet(mt, operations):
-
-    # The order is important
-    supportedOperations = [
-        'gtOnly',
-        'drop',
-        'rename',
-        'annotateRows',
-        'annotateCols',
-        'annotateGlobals',
-        'annotateEntries',
-        'maf',
-        'ldPrune',
-        'subSample',
-        'splitMulti',
-        'addId'
-    ]
-
-    for op in operations:
-        if op not in supportedOperations:
-            LogException(f'Operation {op} is not supported')
-
-    for op in supportedOperations: # The order is important
-        if op in operations:
-            params = operations[op]
-            try:
-                if op=='rename':
-                    mt = mt.rename(params)
-                elif op=='drop':
-                    mt = mt.drop(*params)
-                elif op=='gtOnly' and params==True:
-                    mt = mt.select_entries('GT')
-                elif op=='annotateRows':
-                    mt = mt.annotate_rows(**params)
-                elif op=='annotateCols':
-                    mt = mt.annotate_cols(**params)
-                elif op=='annotateGlobals':
-                    mt = mt.annotate_globals(**params)
-                elif op=='annotateEntries':
-                    mt = mt.annotate_entries(**params)
-                elif op=='maf':
-                    # Calculate MAF in a coloum (avoid writing on existing cols by using a random col name)
-                    mafColName = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-                    mafExpr = {mafColName : hl.min(hl.agg.call_stats(mt.GT, mt.alleles).AF)}
-                    mt = mt.annotate_rows(**mafExpr)
-                    # Apply filter
-                    mt = mt.filter_rows((mt[mafColName] >= params.min) & (mt[mafColName] <= params.max), keep=True)
-                elif op=='ldPrune':
-                    prunList = hl.ld_prune(mt.GT, **params)
-                    mt = mt.filter_rows(hl.is_defined(prunList[mt.row_key]))
-                elif op=='subSample':
-                    mt = SampleRows(mt, params)
-                elif op=='splitMulti':
-                    mt = SplitMulti(mt, params)
-                elif op=='addId':
-                    mt = AddId(mt, params)
-                else:
-                    LogException(f'Something Wrong in the code')
-            except:
-                LogException(f'Hail cannot perfom {op} with args: {params}.')
-            Log(f'{op} done with agrs: {params}.')
-
-    return mt
-
+def GetFile(iof):    
+    return Shared.dataFiles[iof.id]
 
 @D_General
 def UnpackStage(stage):
