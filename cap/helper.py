@@ -173,6 +173,7 @@ def FlattenTable(ht):
         Table: Flattened table.
     """
 
+    keyCol = list(ht.key)
     doneFlag = False
     while not doneFlag:
         ht = ht.flatten().expand_types().flatten()
@@ -190,7 +191,7 @@ def FlattenTable(ht):
                     Log(f'{maxLen} new column to be created out of {k} array.')
                     expr = dict()
                     for i in range(1, maxLen+1):
-                        expr[f'{k}.{i}'] = ht[k][i-1]
+                        expr[f'{k}_{i}'] = ht[k][i-1]
                     try:
                         ht = ht.annotate(**expr)
                     except:
@@ -210,6 +211,7 @@ def FlattenTable(ht):
                     except:
                         LogException(f'Cannot perform annotation with expression {expr}.')
 
+    ht = ht.key_by(*keyCol)
     Count(ht)
     return ht
 

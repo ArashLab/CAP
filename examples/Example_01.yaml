@@ -47,13 +47,13 @@ dataFiles:
         disk:
             path: 1kg.pheno.ht
 
-    PcaScore:
-        memory:
-            type: ht
-
-    PcaScoreKey:
+    pcaScore:
         disk:
             path: 1kg.pca.ht
+
+    outPval:
+        disk:
+            path: 1kg.pval.ht
 
 #gzip -dc 1kg.micro2.vcf.bgz | head -n 98 | tail | cut -f 1-10 | column -t
 
@@ -62,6 +62,8 @@ executionPlan:
     # - CO2
     - SMT
     - KBT
+    - PCA
+    - ASSOC
 
 stages:
     CO1:
@@ -119,17 +121,49 @@ stages:
                 direction: input
     PCA:
         spec:
-            function: SplitMatrixTable
+            function: PcaHweNorm
+        arg:
+            numPcaVectors: 3
+        io:
+            inData:
+                id: outMTx
+                direction: input
+            outScores:
+                id: pcaScore
+                direction: output
+
+    ASSOC:
+        spec:
+            function: HailAssociation
+        arg:
+            tests:
+                -   type: LR
+                    covar:
+                        -   table: pca
+                            cols:
+                                - scores_1
+                                - scores_2
+                                - scores_3
+                        -   table: pheno
+                            cols:
+                                - sex
+                    phenos:
+                        -   table: pheno
+                            cols:
+                                - t2d
         io:
             inData:
                 id: outMTx
                 direction: input
             outData:
-                id: outMTx
+                id: outPval
                 direction: output
-            outCol:
-                id: outCol
-                direction: output
-            outRow:
-                id: outRow
-                direction: output
+            pca:
+                id: pcaScore
+                direction: input
+            pheno:
+                id: outPheno
+                direction: input
+
+    
+           

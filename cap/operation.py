@@ -118,6 +118,7 @@ def PcaHweNorm(stage):
         else:
             cl['compute_loadings'] = False
         eigenvalues, pcs, loading = hl.hwe_normalized_pca(mt.GT, k=arg.numPcaVectors, **cl)
+        pcs = FlattenTable(pcs)
     except:
         LogException('Hail cannot perform the pca analysis')
 
@@ -131,6 +132,43 @@ def PcaHweNorm(stage):
     #     io.outPcaLoading.data = loading
     # if 'outPcaVarList' in io:
     #     io.outPcaVarList.data = mt.rows().select()
+
+@D_General
+def HailAssociation(stage):
+    spec, arg, io = UnpackStage(stage)
+
+    ##### >>>>>>> Input/Output <<<<<<<<
+    inData = GetFile(io.inData)
+    outData = GetFile(io.outData)
+    tables = dict()
+    for tableId in io:
+        if tableId not in ['inData', 'outData']:
+            tables[tableId] = GetFile(io[tableId])
+
+
+    ##### >>>>>>> Live Input <<<<<<<<
+    mt = inData.data
+
+    ##### >>>>>>> STAGE Code <<<<<<<<
+
+    for test in arg.tests:
+        htCovar = None
+        print(f'>>>>>>>>>>>{test.type}')
+        if 'covar' in test:
+            for cv in test.covar:
+                ht = tables[cv.table].data
+                ht = ht.select(*cv.cols)
+                if htCovar:
+                    htCovar = htCovar.join(ht, how='outer')
+                else:
+                    htCovar.describe()
+   
+        htCovar.describe()
+
+
+    ##### >>>>>>> Live Output <<<<<<<<
+    outData.setData(htCovar)
+
 
 
 @D_General
