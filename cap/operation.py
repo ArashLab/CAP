@@ -177,16 +177,20 @@ def HailAssociation(stage):
                         res = hl.logistic_regression_rows(
                             test=test.subType, y=ht[mt.sampleId][col.colName], x=mt.GT.n_alt_alleles(), 
                             covariates=covars, pass_through=['variantId'])
-                        res = res.key_by('variantId')
-                        res = res.drop('locus', 'alleles')
-                        expr = {col.testName: hl.struct(**dict(res.row_value))}
-                        res = res.annotate(**expr)
-                        res = res.select(res[col.testName])
-                        if htResults[col.resTableId]:
+                    elif test.type == 'LinReg':
+                        res = hl.linear_regression_rows(
+                            y=ht[mt.sampleId][col.colName], x=mt.GT.n_alt_alleles(), 
+                            covariates=covars, pass_through=['variantId'])
+                    res = res.key_by('variantId')
+                    res = res.drop('locus', 'alleles')
+                    expr = {col.testName: hl.struct(**dict(res.row_value))}
+                    res = res.annotate(**expr)
+                    res = res.select(res[col.testName])
+                    if htResults[col.resTableId]:
 
-                            htResults[col.resTableId] = htResults[col.resTableId].join(res, how='outer')
-                        else:
-                            htResults[col.resTableId] = res
+                        htResults[col.resTableId] = htResults[col.resTableId].join(res, how='outer')
+                    else:
+                        htResults[col.resTableId] = res
         
         #output[] = htResults
 

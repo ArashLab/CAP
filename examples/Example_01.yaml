@@ -174,8 +174,8 @@ stages:
                                 -   colName: t2d
                                     testName: Binary-Pheno4
                                     resTableId: outData2
-                -   type: LR
-                    subtype: score
+                -   type: LogReg
+                    subType: score
                     covariates:
                         -   table: pca
                             cols:
@@ -200,6 +200,29 @@ stages:
                                 -   colName: t2d
                                     testName: Binary-Pheno4-LessPCA-Score
                                     resTableId: outData1
+                -   type: LinReg
+                    covariates:
+                        -   table: pca
+                            cols:
+                                - scores_1
+                                - scores_2
+                        # -   table: pheno
+                        #     cols:
+                        #         - sex
+                    responseVariables:
+                        -   tableId: pheno
+                            cols:
+                                -   colName: bmi
+                                    testName: Linear-Pheno1
+                                    resTableId: outData1
+                                -   colName: age
+                                    testName: Linear-Pheno2
+                                    resTableId: outData2
+                        -   tableId: pca
+                            cols:
+                                -   colName: scores_3
+                                    testName: Linear-Pheno3
+                                    resTableId: outData2
         io:
             inData:
                 id: outMTx
