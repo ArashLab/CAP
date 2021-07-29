@@ -139,10 +139,9 @@ def HailAssociation(stage):
 
     ##### >>>>>>> Input/Output <<<<<<<<
     inData = GetFile(io.inData)
-    outData = GetFile(io.outData)
     tables = dict()
     for tableId in io:
-        if tableId not in ['inData', 'outData']:
+        if tableId not in ['inData']:
             tables[tableId] = GetFile(io[tableId])
 
 
@@ -151,24 +150,49 @@ def HailAssociation(stage):
 
     ##### >>>>>>> STAGE Code <<<<<<<<
 
+    htResults = {tbl: None for tbl in arg.resTables}
+    print(htResults)
+
     for test in arg.tests:
         htCovar = None
-        print(f'>>>>>>>>>>>{test.type}')
-        if 'covar' in test:
-            for cv in test.covar:
+        if 'covariates' in test:
+            for cv in test.covariates:
                 ht = tables[cv.table].data
                 ht = ht.select(*cv.cols)
                 if htCovar:
                     htCovar = htCovar.join(ht, how='outer')
                 else:
-                    htCovar.describe()
-   
-        htCovar.describe()
+                    htCovar = ht
 
+        covars = [1]#, list()
+        for field in htCovar.row_value:
+            covars.append(htCovar[mt.sampleId][field])
+
+        if 'responseVariables' in test:
+            for table in test.responseVariables:
+                ht = tables[table.tableId].data
+                for col in table.cols:
+
+                    if test.type == 'LogReg':
+                        res = hl.logistic_regression_rows(
+                            test=test.subType, y=ht[mt.sampleId][col.colName], x=mt.GT.n_alt_alleles(), 
+                            covariates=covars, pass_through=['variantId'])
+                        res = res.key_by('variantId')
+                        res = res.drop('locus', 'alleles')
+                        expr = {col.testName: hl.struct(**dict(res.row_value))}
+                        res = res.annotate(**expr)
+                        res = res.select(res[col.testName])
+                        if htResults[col.resTableId]:
+
+                            htResults[col.resTableId] = htResults[col.resTableId].join(res, how='outer')
+                        else:
+                            htResults[col.resTableId] = res
+        
+        #output[] = htResults
 
     ##### >>>>>>> Live Output <<<<<<<<
-    outData.setData(htCovar)
-
+    for tbl in arg.resTables:
+        tables[tbl].setData(htResults[tbl])
 
 
 @D_General

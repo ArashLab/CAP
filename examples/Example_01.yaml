@@ -43,6 +43,8 @@ dataFiles:
     inPheno:
         disk:
             path: 1kg.pheno.tsv
+            importParam:
+                impute: True
     outPheno:
         disk:
             path: 1kg.pheno.ht
@@ -51,9 +53,13 @@ dataFiles:
         disk:
             path: 1kg.pca.ht
 
-    outPval:
+    outPval1:
         disk:
-            path: 1kg.pval.ht
+            path: 1kg.pval1.ht
+
+    outPval2:
+        disk:
+            path: 1kg.pval2.ht
 
 #gzip -dc 1kg.micro2.vcf.bgz | head -n 98 | tail | cut -f 1-10 | column -t
 
@@ -136,27 +142,73 @@ stages:
         spec:
             function: HailAssociation
         arg:
+            resTables:
+                - outData1
+                - outData2
             tests:
-                -   type: LR
-                    covar:
+                -   type: LogReg
+                    subType: wald
+                    covariates:
                         -   table: pca
                             cols:
                                 - scores_1
                                 - scores_2
                                 - scores_3
-                        -   table: pheno
+                        # -   table: pheno
+                        #     cols:
+                        #         - sex
+                    responseVariables:
+                        -   tableId: pheno
                             cols:
-                                - sex
-                    phenos:
-                        -   table: pheno
+                                -   colName: t2d
+                                    testName: Binary-Pheno1
+                                    resTableId: outData1
+                                -   colName: t2d
+                                    testName: Binary-Pheno2
+                                    resTableId: outData1
+                        -   tableId: pheno
                             cols:
-                                - t2d
+                                -   colName: t2d
+                                    testName: Binary-Pheno3
+                                    resTableId: outData1
+                                -   colName: t2d
+                                    testName: Binary-Pheno4
+                                    resTableId: outData2
+                -   type: LR
+                    subtype: score
+                    covariates:
+                        -   table: pca
+                            cols:
+                                - scores_1
+                        # -   table: pheno
+                        #     cols:
+                        #         - sex
+                    responseVariables:
+                        -   tableId: pheno
+                            cols:
+                                -   colName: t2d
+                                    testName: Binary-Pheno1-LessPCA-Score
+                                    resTableId: outData2
+                                -   colName: t2d
+                                    testName: Binary-Pheno2-LessPCA-Score
+                                    resTableId: outData2
+                        -   tableId: pheno
+                            cols:
+                                -   colName: t2d
+                                    testName: Binary-Pheno3-LessPCA-Score
+                                    resTableId: outData1
+                                -   colName: t2d
+                                    testName: Binary-Pheno4-LessPCA-Score
+                                    resTableId: outData1
         io:
             inData:
                 id: outMTx
                 direction: input
-            outData:
-                id: outPval
+            outData1:
+                id: outPval1
+                direction: output
+            outData2:
+                id: outPval2
                 direction: output
             pca:
                 id: pcaScore
