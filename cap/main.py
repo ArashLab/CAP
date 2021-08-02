@@ -45,9 +45,11 @@ if __name__ == '__main__':
     print('============================================')
     print('============================================')
     print('CAP is executed as an standalon application.')
+    print()
 
     Main()
 
+    print()
     print('CAP execution is compeleted.')
     print('============================================')
     print('============================================')
