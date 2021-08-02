@@ -13,7 +13,7 @@ from datetime import datetime
 from copy import deepcopy
 
 if __name__ == '__main__':
-    print('This module is not executable. Import this module in your program.')
+    print('This module is not executable.')
     exit(0)
 
 class Executor:
@@ -46,7 +46,7 @@ class Executor:
             LogPrint("+++++++++++++++++++++++++++++++")
             LogPrint("+++++++++++++++++++++++++++++++")
             LogPrint("+++++++++++++++++++++++++++++++")
-            Log(f'Runtime Information: {Shared.runtime}')
+            LogPrint(f'Runtime Information: {Shared.runtime}')
             LogPrint("+++++++++++++++++++++++++++++++")
             LogPrint("+++++++++++++++++++++++++++++++")
             LogPrint("+++++++++++++++++++++++++++++++")

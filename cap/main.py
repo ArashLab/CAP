@@ -12,7 +12,7 @@ from cap.executor import Executor
 def CapMain(args):
     workload = Workload(path=args.workload)
     executor = Executor(workload, hailLog=args.hailLog)
-    executor.Execute()
+    # executor.Execute()
 
 
 

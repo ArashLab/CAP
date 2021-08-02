@@ -10,6 +10,27 @@ import platform
 Shared = Munch()
 
 #################################################
+##### Default Values
+#################################################
+
+Shared.defaults = Munch()
+
+Shared.defaults.fileSystem = 'local'
+Shared.defaults.vepCheckWaitTime = 5
+Shared.defaults.localMode = True
+Shared.defaults.persistence = None
+
+Shared.defaults.numPartitions = Munch()
+Shared.defaults.numPartitions.default = 4
+Shared.defaults.numPartitions.min = 1
+Shared.defaults.numPartitions.max = 64 
+ 
+Shared.defaults.numSgeJobs = Munch()
+Shared.defaults.numSgeJobs.default = 4
+Shared.defaults.numSgeJobs.min = 1
+Shared.defaults.numSgeJobs.max = 32
+
+#################################################
 ##### Runtime information
 #################################################
 
@@ -39,28 +60,13 @@ for envVar in ['CAP_HOME', 'PYSPARK_PYTHON', 'HAIL_HOME', 'SPARK_HOME', 'HDFS_HO
 Shared.CurrentStageForLogging = None
 
 #################################################
-##### input & output (io) of the stages
+##### Data Files
 #################################################
 
-Shared.dataFiles = Munch()
+# Shared.dataFiles = Munch()
 
 #################################################
-##### Default Values
+##### Stages
 #################################################
 
-Shared.defaults = Munch()
-
-Shared.defaults.fileSystem = 'local'
-Shared.defaults.vepCheckWaitTime = 5
-Shared.defaults.localMode = True
-Shared.defaults.persistence = None
-
-Shared.defaults.numPartitions = Munch()
-Shared.defaults.numPartitions.default = 4
-Shared.defaults.numPartitions.min = 1
-Shared.defaults.numPartitions.max = 64 
- 
-Shared.defaults.numSgeJobs = Munch()
-Shared.defaults.numSgeJobs.default = 4
-Shared.defaults.numSgeJobs.min = 1
-Shared.defaults.numSgeJobs.max = 32
+# Shared.stages = Munch()

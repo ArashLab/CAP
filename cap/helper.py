@@ -19,10 +19,62 @@ import io
 import pandas as pd
 
 if __name__ == '__main__':
-    print('This module is not executable. Import this module in your program.')
+    print('This module is not executable.')
     exit(0)
 
-# TBF: Live JSON Input/Output are not supported yet. (Like PCA Eigen)
+def AbsPath(path):
+
+    inpath=path
+    
+    # replace ~ and ${VAR} with actual values
+    path=os.path.expandvars(path)
+
+    if path.lower().startswith('hdfs://'):
+        abspath = path
+    elif path.lower().startswith('file://'):
+        abspath = path[7:]
+        abspath = os.path.abspath(abspath)
+        abspath = f'file://{abspath}'
+    else:
+        if True:
+            abspath = os.path.abspath(path)
+            abspath = f'file://{abspath}'
+        elif Shared['fileSystem'] == 'hdfs':
+            abspath = f'hdfs://{path}'
+        else:
+            abspath = os.path.abspath(path)
+
+    Log(f'Absolute path of {inpath} is {abspath}')
+    return abspath
+
+# not to have D_General as these function may be called in a wait loop in VEP annotation function
+def GetLocalPath(path, silent=False):
+    inPath = path
+    if path.lower().startswith('hdfs://'):
+        LogException(f'hdfs pathes are not local: {path}')
+    elif path.lower().startswith('file://'):
+        if not silent:
+            Log(f'Removeing file:// from {path}')
+        path = path[7:]
+    path = os.path.abspath(path)
+    if not silent:
+        Log(f'Local path of {inPath} is {path}')
+    return path
+
+# not to have D_General as these function may be called in a wait loop in VEP annotation function
+def FileExist(path, silent=False):
+    if path.lower().startswith('hdfs://'):
+        return not subprocess.run(['hdfs', 'dfs', '-test', '-e', path]).returncode
+    else:
+        path = GetLocalPath(path, silent)
+        return os.path.exists(path)
+
+def WildCardPath(path):
+    path = GetLocalPath(path)
+    fileList = glob.glob(path)
+    Log(f'{len(fileList)} files are found in {path}')
+    return fileList
+
 
 @D_General
 def Bash(command, isPath):
@@ -157,6 +209,16 @@ def AddId(mt, params):
         else:
             LogException('VariantId is not Supported')
     
+    return mt
+
+@D_General
+def ForVep(mt):
+
+    mt = mt.annotate_rows(rsid=hl.str(mt.variantId))
+    ht = mt.rows().select('rsid')
+    mt = hl.MatrixTable.from_rows_table(ht)
+    mt = mt.annotate_cols(sampleId='Dummy') # Neded For VCF Export purpose
+    mt = mt.key_cols_by(mt.sampleId)
     return mt
 
 @D_General
@@ -301,6 +363,7 @@ def CheckRange(varName):
 def CheckDefaults():
     CheckRange('numPartitions')
     CheckRange('numSgeJobs')
+    Log('Default values are updated and checked.')
 
 @D_General
 def InferColumnTypes(df):
@@ -318,17 +381,46 @@ def GetFile(iof):
 
 @D_General
 def UnpackStage(stage):
-    arg = Munch()
-    io = Munch()
-    spec = Munch()
+    stage = stage.stageInfo
+    specifications = stage.get('specifications', Munch())
+    parameters = stage.get('parameters', Munch())
+    dataFiles = stage.get('dataFiles', Munch())
+    runtimes = stage.get('runtimes', Munch())
+    return specifications, parameters, dataFiles, runtimes
 
-    if 'spec' in stage:
-        spec = stage.spec
+@D_General
+def StrListStr(item):
+    if isinstance(item, str):
+        item = [item]
+    elif isinstance(item, list):
+        for k in item:
+            if not isinstance(item, str):
+                LogException('if key is a list, it must be list of str')
+    else:
+        LogException('key must be str or list of str')
+    return item
 
-    if 'arg' in stage:
-        arg = stage.arg
-    
-    if 'io' in stage:
-        io = stage.io
+@D_General
+def KeyBy(mht, key, axis=None):
+    key = StrListStr(key)
 
-    return spec, arg, io
+    if isinstance(mht, hl.Table):
+        ht = mht
+        if key not in list(ht.row):
+            LogException(f'Key ({key}) is not presented in the table')
+        ht = ht.key_by(key)
+    elif isinstance(mht, hl.MatrixTable):
+        mt = mht
+        if not axis:
+            LogException('Axis must present for matrixtable')
+        if axis not in ['row', 'col']:
+            LogException(f'Axis must be row or col but its :{axis}')
+
+        if axis == 'row':
+            if key not in list(mt.row):
+                LogException(f'Key ({key}) is not presented in the matrixtable row')
+            mt = mt.key_row_by(key)
+        elif axis == 'col':
+            if key not in list(mt.col):
+                LogException(f'Key ({key}) is not presented in the matrixtable col')
+            mt = mt.key_col_by(key)

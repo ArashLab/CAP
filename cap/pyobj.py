@@ -10,7 +10,7 @@ from .helper import *
 from .decorators import *
 
 if __name__ == '__main__':
-    print('This module is not executable. Import this module in your program.')
+    print('This module is not executable.')
     exit(0)
 
 

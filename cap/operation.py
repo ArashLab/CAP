@@ -11,12 +11,12 @@ from .helper import *
 from .shared import Shared
 
 if __name__ == '__main__':
-    print('This module is not executable. Import this module in your program.')
+    print('This module is not executable.')
     exit(0)
 
 @D_General
-def CommonOperations(stage):
-    spec, arg, io = UnpackStage(stage)
+def Empty(stage):
+    specifications, parameters, dataFiles, runtimes = UnpackStage(stage)
 
     ##### >>>>>>> Input/Output <<<<<<<<
     inData = GetFile(io.inData)
@@ -29,7 +29,7 @@ def CommonOperations(stage):
     # DO Nothing (Just Common Operation)
 
     ##### >>>>>>> Live Output <<<<<<<<
-    outData.setData(data)
+    outData.SetData(data)
 
 @D_General
 def SplitMatrixTable(stage):
@@ -63,9 +63,9 @@ def SplitMatrixTable(stage):
     mt = mt.drop(*list(dropKeys))
 
     ##### >>>>>>> Live Output <<<<<<<<
-    outData.setData(mt)
-    outCol.setData(ht_col)
-    outRow.setData(ht_row)
+    outData.SetData(mt)
+    outCol.SetData(ht_col)
+    outRow.SetData(ht_row)
 
 @D_General
 def KeyByTable(stage):
@@ -96,7 +96,7 @@ def KeyByTable(stage):
     ht = ht.key_by(keyCol)
 
     ##### >>>>>>> Live Output <<<<<<<<
-    outData.setData(ht)
+    outData.SetData(ht)
 
 @D_General
 def PcaHweNorm(stage):
@@ -125,7 +125,7 @@ def PcaHweNorm(stage):
     logger.info(f'PCA is computed')
 
     ##### >>>>>>> Live Output <<<<<<<<
-    outScores.setData(pcs)
+    outScores.SetData(pcs)
     # if 'outPcaEigen' in io:
     #     io.outPcaEigen.data = eigenvalues
     # if 'outPcaLoading' in io:
@@ -196,7 +196,7 @@ def HailAssociation(stage):
 
     ##### >>>>>>> Live Output <<<<<<<<
     for tbl in arg.resTables:
-        tables[tbl].setData(htResults[tbl])
+        tables[tbl].SetData(htResults[tbl])
 
 
 @D_General
@@ -296,13 +296,16 @@ def MergeMatrixTables(stage):
     spec, arg, io = UnpackStage(stage)
 
     ##### >>>>>>> Input/Output <<<<<<<<
-    input = io.input
-    output = io.output
+    inData = io.inData
+    outData = io.outData
 
     ##### >>>>>>> Live Input <<<<<<<<
-    mts = [Shared.data[path] for path in input.path]
+    mts = [Shared.data[path] for path in inData.path]
 
     ##### >>>>>>> STAGE Code <<<<<<<<
+
+    if not mts:
+        LogException('No Matrix table is loaded')
 
     if 'joinType' in arg:
         joinType = arg.joinType
@@ -321,7 +324,51 @@ def MergeMatrixTables(stage):
 
 
     ##### >>>>>>> Live Output <<<<<<<<
-    output.data = mt
+    outData.data = mt
+
+@D_General
+def MergeTables(stage):
+    spec, arg, io = UnpackStage(stage)
+
+    ##### >>>>>>> Input/Output <<<<<<<<
+    inData = io.inData
+    outData = io.outData
+
+    ##### >>>>>>> Live Input <<<<<<<<
+    hts = [Shared.data[path] for path in inData.path]
+
+    ##### >>>>>>> STAGE Code <<<<<<<<
+
+    if not hts:
+        LogException('No Table is loaded')
+
+    how = arg.get('how')
+    how = how if how else 'inner'
+    if how not in ['inner', 'outer', 'left', 'right']:
+        LogException('Join type is not supported.')
+
+    inKeys = arg.get('inKeys')
+    if not inKeys:
+        LogException('Keys must present')
+    if not isinstance(inKeys, list):
+        LogException('keys must be of type list')
+    if len(inKeys) != len(hts):
+        LogException(f'number of keys ({len(inKeys)}) does not match number of tables ({len(hts)})')
+
+    ht = hts[0]
+    ht = KeyBy(ht, inKeys[0])
+
+    if len(hts) > 1:
+        for i in range(1, len(hts)):
+            ht2 = KeyBy(ht[i], inKeys[i])
+            ht = ht.join(ht2, how=how)
+    
+    outKey = arg.get('outKey')
+    if outKey:
+        ht = KeyBy(ht, outKey)
+
+    ##### >>>>>>> Live Output <<<<<<<<
+    outData.data = ht
 
 
 @D_General
@@ -452,19 +499,31 @@ def VepAnnotation(stage):
     spec, arg, io = UnpackStage(stage)
 
     ##### >>>>>>> Input/Output <<<<<<<<
-    inVar = io.inVar
-    outData = io.outData  # use the path for the output files
+    inData = GetFile(io.inData)
+    outData = GetFile(io.outData)
 
     ##### >>>>>>> Live Input <<<<<<<<
 
     ##### >>>>>>> STAGE Code <<<<<<<<
+    inFile = inData.file.disk
+    outFile = outData.file.disk
+
+    if outFile.get('format') != 'dir':
+        LogException('Currently not supported')
+
+    inPath = inFile.path[0]
+    outPath = outFile.path[0]
+
     try:
-        path = inVar.path
         templateCommand = arg.vepCli
 
-        Bash(command=['mkdir', outData.path], isPath=[False, True])
+        Bash(command=['mkdir', outPath], isPath=[False, True])
 
-        vcfList = WildCardPath(path + '/part-*.bgz')
+        if inFile.get('isParallel'):
+            vcfList = WildCardPath(inPath + '/part-*.bgz')
+        else:
+            LogException('Currently not supported')
+
         numJob = len(vcfList)
 
         if 'isArrayJob' in arg and arg.isArrayJob:
@@ -483,10 +542,10 @@ def VepAnnotation(stage):
             # submit the array job
 
             command = templateCommand
-            command = [path if p == '__VCF_DIR__' else p for p in command]
-            command = [outData.path if p == '__JSON_DIR__' else p for p in command]
-            command = [outData.path if p == '__TBL_DIR__' else p for p in command]
-            command = [outData.path if p == '__JOB_DIR__' else p for p in command]
+            command = [inPath if p == '__VCF_DIR__' else p for p in command]
+            command = [outPath if p == '__JSON_DIR__' else p for p in command]
+            command = [outPath if p == '__TBL_DIR__' else p for p in command]
+            command = [outPath if p == '__JOB_DIR__' else p for p in command]
             command = [f'CAP' if p == '__JOB_NAME__' else p for p in command]
             command = ['1' if p == '__JOB_START__' else p for p in command]
             command = [str(numJob) if p == '__JOB_END__' else p for p in command]
@@ -503,9 +562,9 @@ def VepAnnotation(stage):
                 code = fileName[5:10]
                 command = templateCommand
                 command = [vcf if p == '__IN_VCF__' else p for p in command]
-                command = [os.path.join(outData.path, f'part-{code}.json.bgz')if p == '__OUT_JSON__' else p for p in command]
-                command = [os.path.join(outData.path, f'part-{code}.table') if p == '__OUT_TBL__' else p for p in command]
-                command = [os.path.join(outData.path, f'part-{code}.job') if p == '__OUT_JOB__' else p for p in command]
+                command = [os.path.join(outPath, f'part-{code}.json.bgz')if p == '__OUT_JSON__' else p for p in command]
+                command = [os.path.join(outPath, f'part-{code}.table') if p == '__OUT_TBL__' else p for p in command]
+                command = [os.path.join(outPath, f'part-{code}.job') if p == '__OUT_JOB__' else p for p in command]
                 command = [f'CAP-{code}' if p == '__JOB_ID__' else p for p in command]
 
                 Bash(command, isPath=[False, True, True, True, True, False, True, True])
@@ -519,7 +578,7 @@ def VepAnnotation(stage):
             for vcf in vcfList:
                 fileName = os.path.basename(vcf)
                 code = fileName[5:10]
-                doneFile = os.path.join(outData.path, f'part-{code}.job.done')
+                doneFile = os.path.join(outPath, f'part-{code}.job.done')
                 if FileExist(doneFile, silent=True):
                     numCompeleted += 1
             if numCompeleted != numJob:
@@ -535,41 +594,55 @@ def VepAnnotation(stage):
 
     ##### >>>>>>> Live Output <<<<<<<<
 
-
 @D_General
 def VepLoadTables(stage):
     spec, arg, io = UnpackStage(stage)
 
     ##### >>>>>>> Input/Output <<<<<<<<
-    inData = io.inData
+    inData = GetFile(io.inData)
+    if 'var' in arg.tables:
+        outVar = GetFile(io.outVar)
+    if 'clvar' in arg.tables:
+        outClVar = GetFile(io.outClVar)
+    if 'freq' in arg.tables:
+        outFreq = GetFile(io.outFreq)
+    if 'conseq' in arg.tables:
+        outConseq = GetFile(io.outConseq)
+        outConseqToVar = GetFile(io.outConseqToVar)
+        outConseqToTerms = GetFile(io.outConseqToTerms)
+        outVarTerms = GetFile(io.outVarTerms)
 
     ##### >>>>>>> Live Input <<<<<<<<
 
     ##### >>>>>>> STAGE Code <<<<<<<<
+
+    inFile = inData.file.disk
+    inPath = inFile.path[0]
+
     if 'all' in arg.tables:
         arg.tables = ['var', 'clvar', 'freq', 'conseq']
 
-    path = inData.path
     try:  # TBF it currently check if the folder exist or not. should find a way to check all parquet files
         if 'var' in arg.tables:
-            tblList = AbsPath(path + '/part-*.var.parquet')
+            tblList = AbsPath(inPath + '/part-*.var.parquet')
             htVar = ImportMultipleTable(tblList)
 
         if 'clvar' in arg.tables:
-            tblList = AbsPath(path + '/part-*.clvar.parquet')
+            tblList = AbsPath(inPath + '/part-*.clvar.parquet')
             htClVar = ImportMultipleTable(tblList, addFileNumber=True)
 
         if 'freq' in arg.tables:
-            tblList = AbsPath(path + '/part-*.freq.parquet')
+            tblList = AbsPath(inPath + '/part-*.freq.parquet')
             htFreq = ImportMultipleTable(tblList)
 
         if 'conseq' in arg.tables:
-            tblList = AbsPath(path + '/part-*.conseq.parquet')
+            tblList = AbsPath(inPath + '/part-*.conseq.parquet')
             htConseq = ImportMultipleTable(tblList)
     except:
         LogException(f'Can not read parquet files')
 
     try:
+        pass
         if 'clvar' in arg.tables:
             # Process colocated-variants table
             htClVar = htClVar.annotate(clVarId=(htClVar.fileNumber * 2**32) + htClVar.clVarId)
@@ -606,17 +679,14 @@ def VepLoadTables(stage):
 
     ##### >>>>>>> Live Output <<<<<<<<
     if 'var' in arg.tables:
-        io.outVar.data = htVar
+        outVar.SetData(htVar)
     if 'clvar' in arg.tables:
-        io.outClVar.data = htClVar
+        outClVar.SetData(htClVar)
     if 'freq' in arg.tables:
+        outFreq.SetData(htFreq)
         io.outFreq.data = htFreq
     if 'conseq' in arg.tables:
-        io.outConseq.data = htConseq
-        io.outConseqToVar.data = htConseqToVar
-        io.outConseqTerms.data = htConseqTerms
-        io.outVarTerms.data = htVarTerms
-
-
-
-
+        outConseq.SetData(htConseq)
+        outConseqToVar.SetData(htConseqToVar)
+        outConseqToTerms.SetData(htConseqTerms)
+        outVarTerms.SetData(htVarTerms)

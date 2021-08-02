@@ -6,7 +6,7 @@ from datetime import datetime
 from inspect import getframeinfo, stack
 
 if __name__ == '__main__':
-    print('This module is not executable. Import this module in your program.')
+    print('This module is not executable.')
     exit(0)
 
 

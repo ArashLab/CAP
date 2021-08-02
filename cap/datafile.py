@@ -12,7 +12,7 @@ from .pyobj import PyObj
 from .shared import Shared
 
 if __name__ == '__main__':
-    print('This module is not executable. Import this module in your program.')
+    print('This module is not executable.')
     exit(0)
 
 class DataFile:
@@ -24,12 +24,12 @@ class DataFile:
         else:
             LogException(f'`file` must be of type Munch but the type is `{type(file)}`.')
 
-        self.Infer()
-        self.InferPath()
-        self.isInferred = True
-        self.ProcessPath()
+        # self.Infer()
+        # self.InferPath()
+        # self.isInferred = True
+        # self.ProcessPath()
 
-        self.InferMemory()
+        # self.InferMemory()
 
     @D_General
     def Infer(self):
@@ -159,6 +159,9 @@ class DataFile:
                 if any([c in p for c in ['*', '?', '[', ']']]):
                     inferred.isWildcard = True
 
+        if 'exportParam' in disk and 'parallel' in disk.exportParam and disk.exportParam.parallel:
+            inferred.isParallel = True
+
         # Check consistensy of the inferred and given information
         for k in disk.inferred:
             if k in disk:
@@ -260,6 +263,7 @@ class DataFile:
     @D_General
     def InferMemory(self):
         file = self.file
+
         if file.storageType == 'disk':
             if not 'memory' in file or not file.memory:  # memory could exist but an empty field
                 file.memory = Munch()
@@ -272,13 +276,13 @@ class DataFile:
             if file.disk.format in self.formatMapper:
                 inferred.formats = self.formatMapper[file.disk.format]
             else:
-                inferred.formats = []
+                inferred.formats = None
 
             if 'format' not in memory:
                 if inferred.formats:
                     memory.format = inferred.formats[0]
                 else:
-                    LogException('Could not identify memory format')
+                    Log('Could not identify memory format')
             else:
                 if memory.format not in inferred.formats:
                     LogException(f'Memory format `{memory.format}` is not supported for disk format `{file.disk.format}`. Acceptable memory formats are `{inferred.formats}`')
@@ -315,7 +319,6 @@ class DataFile:
         disk = self.file.disk
         return any([self.ExistInternal(p) for p in disk.path])
         
-
     @D_General
     def ExpandWildcardPathInternal(self, path):
         path = self.GetLocalPath(path)
@@ -335,23 +338,24 @@ class DataFile:
 
         importParam = disk.importParam if 'importParam' in disk else {}
 
+        data = None
         if memory.format == 'mt':
 
             if disk.format == 'mt':
                 if len(disk.path) > 1:
                     LogException('Not supported')
                 mt = hl.read_matrix_table(disk.path[0])    
-                self.data = mt
+                data = mt
 
             elif disk.format == 'vcf':
                 mt = hl.import_vcf(disk.path, **importParam)
-                self.data = mt
+                data = mt
 
             elif disk.format == 'plink-bfile':
                 if len(disk.path) > 1:
                     LogException('Not supported')
                 mt = hl.import_plink(bed=f'{disk.path[0]}.bed', bim=f'{disk.path[0]}.bim', fam=f'{disk.path[0]}.fam', **importParam)
-                self.data = mt
+                data = mt
 
         elif memory.format == 'ht':
 
@@ -359,21 +363,19 @@ class DataFile:
                 if len(disk.path) > 1:
                     LogException('Not supported')
                 ht = hl.read_table(disk.path[0])    
-                self.data = ht
+                data = ht
 
             elif disk.format == 'tsv':
                 importParam['delimiter'] = '\t'
                 ht = hl.import_table(disk.path, **importParam)
-                self.data = ht
+                data = ht
 
             elif disk.format == 'csv':
                 importParam['delimiter'] = ','
                 ht = hl.import_table(disk.path, **importParam)
-                self.data = ht
+                data = ht
 
-        file.isLoaded = True
-
-        self.CommonOperations()
+        self.SetData(data)
 
     @D_General
     def Dump(self):
@@ -425,12 +427,31 @@ class DataFile:
         file.isDumped = True
 
     @D_General
-    def setData(self, data):
+    def Partitioning(self):
+        if not self.file.isLoaded:
+            LogException('Data is not ready to perform common operation')
+
+        memory = self.file.memory
+        if memory.format in ['mt', 'ht']:
+            mht = self.data
+            mht = mht.repartition(memory.numPartitions)
+            if memory.persistence:
+                if memory.persistence not in ['DISK_ONLY', 'DISK_ONLY_2', 'MEMORY_ONLY', 'MEMORY_ONLY_2', 'MEMORY_ONLY_SER', 'MEMORY_ONLY_SER_2', 'MEMORY_AND_DISK', 'MEMORY_AND_DISK_2', 'MEMORY_AND_DISK_SER', 'MEMORY_AND_DISK_SER_2', 'OFF_HEAP']:
+                    LogException(f'Persistance {memory.persistence} level not supported')
+                mht = mht.persist(memory.persistence)
+            self.data = mht
+    
+    @D_General
+    def SetData(self, data):
         if self.file.isLoaded:
             LogException('This file is alredy loaded')
-        self.data = data
+        
+        self.data = data 
         self.file.isLoaded = True
+
+        self.Partitioning()
         self.CommonOperations()
+        self.Partitioning()  ## TBF
 
     @D_General
     def CommonOperations(self):
@@ -483,8 +504,10 @@ class DataFile:
             'ldPrune',
             'subSample',
             'splitMulti',
-            'addId'
+            'addId',
+            'forVep'
         ]
+        # KeyBy KeyBY row and col
 
         for op in operations:
             if op not in supportedOperations:
@@ -531,6 +554,8 @@ class DataFile:
                     mt = SplitMulti(mt, params)
                 elif op=='addId':
                     mt = AddId(mt, params)
+                elif op=='forVep' and params==True:
+                    mt = ForVep(mt)
                 else:
                     LogException(f'Something Wrong in the code')
             except:
@@ -539,134 +564,3 @@ class DataFile:
 
         self.data = mt
 
-
-# @D_General
-# def Check(self):
-
-#     Log(f'There are {len(stage.io)} io/s to be checked.')
-
-#     for name, io in stage.io.items():
-#         Log(f'<< io: {name} >> Checking...')
-
-#         if 'pathType' not in io:
-#             io.pathType = 'file'
-
-#         if io.pathType=='file':
-#             io.path = AbsPath(io.path)
-#         elif io.pathType=='fileList':
-#             io.path = [AbsPath(f) for f in io.path]
-
-#         self.InferFileFormat(io, name)
-
-#         if io.format not in ['mt', 'ht']:
-#             if 'isAlive' in io:
-#                 LogException(f'<< io: {name} >> isAlive should not be presented when input format is {io.format}')
-#         else:
-#             if 'isAlive' not in io:
-#                 io.isAlive = True
-#             if io.isAlive:
-#                 ### TBF what if the user dont want to repartition at all
-#                 if 'numPartitions' not in io:
-#                     io.numPartitions = Shared.numPartitions.default
-
-#                 if not (Shared.numPartitions.min <= io.numPartitions <= Shared.numPartitions.max):
-#                     LogException(f'<< io: {name} >> numPartitions {io.numPartitions} must be in range [{Shared.numPartitions.min}, {Shared.numPartitions.max}]')
-
-#                 for key in ['toBeCached', 'toBeCounted']:
-#                     if key not in io:
-#                         io[key] = True
-
-#         if 'isAlive' in io and not io.isAlive:
-#             for key in ['numPartitions', 'toBeCached', 'toBeCounted']:
-#                 if key in io:
-#                     LogException(f'<< io: {name} >> When isAlive is explicitly set to false, "{key}" should not be presented at io.')
-
-#     # TBF this file existance check needs to be reviewd
-#     if stage.spec.status != 'Completed':
-#         for name, io in stage.io.items():
-#             if io.direction == 'output':
-#                 if io.format == 'bfile':
-#                     cond = any([FileExist(f'{io.path}{suffix}') for suffix in ['bed', 'bim', 'fam']])
-#                 else:
-#                     cond = FileExist(io.path)
-
-#                 if cond:
-#                     LogException(f'<< io: {name} >> Output path (or plink bfile prefix) {io.path} already exist in the file system')
-
-
-# @D_General
-# def ProcessAsInput(self, input):
-#     Log(f'<< io: {input.name} >> is {JsonDumps(input)}.')
-#     if 'isAlive' in input and input.isAlive:
-#         if input.pathType!='fileList':
-#             paths = [input.path]
-#         else:
-#             paths = input.path
-#         for path in paths:
-#             if path not in Shared.data:
-#                 Log(f'<< io: {input.name} >> Loading.')
-#                 try:
-#                     if input.format == 'ht':
-#                         mht = hl.read_table(path)
-#                     elif input.format == 'mt':
-#                         mht = hl.read_matrix_table(path)
-#                     else:
-#                         pass  # Already handled in Checkio
-#                 except:
-#                     LogException(f'<< io: {input.name} >> Cannot read input form {path}.')
-#                 else:
-#                     Shared.data[path] = mht
-#                     Log('<< io: {name} >> Loaded.')
-#             else:
-#                 mht = Shared.data[path]
-#                 Log(f'<< io: {input.name} >> Preloaded.')
-
-#             if input.numPartitions and mht.n_partitions() != input.numPartitions:
-#                 np = mht.n_partitions()
-#                 mht = mht.repartition(input.numPartitions)
-#                 Log(f'<< io: {input.name} >> Repartitioned from {np} to {input.numPartitions}.')
-#             if input.toBeCached:
-#                 mht = mht.cache()
-#                 Log(f'<< io: {input.name} >> Cached.')
-#             if input.toBeCounted:
-#                 input.count = Count(mht)
-#                 Log(f'<< io: {input.name} >> Counted.')
-#                 self.Update()
-
-
-# @D_General
-# def ProcessAsOutput(self, output):
-
-#     Log(f'<< io: {output.name} >> is {JsonDumps(output)}')
-
-#     if 'isAlive' in output and output.isAlive:
-#         if 'data' in output:
-#             mht = output.data
-#         else:
-#             LogException(f'<< io: {output.name} >> No "data" field is provided.')
-
-#         if output.path in Shared.data:
-#             LogException(f'<< io: {output.name} >> Output path {output.path} alredy exist in the shared.')
-
-#         if output.numPartitions and mht.n_partitions() != output.numPartitions:
-#             np = mht.n_partitions()
-#             mht = mht.repartition(output.numPartitions)
-#             Log(f'<< io: {output.name} >> Repartitioned from {np} to {output.numPartitions}.')
-
-#         if output.toBeCached:
-#             mht = mht.cache()
-#             Log(f'<< io: {output.name} >> Cached.')
-
-#         if output.toBeCounted:
-#             output.count = Count(mht)
-#             Log(f'<< io: {output.name} >> Counted.')
-#             self.Update()
-
-#         Shared.data[output.path] = mht
-#         Log(f'<< io: {output.name} >> Added to shared.')
-
-#         if output.format in ['ht', 'mt']:
-#             mht.write(output.path, overwrite=False)
-#             Log(f'<< io: {output.name} >> Dumped.')
-#         else:
-#             pass  # Already handled in Checkio

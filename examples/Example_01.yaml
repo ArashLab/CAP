@@ -3,34 +3,64 @@ dataFiles:
         disk:
             path: 1kg.micro.vcf.bgz
         commonOperations:
-            annotateRows:
-                info:
-                    k1: v1
-                    k2: v2
-    outMT:
-        disk:
-            path: 1kg.ma.mt
-        commonOperations:
-            annotateRows:
-                ef23: asf332
-                filters:
-                    - 'f1'
-                    - 'f2'
-                    - 'f3'
-            annotateCols:
-                cohort: xxx
-                asdf: gasdf
             rename:
                 s: sample
             addId:
                 sampleId: sample
                 variantId: CHR:POS:ALLELES
+    outMT:
+        disk:
+            path: 1kg.ma.mt
     outVCF:
         disk:
             path: 1kg.micro2.vcf.bgz
         commonOperations:
             annotateRows:
                 rsid: 'rs123456'
+
+    outVCFvep:
+        disk:
+            path: 1kg.micro.vep.vcf.bgz
+            exportParam:
+                parallel: header_per_shard
+        commonOperations:
+            forVep: True
+        memory:
+            numPartitions: 1
+
+    outVep:
+        disk:
+            path: OutVep
+            format: dir
+
+    outVepVar:
+        disk:
+            path: 1kg.micro.vepVar.ht
+
+    outVepClVar:
+        disk:
+            path: 1kg.micro.vepClVar.ht
+
+    outVepFreq:
+        disk:
+            path: 1kg.micro.vepFreq.ht
+
+    outVepConseq:
+        disk:
+            path: 1kg.micro.vepConseq.ht
+
+    outVepConseqToVar:
+        disk:
+            path: 1kg.micro.vepConseqToVar.ht
+
+    outVepConseqToTerms:
+        disk:
+            path: 1kg.micro.vepConseqToTerms.ht
+
+    outVepVarTerms:
+        disk:
+            path: 1kg.micro.vepVarTerm.ht
+            
     outMTx:
         disk:
             path: 1kg.xx.mt
@@ -65,17 +95,23 @@ dataFiles:
 
 executionPlan:
     - CO1
+    - EGTVEP
+    - VEPANN
+    - VEPLT1
+    - VEPLT2
+    - VEPLT3
+    - VEPLT4
     # - CO2
-    - SMT
-    - KBT
-    - PCA
-    - ASSOC
+    # - SMT
+    # - KBT
+    # - PCA
+    # - ASSOC
 
 stages:
     CO1:
-        spec:
+        specifications:
             function: CommonOperations
-        io:
+        dataFiles:
             inData:
                 id: inVCF
                 direction: input
@@ -83,9 +119,9 @@ stages:
                 id: outMT
                 direction: output
     CO2:
-        spec:
+        specifications:
             function: CommonOperations
-        io:
+        dataFiles:
             inData:
                 id: outMT
                 direction: input
@@ -93,9 +129,9 @@ stages:
                 id: outVCF
                 direction: output
     SMT:
-        spec:
+        specifications:
             function: SplitMatrixTable
-        io:
+        dataFiles:
             inData:
                 id: outMT
                 direction: input
@@ -109,13 +145,13 @@ stages:
                 id: outRow
                 direction: output
     KBT:
-        spec:
+        specifications:
             function: KeyByTable
-        arg:
+        parameters:
             keyCol: sampleId
             joinColKey: sample
             joinColData: ID
-        io:
+        dataFiles:
             inData:
                 id: inPheno
                 direction: input
@@ -126,11 +162,11 @@ stages:
                 id: outCol
                 direction: input
     PCA:
-        spec:
+        specifications:
             function: PcaHweNorm
-        arg:
+        parameters:
             numPcaVectors: 3
-        io:
+        dataFiles:
             inData:
                 id: outMTx
                 direction: input
@@ -139,9 +175,9 @@ stages:
                 direction: output
 
     ASSOC:
-        spec:
+        specifications:
             function: HailAssociation
-        arg:
+        parameters:
             resTables:
                 - outData1
                 - outData2
@@ -223,7 +259,7 @@ stages:
                                 -   colName: scores_3
                                     testName: Linear-Pheno3
                                     resTableId: outData2
-        io:
+        dataFiles:
             inData:
                 id: outMTx
                 direction: input
@@ -240,5 +276,123 @@ stages:
                 id: outPheno
                 direction: input
 
-    
-           
+    EGTVEP:
+        specifications:
+            function: CommonOperations
+        dataFiles:
+            inData:
+                id: outMT
+                direction: input
+            outData:
+                id: outVCFvep
+                direction: output
+
+    VEPANN:
+        specifications:
+            function: VepAnnotation
+        parameters:
+            vepCli: 
+                - bash
+                - vep/cvs-norm.sh
+                - __IN_VCF__
+                - __OUT_JSON__
+                - __OUT_TBL__
+                - NoJobId
+                - __OUT_JOB__
+                - vep
+        dataFiles:
+            inData:
+                id: outVCFvep
+                direction: input
+                externalUse: true
+            outData:
+                id: outVep
+                direction: output
+                externalUse: true
+
+
+    VEPLT1:
+        specifications:
+            function: VepLoadTables
+        parameters:
+            tables:
+                - var
+        dataFiles:
+            inData:
+                id: outVep
+                direction: input
+                externalUse: true
+            outVar:
+                id: outVepVar
+                direction: output
+            
+    VEPLT2:
+        specifications:
+            function: VepLoadTables
+        parameters:
+            tables:
+                - clvar
+        dataFiles:
+            inData:
+                id: outVep
+                direction: input
+                externalUse: true
+            outClVar:
+                id: outVepClVar
+                direction: output
+    VEPLT3:
+        specifications:
+            function: VepLoadTables
+        parameters:
+            tables:
+                - freq
+        dataFiles:
+            inData:
+                id: outVep
+                direction: input
+                externalUse: true
+            outFreq:
+                id: outVepFreq
+                direction: output
+    VEPLT4:
+        specifications:
+            function: VepLoadTables
+        parameters:
+            tables:
+                - conseq
+        dataFiles:
+            inData:
+                id: outVep
+                direction: input
+                externalUse: true
+            outConseq:
+                id: outVepConseq
+                direction: output
+            outConseqToVar:
+                id: outVepConseqToVar
+                direction: output
+            outConseqToTerms:
+                id: outVepConseqToTerms
+                direction: output
+            outVarTerms:
+                id: outVepVarTerms
+                direction: output
+
+    VEPLT4:
+        specifications:
+            function: MergeTables
+        parameters:
+            inKeys:
+                - conseqId
+                - conseqId
+            outKey: varId
+        dataFiles:
+            inData1:
+                id: outVepConseq
+                direction: input
+            inData2:
+                id: outVepConseqToVar
+                direction: input
+            outData:
+                id: outVepConseq
+                direction: output
