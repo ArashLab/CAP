@@ -67,7 +67,7 @@ class Workload(PyObj):
             self.dataFiles[ID] = DataFile(dataFile)
 
         ##### Create Stage objects
-        self.stages = Munch()
+        self.dataFiles = Munch()
         for ID, stage in wl.stages.items():
             self.stages[ID] = Stage(stage)
 

@@ -24,12 +24,12 @@ class DataFile:
         else:
             LogException(f'`file` must be of type Munch but the type is `{type(file)}`.')
 
-        # self.Infer()
-        # self.InferPath()
-        # self.isInferred = True
-        # self.ProcessPath()
+        self.Infer()
+        self.InferPath()
+        self.isInferred = True
+        self.ProcessPath()
 
-        # self.InferMemory()
+        self.InferMemory()
 
     @D_General
     def Infer(self):
