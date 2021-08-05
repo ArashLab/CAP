@@ -167,7 +167,6 @@ stages:
                     -   type: repartition
                         parameters:
                             numPartitions: 1
-
     CO2:
         specifications:
             function: ByPass
@@ -176,6 +175,98 @@ stages:
                 dataFileId: outMt
             outData:
                 dataFileId: outVCF
+
+    VEPANN:
+        specifications:
+            function: VepAnnotation
+        parameters:
+            vepCli: 
+                - bash
+                - vep/cvs-norm.sh
+                - __IN_VCF__
+                - __OUT_JSON__
+                - __OUT_TBL__
+                - NoJobId
+                - __OUT_JOB__
+                - vep
+        inouts:
+            inData:
+                dataFileId: vepVCF
+            outData:
+                dataFileId: vepDIR
+
+    VEPLT1:
+        specifications:
+            function: VepLoadTables
+        parameters:
+            tables:
+                - var
+        inouts:
+            inData:
+                dataFileId: vepDIR
+            outVar:
+                dataFileId: vepVar
+            
+    VEPLT2:
+        specifications:
+            function: VepLoadTables
+        parameters:
+            tables:
+                - clvar
+        inouts:
+            inData:
+                dataFileId: vepDIR
+            outClVar:
+                dataFileId: vepClVar
+    VEPLT3:
+        specifications:
+            function: VepLoadTables
+        parameters:
+            tables:
+                - freq
+        inouts:
+            inData:
+                dataFileId: vepDIR
+            outFreq:
+                dataFileId: vepFreq
+    VEPLT4:
+        specifications:
+            function: VepLoadTables
+        parameters:
+            tables:
+                - conseq
+        inouts:
+            inData:
+                dataFileId: vepDIR
+            outConseq:
+                dataFileId: vepConseq
+            outConseqVar:
+                dataFileId: vepConseqVar
+            outConseqTerms:
+                dataFileId: vepConseqTerms
+            outVarTerms:
+                dataFileId: vepVarTrems
+
+    JOINVEP:
+        specifications:
+            function: Join
+        parameters:
+            order:
+                -   table: inData_01
+                -   table: inData_02
+                    kind: join # semi, anti, annotate
+                    how: inner # left, right, outer
+                    #axis: rows or col if it has to be added to matrix table
+
+        inouts:
+            inData_01:
+                dataFileId: vepConseq
+            inData_02:
+                dataFileId: vepConseqVar
+            outData:
+                dataFileId: vepConseqWithVarId
+
+
     # CO2:
     #     specifications:
     #         function: CommonOperations
@@ -333,94 +424,3 @@ stages:
     #         pheno:
     #             id: outPheno
     #             direction: input
-
-    
-    VEPANN:
-        specifications:
-            function: VepAnnotation
-        parameters:
-            vepCli: 
-                - bash
-                - vep/cvs-norm.sh
-                - __IN_VCF__
-                - __OUT_JSON__
-                - __OUT_TBL__
-                - NoJobId
-                - __OUT_JOB__
-                - vep
-        inouts:
-            inData:
-                dataFileId: vepVCF
-            outData:
-                dataFileId: vepDIR
-
-    VEPLT1:
-        specifications:
-            function: VepLoadTables
-        parameters:
-            tables:
-                - var
-        inouts:
-            inData:
-                dataFileId: vepDIR
-            outVar:
-                dataFileId: vepVar
-            
-    VEPLT2:
-        specifications:
-            function: VepLoadTables
-        parameters:
-            tables:
-                - clvar
-        inouts:
-            inData:
-                dataFileId: vepDIR
-            outClVar:
-                dataFileId: vepClVar
-    VEPLT3:
-        specifications:
-            function: VepLoadTables
-        parameters:
-            tables:
-                - freq
-        inouts:
-            inData:
-                dataFileId: vepDIR
-            outFreq:
-                dataFileId: vepFreq
-    VEPLT4:
-        specifications:
-            function: VepLoadTables
-        parameters:
-            tables:
-                - conseq
-        inouts:
-            inData:
-                dataFileId: vepDIR
-            outConseq:
-                dataFileId: vepConseq
-            outConseqVar:
-                dataFileId: vepConseqVar
-            outConseqTerms:
-                dataFileId: vepConseqTerms
-            outVarTerms:
-                dataFileId: vepVarTrems
-
-    # VEPLT4:
-    #     specifications:
-    #         function: MergeTables
-    #     parameters:
-    #         inKeys:
-    #             - conseqId
-    #             - conseqId
-    #         outKey: varId
-    #     inouts:
-    #         inData1:
-    #             id: outVepConseq
-    #             direction: input
-    #         inData2:
-    #             id: outVepConseqToVar
-    #             direction: input
-    #         outData:
-    #             id: outVepConseq
-    #             direction: output
