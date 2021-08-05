@@ -1,4 +1,5 @@
 
+from inspect import Arguments
 import time
 
 import hail as hl
@@ -328,47 +329,78 @@ def MergeMatrixTables(stage):
 
 @D_General
 def MergeTables(stage):
-    spec, arg, io = UnpackStage(stage)
+    specifications, parameters, inouts, runtimes = UnpackStage(stage)
 
     ##### >>>>>>> Input/Output <<<<<<<<
-    inData = io.inData
-    outData = io.outData
+    inData = Munch()
+    for inout in inouts:
+        if inout.startswith('inData_'):
+            inData[inout] = inouts[inout]
+    outData = inouts.outData
 
     ##### >>>>>>> Live Input <<<<<<<<
-    hts = [Shared.data[path] for path in inData.path]
+    data = Munch()
+    for inout in inouts:
+        if inout.startswith('inData_'):
+            data[inout] = inouts[inout].GetData()
 
     ##### >>>>>>> STAGE Code <<<<<<<<
 
-    if not hts:
-        LogException('No Table is loaded')
+    for i, item in parameters.order:
+        inTable = data[item.table]
+        if not i:
+            outTable = inTable
+        else:
+            kind = item.get('kind')
+            how = item.get('how')
+            axis = item.get('axis')
+            if kind=='annotate' or axis:
+                if not isinstance(outTable, hl.MatrixTable):
+                    LogException('XXX')
+            if kind!='join':
+                if how:
+                    LogException("XXX")
+            else:
+                if not isinstance(outTable, hl.Table):
+                    LogException('XXX')
+                if not isinstance(outTable, hl.Table):
+                    LogException('XXX')
 
-    how = arg.get('how')
-    how = how if how else 'inner'
-    if how not in ['inner', 'outer', 'left', 'right']:
-        LogException('Join type is not supported.')
+            if kind=='join':
+                outTable = outTable.join()
+            
 
-    inKeys = arg.get('inKeys')
-    if not inKeys:
-        LogException('Keys must present')
-    if not isinstance(inKeys, list):
-        LogException('keys must be of type list')
-    if len(inKeys) != len(hts):
-        LogException(f'number of keys ({len(inKeys)}) does not match number of tables ({len(hts)})')
 
-    ht = hts[0]
-    ht = KeyBy(ht, inKeys[0])
+    # if not hts:
+    #     LogException('No Table is loaded')
 
-    if len(hts) > 1:
-        for i in range(1, len(hts)):
-            ht2 = KeyBy(ht[i], inKeys[i])
-            ht = ht.join(ht2, how=how)
+    # how = parameters.get('how')
+    # how = how if how else 'inner'
+    # if how not in ['inner', 'outer', 'left', 'right']:
+    #     LogException('Join type is not supported.')
+
+    # inKeys = parameters.get('inKeys')
+    # if not inKeys:
+    #     LogException('Keys must present')
+    # if not isinstance(inKeys, list):
+    #     LogException('keys must be of type list')
+    # if len(inKeys) != len(hts):
+    #     LogException(f'number of keys ({len(inKeys)}) does not match number of tables ({len(hts)})')
+
+    # ht = hts[0]
+    # ht = KeyBy(ht, inKeys[0])
+
+    # if len(hts) > 1:
+    #     for i in range(1, len(hts)):
+    #         ht2 = KeyBy(ht[i], inKeys[i])
+    #         ht = ht.join(ht2, how=how)
     
-    outKey = arg.get('outKey')
-    if outKey:
-        ht = KeyBy(ht, outKey)
+    # outKey = parameters.get('outKey')
+    # if outKey:
+    #     ht = KeyBy(ht, outKey)
 
     ##### >>>>>>> Live Output <<<<<<<<
-    outData.data = ht
+    outData.SetData(outTable)
 
 
 @D_General
