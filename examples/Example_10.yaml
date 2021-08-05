@@ -8,16 +8,44 @@ dataFiles:
         disk:
             path: 1kg.micro.out.vcf.bgz
 
-    vpeVCF:
+    vepVCF:
         disk:
             path: 1kg.micro.vep.vcf.bgz
             exportParam:
                 parallel: separate_header
 
-    vpeDIR:
+    vepDIR:
         disk:
             path: 1kg.micro.vep
             format: dir
+
+    vepVar:
+        disk:
+            path: 1kg.micro.vep.var.ht
+
+    vepClVar:
+        disk:
+            path: 1kg.micro.vep.clvar.ht
+
+    vepFreq:
+        disk:
+            path: 1kg.micro.vep.freq.ht
+
+    vepConseq:
+        disk:
+            path: 1kg.micro.vep.conseq.ht
+
+    vepConseqVar:
+        disk:
+            path: 1kg.micro.vep.conseqVar.ht
+
+    vepConseqTerms:
+        disk:
+            path: 1kg.micro.vep.conseqTerms.ht
+
+    vepVarTerms:
+        disk:
+            path: 1kg.micro.vep.varTerms.ht
 
     # outVCFvep:
     #     disk:
@@ -99,10 +127,10 @@ executionPlan:
     # - CO2
     - EGTVEP
     - VEPANN
-    # - VEPLT1
-    # - VEPLT2
-    # - VEPLT3
-    # - VEPLT4
+    - VEPLT1
+    - VEPLT2
+    - VEPLT3
+    - VEPLT4
     # - SMT
     # - KBT
     # - PCA
@@ -133,12 +161,12 @@ stages:
             inData:
                 dataFileId: outMt
             outData:
-                dataFileId: vpeVCF
+                dataFileId: vepVCF
                 microFunctions:
                     -   type: forVep
                     -   type: repartition
                         parameters:
-                            numPartitions: 4
+                            numPartitions: 1
 
     CO2:
         specifications:
@@ -322,77 +350,61 @@ stages:
                 - vep
         inouts:
             inData:
-                dataFileId: vpeVCF
+                dataFileId: vepVCF
             outData:
-                dataFileId: vpeDIR
+                dataFileId: vepDIR
 
-
-    # VEPLT1:
-    #     specifications:
-    #         function: VepLoadTables
-    #     parameters:
-    #         tables:
-    #             - var
-    #     inouts:
-    #         inData:
-    #             id: outVep
-    #             direction: input
-    #             externalUse: true
-    #         outVar:
-    #             id: outVepVar
-    #             direction: output
+    VEPLT1:
+        specifications:
+            function: VepLoadTables
+        parameters:
+            tables:
+                - var
+        inouts:
+            inData:
+                dataFileId: vepDIR
+            outVar:
+                dataFileId: vepVar
             
-    # VEPLT2:
-    #     specifications:
-    #         function: VepLoadTables
-    #     parameters:
-    #         tables:
-    #             - clvar
-    #     inouts:
-    #         inData:
-    #             id: outVep
-    #             direction: input
-    #             externalUse: true
-    #         outClVar:
-    #             id: outVepClVar
-    #             direction: output
-    # VEPLT3:
-    #     specifications:
-    #         function: VepLoadTables
-    #     parameters:
-    #         tables:
-    #             - freq
-    #     inouts:
-    #         inData:
-    #             id: outVep
-    #             direction: input
-    #             externalUse: true
-    #         outFreq:
-    #             id: outVepFreq
-    #             direction: output
-    # VEPLT4:
-    #     specifications:
-    #         function: VepLoadTables
-    #     parameters:
-    #         tables:
-    #             - conseq
-    #     inouts:
-    #         inData:
-    #             id: outVep
-    #             direction: input
-    #             externalUse: true
-    #         outConseq:
-    #             id: outVepConseq
-    #             direction: output
-    #         outConseqToVar:
-    #             id: outVepConseqToVar
-    #             direction: output
-    #         outConseqToTerms:
-    #             id: outVepConseqToTerms
-    #             direction: output
-    #         outVarTerms:
-    #             id: outVepVarTerms
-    #             direction: output
+    VEPLT2:
+        specifications:
+            function: VepLoadTables
+        parameters:
+            tables:
+                - clvar
+        inouts:
+            inData:
+                dataFileId: vepDIR
+            outClVar:
+                dataFileId: vepClVar
+    VEPLT3:
+        specifications:
+            function: VepLoadTables
+        parameters:
+            tables:
+                - freq
+        inouts:
+            inData:
+                dataFileId: vepDIR
+            outFreq:
+                dataFileId: vepFreq
+    VEPLT4:
+        specifications:
+            function: VepLoadTables
+        parameters:
+            tables:
+                - conseq
+        inouts:
+            inData:
+                dataFileId: vepDIR
+            outConseq:
+                dataFileId: vepConseq
+            outConseqVar:
+                dataFileId: vepConseqVar
+            outConseqTerms:
+                dataFileId: vepConseqTerms
+            outVarTerms:
+                dataFileId: vepVarTrems
 
     # VEPLT4:
     #     specifications:

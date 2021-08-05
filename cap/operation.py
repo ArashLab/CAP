@@ -505,8 +505,6 @@ def VepAnnotation(stage):
     ##### >>>>>>> Live Input <<<<<<<<
 
     ##### >>>>>>> STAGE Code <<<<<<<<
-    print(dict(inData.dataFile))
-    print(dict(outData.dataFile))
     inFile = inData.dataFile.disk
     outFile = outData.dataFile.disk
 
@@ -598,46 +596,47 @@ def VepAnnotation(stage):
 
 @D_General
 def VepLoadTables(stage):
-    spec, arg, io = UnpackStage(stage)
+
+    specifications, parameters, inouts, runtimes = UnpackStage(stage)
+    tables = parameters.tables
 
     ##### >>>>>>> Input/Output <<<<<<<<
-    inData = GetFile(io.inData)
-    if 'var' in arg.tables:
-        outVar = GetFile(io.outVar)
-    if 'clvar' in arg.tables:
-        outClVar = GetFile(io.outClVar)
-    if 'freq' in arg.tables:
-        outFreq = GetFile(io.outFreq)
-    if 'conseq' in arg.tables:
-        outConseq = GetFile(io.outConseq)
-        outConseqToVar = GetFile(io.outConseqToVar)
-        outConseqToTerms = GetFile(io.outConseqToTerms)
-        outVarTerms = GetFile(io.outVarTerms)
+    inData = inouts.inData
+    if 'var' in tables:
+        outVar = inouts.outVar
+    if 'clvar' in tables:
+        outClVar = inouts.outClVar
+    if 'freq' in tables:
+        outFreq = inouts.outFreq
+    if 'conseq' in tables:
+        outConseq = inouts.outConseq
+        outConseqVar = inouts.outConseqVar
+        outConseqTerms = inouts.outConseqTerms
+        outVarTerms = inouts.outVarTerms
 
     ##### >>>>>>> Live Input <<<<<<<<
 
     ##### >>>>>>> STAGE Code <<<<<<<<
-
-    inFile = inData.file.disk
+    inFile = inData.dataFile.disk
     inPath = inFile.path[0]
 
-    if 'all' in arg.tables:
-        arg.tables = ['var', 'clvar', 'freq', 'conseq']
+    if 'all' in tables:
+        tables = ['var', 'clvar', 'freq', 'conseq']
 
     try:  # TBF it currently check if the folder exist or not. should find a way to check all parquet files
-        if 'var' in arg.tables:
+        if 'var' in tables:
             tblList = AbsPath(inPath + '/part-*.var.parquet')
             htVar = ImportMultipleTable(tblList)
 
-        if 'clvar' in arg.tables:
+        if 'clvar' in tables:
             tblList = AbsPath(inPath + '/part-*.clvar.parquet')
             htClVar = ImportMultipleTable(tblList, addFileNumber=True)
 
-        if 'freq' in arg.tables:
+        if 'freq' in tables:
             tblList = AbsPath(inPath + '/part-*.freq.parquet')
             htFreq = ImportMultipleTable(tblList)
 
-        if 'conseq' in arg.tables:
+        if 'conseq' in tables:
             tblList = AbsPath(inPath + '/part-*.conseq.parquet')
             htConseq = ImportMultipleTable(tblList)
     except:
@@ -645,11 +644,11 @@ def VepLoadTables(stage):
 
     try:
         pass
-        if 'clvar' in arg.tables:
+        if 'clvar' in tables:
             # Process colocated-variants table
             htClVar = htClVar.annotate(clVarId=(htClVar.fileNumber * 2**32) + htClVar.clVarId)
 
-        if 'conseq' in arg.tables:
+        if 'conseq' in tables:
             # Process consequences table and group consequences
             # Select all columns except 'varId' to group by (remove duplicate)
             groupBykeys = list(dict(htConseq.row).keys())
@@ -659,9 +658,9 @@ def VepLoadTables(stage):
             htConseq = htConseq.add_index('conseqId')
             htConseq = htConseq.key_by('conseqId')
             # create a table for many to many relationship between consequences and variants
-            htConseqToVar = htConseq.select('varIds')
-            htConseqToVar = htConseqToVar.explode('varIds')
-            htConseqToVar = htConseqToVar.rename({'varIds': 'varId'})
+            htConseqVar = htConseq.select('varIds')
+            htConseqVar = htConseqVar.explode('varIds')
+            htConseqVar = htConseqVar.rename({'varIds': 'varId'})
             # create a table to list consequence terms per consequence
             htConseqTerms = htConseq.select('consequence_terms', 'varIds')
             htConseqTerms = htConseqTerms.annotate(consequence_terms=hl.array(htConseqTerms.consequence_terms.replace('\[', '').replace('\]', '').replace('\'', '').split(',')))
@@ -680,15 +679,14 @@ def VepLoadTables(stage):
     Log(f'VEP parquet files are converted to hail tables.')
 
     ##### >>>>>>> Live Output <<<<<<<<
-    if 'var' in arg.tables:
+    if 'var' in tables:
         outVar.SetData(htVar)
-    if 'clvar' in arg.tables:
+    if 'clvar' in tables:
         outClVar.SetData(htClVar)
-    if 'freq' in arg.tables:
+    if 'freq' in tables:
         outFreq.SetData(htFreq)
-        io.outFreq.data = htFreq
-    if 'conseq' in arg.tables:
+    if 'conseq' in tables:
         outConseq.SetData(htConseq)
-        outConseqToVar.SetData(htConseqToVar)
-        outConseqToTerms.SetData(htConseqTerms)
+        outConseqVar.SetData(htConseqVar)
+        outConseqTerms.SetData(htConseqTerms)
         outVarTerms.SetData(htVarTerms)
