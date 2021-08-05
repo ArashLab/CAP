@@ -423,3 +423,94 @@ def KeyBy(mht, key, axis=None):
             if key not in list(mt.col):
                 LogException(f'Key ({key}) is not presented in the matrixtable col')
             mt = mt.key_col_by(key)
+
+@D_General
+def CommonOperations(data, operations):
+    return
+    supportedOperations = [
+        'addIndex', # rc
+        'aggregate', # rce
+        'annotate', # rcge
+        'antiJoin', # rc Function
+        'semiJoin', # rc Function
+        'union', # rc Function
+        'collect', # - ??
+        'collectBykey', # c ??
+        'count', # rcx (x:rc together)
+        'distinct', # rc
+        'drop',
+        'explode', # rc ??
+        'filter', # rce
+        'groupBy', #rc
+        'index', # rcge
+        'keyBy', # rc
+        'rename',
+        'sample', #rc
+        'select', # rcge
+
+        'keyBy', # rc
+
+        'repartition',
+        'persist',
+        'unpersist',
+
+        'addId', # rc same as nnotate col and row this is a alisa
+        # Genomic ones
+        'maf',
+        'ldPrune',
+        'splitMulti',
+        'forVep'
+    ]
+
+    for op in operations:
+        if op not in supportedOperations:
+            LogException(f'Operation {op} is not supported')
+
+    for op in operations:
+        params = operations[op]
+        try:
+            if op=='rename':
+                mt = mt.rename(params)
+            elif op=='drop':
+                mt = mt.drop(*params)
+            elif op=='gtOnly' and params==True:
+                mt = mt.select_entries('GT')
+            elif op=='annotateRows': ### TBF so that the type is mentiond and enough data to form expression
+                for k in params:
+                    if isinstance(params[k], dict):
+                        params[k] = hl.struct(**params[k])
+                    elif isinstance(params[k], list):
+                        if len(params[k]) == len(set(params[k])):
+                            params[k] = hl.set(params[k])
+                        else:
+                            params[k] = hl.array(params[k])
+                mt = mt.annotate_rows(**params)
+            elif op=='annotateCols':
+                mt = mt.annotate_cols(**params)
+            elif op=='annotateGlobals':
+                mt = mt.annotate_globals(**params)
+            elif op=='annotateEntries':
+                mt = mt.annotate_entries(**params)
+            elif op=='maf':
+                # Calculate MAF in a coloum (avoid writing on existing cols by using a random col name)
+                mafColName = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+                mafExpr = {mafColName : hl.min(hl.agg.call_stats(mt.GT, mt.alleles).AF)}
+                mt = mt.annotate_rows(**mafExpr)
+                # Apply filter
+                mt = mt.filter_rows((mt[mafColName] >= params.min) & (mt[mafColName] <= params.max), keep=True)
+            elif op=='ldPrune':
+                prunList = hl.ld_prune(mt.GT, **params)
+                mt = mt.filter_rows(hl.is_defined(prunList[mt.row_key]))
+            elif op=='subSample':
+                mt = SampleRows(mt, params)
+            elif op=='splitMulti':
+                mt = SplitMulti(mt, params)
+            elif op=='addId':
+                mt = AddId(mt, params)
+            elif op=='forVep' and params==True:
+                mt = ForVep(mt)
+            else:
+                LogException(f'Something Wrong in the code')
+        except:
+            LogException(f'Hail cannot perfom {op} with args: {params}.')
+        Log(f'{op} done with agrs: {params}.')

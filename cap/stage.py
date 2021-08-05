@@ -22,16 +22,14 @@ if __name__ == '__main__':
 class Stage(Munch):
 
     @D_General
-    def __init__(self, stage, stageId):
-        stage.specifications.id = stageId
+    def __init__(self, stage):
         stage.specifications.status = 'Initiated'
         stage.inouts = stage.get('inouts', Munch())
         self.update(stage)
 
 
     @D_General
-    def Execute(self, dataFiles):
-        workload = Shared.workload
+    def Execute(self, workload):
         
         Shared.CurrentStageForLogging = self
         
@@ -48,13 +46,13 @@ class Stage(Munch):
         runtime.startTime = datetime.now()
         workload.Update()
 
-        self.ExecuteInputs()
+        self.IncludeDataFiles(workload)
         workload.Update()
 
-        func(self, dataFiles)
+        func(self)
         workload.Update()
 
-        self.ExecuteOutputs()
+        self.RemoveDataFiles()
         workload.Update()
 
         runtime.endTime = datetime.now()
@@ -68,15 +66,11 @@ class Stage(Munch):
 
 
     @D_General
-    def ExecuteInputs(self):
+    def IncludeDataFiles(self, workload):
         for inout in self.inouts.values():
-            if inout.direction == 'input':
-                for items in inout.dataFiles:
-                    pass
+            inout.dataFile = workload.GetDataFileById(inout.dataFileId)
+    
+    def RemoveDataFiles(self):
+        for inout in self.inouts.values():
+            inout.pop('dataFile')
 
-    @D_General
-    def ExecuteOutputs(self):
-        for inout in self.inouts.values():
-            if inout.direction == 'output':
-                for dataFileId in inout.id:
-                    Shared.workload.dataFiles[dataFileId].ExecuteAsOutput()

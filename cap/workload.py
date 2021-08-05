@@ -11,6 +11,8 @@ from .pyobj import PyObj
 from .shared import Shared
 from .datafile import DataFile
 from .stage import Stage
+from .inout import InOut
+
 
 if __name__ == '__main__':
     print('This module is not executable.')
@@ -59,15 +61,38 @@ class Workload(PyObj):
         ##### Create DataFile objects
         self.dataFiles = Munch()
         for ID, dataFile in wl.dataFiles.items():
+            dataFile.id = ID
             self.dataFiles[ID] = DataFile(dataFile)
+            dataFile = self.dataFiles[ID]
 
         ##### Create Stage objects
         self.stages = Munch()
         for ID, stage in wl.stages.items():
-            self.stages[ID] = Stage(stage, ID)
+            stage.id = ID
+            self.stages[ID] = Stage(stage)
+            stage = self.stages[ID]
+
+        for stage in self.stages.values():
+            for ID, inout in stage.inouts.items():
+                inout.id = ID
+                stage.inouts[ID] = InOut(inout)
 
         ##### Add execution plan to the runtime
         Shared.runtime.executionPlan = wl.executionPlan
 
         self.Update()
         Log('Workload has been initialised.')
+
+
+    @D_General
+    def GetDataFileById(self, ID):
+        wl = self.obj
+
+        if ID not in self.dataFiles: # create a memory datafile on the fly
+            dataFile = Munch()
+            dataFile.id = ID
+            self.dataFiles[ID] = DataFile(dataFile)
+            wl.dataFiles[ID] = self.dataFiles[ID]
+            self.Update()
+
+        return self.dataFiles[ID]

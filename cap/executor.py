@@ -60,10 +60,6 @@ class Executor:
         workload = self.workload
         for stageId in workload.executionPlan:
             stage = workload.stages[stageId]
-            if stage.stage.specifications.status != 'Completed':
-
-                # for inout in stage.inouts.values():
-                # for items in inout.dataFiles:
-                stage.Execute()
-
+            if stage.specifications.status != 'Completed':
+                stage.Execute(self.workload)
     

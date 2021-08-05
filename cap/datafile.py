@@ -25,32 +25,49 @@ class DataFile(Munch):
             LogException(f'`file` must be of type Munch but the type is `{type(file)}`.')
 
         self.Infer()
-        self.InferPath()
-        self.isInferred = True
-        self.ProcessPath()
+        if self.storageType == 'disk':
+            self.InferPath()
+            self.isInferred = True
+            self.ProcessPath()
 
         self.InferMemory()
 
     @D_General
+    def SetData(self, data):
+        self.data = data 
+        self.memory.isProduced = True
+        if self.storageType == 'disk':
+            self.Dump()
+            self.disk.isProduced = True
+
+    @D_General
+    def GetData(self):
+        if not self.memory.get('isProduced'):
+            if self.storageType == 'disk':
+                if self.disk.get('isProduced'):
+                    self.Load()
+                    self.memory.isProduced = True
+        return self.data
+
+    @D_General
     def Infer(self):
-        file = self
 
-        if 'storageType' not in file:
-            if 'disk' in file:
-                file.storageType = 'disk'
+        if 'storageType' not in self:
+            if 'disk' in self:
+                self.storageType = 'disk'
             else:
-                file.storageType = 'memory'
+                self.storageType = 'memory'
 
-        if file.storageType == 'memory' and 'disk' in file:
+        if self.storageType == 'memory' and 'disk' in self:
             LogException('`disk` should not present when storage type is `memory`')
 
-        if file.storageType == 'disk':
-            if 'disk' not in file:
+        if self.storageType == 'disk':
+            if 'disk' not in self:
                 LogException('`disk` should present when storage type is `disk`')
-            if 'isProduced' not in file.disk:
-                file.disk.isProduced = False
+            if 'isProduced' not in self.disk:
+                self.disk.isProduced = False
 
-        if 'disk' in file and 'path' not in file.disk:
+        if 'disk' in self and 'path' not in self.disk:
             LogException('`path` must present in `disk`')
 
 
@@ -303,12 +320,8 @@ class DataFile(Munch):
 
     @D_General
     def Load(self):
-        file = self
-        disk = file.disk
-        memory = file.memory
-
-        if not disk.isProduced:
-            LogException('file is not produced yet')
+        disk = self.disk
+        memory = self.memory
 
         importParam = disk.get('importParam', Munch())
 
@@ -348,15 +361,13 @@ class DataFile(Munch):
                 importParam.delimiter = ','
                 ht = hl.import_table(disk.path, **importParam)
                 data = ht
-
-        self.SetData(data)
+        self.data = data
 
     @D_General
     def Dump(self):
-        file = self
-        disk = file.disk
-        memory = file.memory
-
+        disk = self.disk
+        memory = self.memory
+        data = self.data
         exportParam = disk.get('exportParam', Munch())
 
         if len(disk.path) > 1:
@@ -365,15 +376,15 @@ class DataFile(Munch):
         if memory.format == 'mt':
 
             if disk.format == 'mt':
-                mt = self.data
+                mt = data
                 mt.write(disk.path[0])   
 
             elif disk.format == 'vcf':
-                mt = self.data
+                mt = data
                 hl.export_vcf(mt, disk.path[0], **exportParam)
 
             elif disk.format == 'plink-bfile':
-                mt = self.data
+                mt = data
                 for k in ['call', 'fam_id', 'ind_id', 'pat_id', 'mat_id', 'is_female', 'pheno', 'varid', 'cm_position']:
                     if k in exportParam:
                         exportParam[k] = HailPath([mt]+exportParam[k])
@@ -382,20 +393,18 @@ class DataFile(Munch):
         elif memory.format == 'ht':
 
             if disk.format == 'ht':
-                ht = self.data
+                ht = data
                 ht.write(disk.path[0])    
 
             elif disk.format == 'tsv':
                 exportParam.delimiter = '\t'
-                ht = self.data
+                ht = data
                 ht.export(disk.path[0], **exportParam)
 
             elif disk.format == 'csv':
                 exportParam.delimiter = ','
-                ht = self.data
+                ht = data
                 ht.export(disk.path[0], **exportParam)
-
-        disk.isProduced = True
 
     @D_General
     def Partitioning(self):
@@ -411,107 +420,6 @@ class DataFile(Munch):
                     LogException(f'Persistance {memory.persistence} level not supported')
                 mht = mht.persist(memory.persistence)
             self.data = mht
-    
-    @D_General
-    def SetData(self, data):
-        self.data = data 
-        self.memory.isProduced = True
-
-    @D_General
-    def CommonOperations(self, operations):
-        file = self
-        
-        mt = self.data
-
-        supportedOperations = [
-            'addIndex', # rc
-            'aggregate', # rce
-            'annotate', # rcge
-            'antiJoin', # rc Function
-            'semiJoin', # rc Function
-            'union', # rc Function
-            'collect', # - ??
-            'collectBykey', # c ??
-            'count', # rcx (x:rc together)
-            'distinct', # rc
-            'drop',
-            'explode', # rc ??
-            'filter', # rce
-            'groupBy', #rc
-            'index', # rcge
-            'keyBy', # rc
-            'rename',
-            'sample', #rc
-            'select', # rcge
-
-            'keyBy', # rc
-
-            'repartition',
-            'persist',
-            'unpersist',
-
-            'addId', # rc same as nnotate col and row this is a alisa
-            # Genomic ones
-            'maf',
-            'ldPrune',
-            'splitMulti',
-            'forVep'
-        ]
-
-        for op in operations:
-            if op not in supportedOperations:
-                LogException(f'Operation {op} is not supported')
-
-        for op in operations:
-            params = operations[op]
-            try:
-                if op=='rename':
-                    mt = mt.rename(params)
-                elif op=='drop':
-                    mt = mt.drop(*params)
-                elif op=='gtOnly' and params==True:
-                    mt = mt.select_entries('GT')
-                elif op=='annotateRows': ### TBF so that the type is mentiond and enough data to form expression
-                    for k in params:
-                        if isinstance(params[k], dict):
-                            params[k] = hl.struct(**params[k])
-                        elif isinstance(params[k], list):
-                            if len(params[k]) == len(set(params[k])):
-                                params[k] = hl.set(params[k])
-                            else:
-                                params[k] = hl.array(params[k])
-                    mt = mt.annotate_rows(**params)
-                elif op=='annotateCols':
-                    mt = mt.annotate_cols(**params)
-                elif op=='annotateGlobals':
-                    mt = mt.annotate_globals(**params)
-                elif op=='annotateEntries':
-                    mt = mt.annotate_entries(**params)
-                elif op=='maf':
-                    # Calculate MAF in a coloum (avoid writing on existing cols by using a random col name)
-                    mafColName = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-                    mafExpr = {mafColName : hl.min(hl.agg.call_stats(mt.GT, mt.alleles).AF)}
-                    mt = mt.annotate_rows(**mafExpr)
-                    # Apply filter
-                    mt = mt.filter_rows((mt[mafColName] >= params.min) & (mt[mafColName] <= params.max), keep=True)
-                elif op=='ldPrune':
-                    prunList = hl.ld_prune(mt.GT, **params)
-                    mt = mt.filter_rows(hl.is_defined(prunList[mt.row_key]))
-                elif op=='subSample':
-                    mt = SampleRows(mt, params)
-                elif op=='splitMulti':
-                    mt = SplitMulti(mt, params)
-                elif op=='addId':
-                    mt = AddId(mt, params)
-                elif op=='forVep' and params==True:
-                    mt = ForVep(mt)
-                else:
-                    LogException(f'Something Wrong in the code')
-            except:
-                LogException(f'Hail cannot perfom {op} with args: {params}.')
-            Log(f'{op} done with agrs: {params}.')
-
-        self.data = mt
 
     @D_General
     def ExecuteAsInput(self):

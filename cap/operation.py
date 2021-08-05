@@ -19,11 +19,12 @@ def CommonOperations(stage):
     specifications, parameters, inouts, runtimes = UnpackStage(stage)
 
     ##### >>>>>>> Input/Output <<<<<<<<
-    inData = inouts.inData.dataFiles[0].dataFile
-    outData = inouts.outData.dataFiles[0].dataFile
+    inData = inouts.inData
+    outData = inouts.outData
 
     ##### >>>>>>> Live Input <<<<<<<<
     data = inData.GetData()
+    print("====", type(data))
 
     ##### >>>>>>> STAGE Code <<<<<<<<
     # DO Nothing (Just Common Operation)

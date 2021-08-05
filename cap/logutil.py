@@ -50,7 +50,7 @@ def FixMsg(msg, caller=None):
         stage = Shared.CurrentStageForLogging
 
     if stage:
-        sid = stage.specifications.id
+        sid = stage.id
     else:
         sid = 'None'
 

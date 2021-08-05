@@ -103,34 +103,26 @@ stages:
             function: CommonOperations
         inouts:
             inData:
-                direction: input
-                dataFiles:
-                    -   id: inVCF
-                        commonOperations:
-                            -   type: rename
-                                parameters:
-                                    s: sample
-                            -   type: addId
-                                parameters:
-                                    sampleId: sample
-                                    variantId: CHR:POS:ALLELES
+                dataFileId: inVCF
+                commonOperations:
+                    -   type: rename
+                        parameters:
+                            s: sample
+                    -   type: addId
+                        parameters:
+                            sampleId: sample
+                            variantId: CHR:POS:ALLELES
             outData:
-                direction: output
-                dataFiles:
-                    -   id: outMt
+                dataFileId: outMt
 
     CO2:
         specifications:
             function: CommonOperations
         inouts:
             inData:
-                direction: output
-                dataFiles:
-                    -   id: outMt
+                dataFileId: outMt
             outData:
-                direction: input
-                dataFiles:
-                    -   id: outVCF
+                dataFileId: outVCF
     # CO2:
     #     specifications:
     #         function: CommonOperations
