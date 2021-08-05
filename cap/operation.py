@@ -496,17 +496,19 @@ def CalcQC(stage):
 
 @D_General
 def VepAnnotation(stage):
-    spec, arg, io = UnpackStage(stage)
+    specifications, parameters, inouts, runtimes = UnpackStage(stage)
 
     ##### >>>>>>> Input/Output <<<<<<<<
-    inData = GetFile(io.inData)
-    outData = GetFile(io.outData)
+    inData = inouts.inData
+    outData = inouts.outData
 
     ##### >>>>>>> Live Input <<<<<<<<
 
     ##### >>>>>>> STAGE Code <<<<<<<<
-    inFile = inData.file.disk
-    outFile = outData.file.disk
+    print(dict(inData.dataFile))
+    print(dict(outData.dataFile))
+    inFile = inData.dataFile.disk
+    outFile = outData.dataFile.disk
 
     if outFile.get('format') != 'dir':
         LogException('Currently not supported')
@@ -515,7 +517,7 @@ def VepAnnotation(stage):
     outPath = outFile.path[0]
 
     try:
-        templateCommand = arg.vepCli
+        templateCommand = parameters.vepCli
 
         Bash(command=['mkdir', outPath], isPath=[False, True])
 
@@ -526,15 +528,15 @@ def VepAnnotation(stage):
 
         numJob = len(vcfList)
 
-        if 'isArrayJob' in arg and arg.isArrayJob:
+        if 'isArrayJob' in parameters and parameters.isArrayJob:
 
             numSgeJobs = Shared.numSgeJobs
 
-            if 'numSgeJobs' in arg:
-                if not (numSgeJobs.min <= arg.numSgeJobs <= numSgeJobs.max):
-                    LogException(f'numSgeJobs {arg.numSgeJobs} must be in range [{numSgeJobs.min},{numSgeJobs.max}]')
+            if 'numSgeJobs' in parameters:
+                if not (numSgeJobs.min <= parameters.numSgeJobs <= numSgeJobs.max):
+                    LogException(f'numSgeJobs {parameters.numSgeJobs} must be in range [{numSgeJobs.min},{numSgeJobs.max}]')
             else:
-                arg.numSgeJobs = numSgeJobs.default
+                parameters.numSgeJobs = numSgeJobs.default
 
             # Get the absolute path to the scripts
             templateCommand[1] = AbsPath(templateCommand[1])
@@ -549,7 +551,7 @@ def VepAnnotation(stage):
             command = [f'CAP' if p == '__JOB_NAME__' else p for p in command]
             command = ['1' if p == '__JOB_START__' else p for p in command]
             command = [str(numJob) if p == '__JOB_END__' else p for p in command]
-            command = [str(arg.numSgeJobs) if p == '__JOB_IN_PARALLEL__' else p for p in command]
+            command = [str(parameters.numSgeJobs) if p == '__JOB_IN_PARALLEL__' else p for p in command]
 
             Bash(command, isPath=[False, True, True, True, True, True, False, False, False, False, True])
         else:

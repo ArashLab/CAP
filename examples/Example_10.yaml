@@ -8,6 +8,17 @@ dataFiles:
         disk:
             path: 1kg.micro.out.vcf.bgz
 
+    vpeVCF:
+        disk:
+            path: 1kg.micro.vep.vcf.bgz
+            exportParam:
+                parallel: separate_header
+
+    vpeDIR:
+        disk:
+            path: 1kg.micro.vep
+            format: dir
+
     # outVCFvep:
     #     disk:
     #         path: 1kg.micro.vep.vcf.bgz
@@ -85,9 +96,9 @@ dataFiles:
 
 executionPlan:
     - CO1
-    - CO2
-    # - EGTVEP
-    # - VEPANN
+    # - CO2
+    - EGTVEP
+    - VEPANN
     # - VEPLT1
     # - VEPLT2
     # - VEPLT3
@@ -114,6 +125,20 @@ stages:
                             variantId: CHR:POS:ALLELES
             outData:
                 dataFileId: outMt
+
+    EGTVEP:
+        specifications:
+            function: ByPass
+        inouts:
+            inData:
+                dataFileId: outMt
+            outData:
+                dataFileId: vpeVCF
+                microFunctions:
+                    -   type: forVep
+                    -   type: repartition
+                        parameters:
+                            numPartitions: 4
 
     CO2:
         specifications:
@@ -281,39 +306,25 @@ stages:
     #             id: outPheno
     #             direction: input
 
-    # EGTVEP:
-    #     specifications:
-    #         function: CommonOperations
-    #     inouts:
-    #         inData:
-    #             id: outMT
-    #             direction: input
-    #         outData:
-    #             id: outVCFvep
-    #             direction: output
-
-    # VEPANN:
-    #     specifications:
-    #         function: VepAnnotation
-    #     parameters:
-    #         vepCli: 
-    #             - bash
-    #             - vep/cvs-norm.sh
-    #             - __IN_VCF__
-    #             - __OUT_JSON__
-    #             - __OUT_TBL__
-    #             - NoJobId
-    #             - __OUT_JOB__
-    #             - vep
-    #     inouts:
-    #         inData:
-    #             id: outVCFvep
-    #             direction: input
-    #             externalUse: true
-    #         outData:
-    #             id: outVep
-    #             direction: output
-    #             externalUse: true
+    
+    VEPANN:
+        specifications:
+            function: VepAnnotation
+        parameters:
+            vepCli: 
+                - bash
+                - vep/cvs-norm.sh
+                - __IN_VCF__
+                - __OUT_JSON__
+                - __OUT_TBL__
+                - NoJobId
+                - __OUT_JOB__
+                - vep
+        inouts:
+            inData:
+                dataFileId: vpeVCF
+            outData:
+                dataFileId: vpeDIR
 
 
     # VEPLT1:

@@ -197,31 +197,6 @@ def SplitMulti(mt, params):
     return mt
 
 @D_General
-def AddId(mt, params):
-
-    if 'sampleId' in params:
-        mt = mt.annotate_cols(sampleId=mt[params.sampleId])
-        mt = mt.key_cols_by('sampleId')
-    
-    if 'variantId' in params:
-        if params.variantId== 'CHR:POS:ALLELES':
-            mt = mt.annotate_rows(variantId=hl.str(':').join(hl.array([mt.locus.contig, hl.str(mt.locus.position)]).extend(mt.alleles)))
-        else:
-            LogException('VariantId is not Supported')
-    
-    return mt
-
-@D_General
-def ForVep(mt):
-
-    mt = mt.annotate_rows(rsid=hl.str(mt.variantId))
-    ht = mt.rows().select('rsid')
-    mt = hl.MatrixTable.from_rows_table(ht)
-    mt = mt.annotate_cols(sampleId='Dummy') # Neded For VCF Export purpose
-    mt = mt.key_cols_by(mt.sampleId)
-    return mt
-
-@D_General
 def FlattenTable(ht):
     """Recursively flatten table fields including arrays.
 
@@ -376,10 +351,6 @@ def InferColumnTypes(df):
     return df
 
 @D_General
-def GetFile(iof):    
-    return Shared.dataFiles[iof.id]
-
-@D_General
 def UnpackStage(stage):
     specifications = stage.get('specifications', Munch())
     parameters = stage.get('parameters', Munch())
@@ -399,27 +370,3 @@ def StrListStr(item):
         LogException('key must be str or list of str')
     return item
 
-@D_General
-def KeyBy(mht, key, axis=None):
-    key = StrListStr(key)
-
-    if isinstance(mht, hl.Table):
-        ht = mht
-        if key not in list(ht.row):
-            LogException(f'Key ({key}) is not presented in the table')
-        ht = ht.key_by(key)
-    elif isinstance(mht, hl.MatrixTable):
-        mt = mht
-        if not axis:
-            LogException('Axis must present for matrixtable')
-        if axis not in ['row', 'col']:
-            LogException(f'Axis must be row or col but its :{axis}')
-
-        if axis == 'row':
-            if key not in list(mt.row):
-                LogException(f'Key ({key}) is not presented in the matrixtable row')
-            mt = mt.key_row_by(key)
-        elif axis == 'col':
-            if key not in list(mt.col):
-                LogException(f'Key ({key}) is not presented in the matrixtable col')
-            mt = mt.key_col_by(key)

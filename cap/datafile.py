@@ -289,7 +289,6 @@ class DataFile(Munch):
                     LogException(f'Memory format `{memory.format}` is not supported for disk format `{file.disk.format}`. Acceptable memory formats are `{inferred.formats}`')
             memory.isProduced = False #always false at the begining
 
-
     @D_General
     def ExistInternal(self, path):
         fs = self.disk.fileSystem
@@ -405,59 +404,3 @@ class DataFile(Munch):
                 exportParam.delimiter = ','
                 ht = data
                 ht.export(disk.path[0], **exportParam)
-
-    @D_General
-    def Partitioning(self):
-        if not self.isLoaded:
-            LogException('Data is not ready to perform common operation')
-
-        memory = self.memory
-        if memory.format in ['mt', 'ht']:
-            mht = self.data
-            mht = mht.repartition(memory.numPartitions)
-            if memory.persistence:
-                if memory.persistence not in ['DISK_ONLY', 'DISK_ONLY_2', 'MEMORY_ONLY', 'MEMORY_ONLY_2', 'MEMORY_ONLY_SER', 'MEMORY_ONLY_SER_2', 'MEMORY_AND_DISK', 'MEMORY_AND_DISK_2', 'MEMORY_AND_DISK_SER', 'MEMORY_AND_DISK_SER_2', 'OFF_HEAP']:
-                    LogException(f'Persistance {memory.persistence} level not supported')
-                mht = mht.persist(memory.persistence)
-            self.data = mht
-
-    @D_General
-    def ExecuteAsInput(self):
-        file = self
-
-        if file.get('externalUse'):
-            Log('This file is for external use and not loaded')
-            return
-        
-        if file.storageType == 'memory':
-            if not file.memory.isProduced:
-                LogException('Data has not produced yet')
-            else:
-                return
-
-        if file.storageType == 'disk':
-            self.ExpandWildcardPath()
-            if not self.ExistAll():
-                LogException('Input file does not exist')
-            self.Load()
-
-    @D_General
-    def ExecuteAsOutput(self):
-        file = self
-
-        if file.get('externalUse'):
-            Log('This file is for external use and not loaded')
-            return
-
-        if file.storageType == 'memory':
-            if not file.memory.isProduced:
-                LogException('Data has not produced yet')
-            else:
-                return
-
-        if file.storageType == 'disk':
-            if file.disk.isWildcard:
-                LogException('Output file cannot be wildcard')
-            if self.ExistAny():
-                LogException(f'Output path already exist')
-            self.Dump()

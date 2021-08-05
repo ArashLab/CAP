@@ -14,44 +14,53 @@ from .datafile import DataFile
 from . import operation as Operation
 
 supportedFunctions = {
-    'addIndex': [hl.Table, hl.MatrixTable], # rc
-    'aggregate': [hl.Table, hl.MatrixTable], # rce
-    'annotate': [hl.Table, hl.MatrixTable], # rcge
-    'antiJoin': [hl.Table, hl.MatrixTable], # rc Function
-    'semiJoin': [hl.Table, hl.MatrixTable], # rc Function
-    'union': [hl.Table, hl.MatrixTable], # rc Function
-    'collect': [hl.Table, hl.MatrixTable], # - ??
-    'collectBykey': [hl.Table, hl.MatrixTable], # c ??
-    'count': [hl.Table, hl.MatrixTable], # rcx (x:rc together)
-    'distinct': [hl.Table, hl.MatrixTable], # rc
-    'drop': [hl.Table, hl.MatrixTable],
-    'explode': [hl.Table, hl.MatrixTable], # rc ??
-    'filter': [hl.Table, hl.MatrixTable], # rce
-    'groupBy': [hl.Table, hl.MatrixTable], #rc
-    'index': [hl.Table, hl.MatrixTable], # rcge
-    'keyBy': [hl.Table, hl.MatrixTable], # rc
-    'rename': [hl.Table, hl.MatrixTable],
-    'sample': [hl.Table, hl.MatrixTable], #rc
-    'select': [hl.Table, hl.MatrixTable], # rcge
+    'addIndex': ['ht', 'mt'], # rc
+    'aggregate': ['ht', 'mt'], # rce
+    'annotate': ['ht', 'mt'], # rcge
+    # 'antiJoin': ['ht', 'mt'], # rc Function
+    # 'semiJoin': ['ht', 'mt'], # rc Function
+    # 'union': ['ht', 'mt'], # rc Function
+    'collect': ['ht', 'mt'], # - ??
+    'collectByKey': ['ht', 'mt'], # c ??
+    'count': ['ht', 'mt'], # rcx (x:rc together)
+    'distinct': ['ht', 'mt'], # rc
+    'drop': ['ht', 'mt'],
+    'explode': ['ht', 'mt'], # rc ??
+    'filter': ['ht', 'mt'], # rce
+    'groupBy': ['ht', 'mt'], #rc
+    'index': ['ht', 'mt'], # rcge
+    'keyBy': ['ht', 'mt'], # rc
+    'rename': ['ht', 'mt'],
+    'sample': ['ht', 'mt'], #rc
+    'select': ['ht', 'mt'], # rcge
 
-    'keyBy': [hl.Table, hl.MatrixTable], # rc
+    'repartition': ['ht', 'mt'],
+    'persist': ['ht', 'mt'],
+    'unpersist': ['ht', 'mt'],
 
-    'repartition': [hl.Table, hl.MatrixTable],
-    'persist': [hl.Table, hl.MatrixTable],
-    'unpersist': [hl.Table, hl.MatrixTable],
-
-    'addId': [hl.MatrixTable], # rc same as nnotate col and row this is a alisa
+    'addId': ['mt'], # rc same as nnotate col and row this is a alisa
     # Genomic ones
-    'maf': [hl.MatrixTable],
-    'ldPrune': [hl.MatrixTable],
-    'splitMulti': [hl.MatrixTable],
-    'forVep': [hl.MatrixTable]
+    'maf': ['mt'],
+    'ldPrune': ['mt'],
+    'splitMulti': ['mt'],
+    'forVep': ['mt']
 }
+
+dataTypeMapper = {
+    hl.MatrixTable: 'mt',
+    hl.Table: 'ht',
+    int: 'int',
+    str: 'str'
+}
+
+dataTypeNameMapper = {v:k for k,v in dataTypeMapper.items()}
 
 @D_General
 def MicroFunction(data, microFunctions):
 
     for func in microFunctions:
+
+        dataType = dataTypeMapper[type(data)]
 
         mfType = func.get('type')
         if not mfType:
@@ -60,63 +69,187 @@ def MicroFunction(data, microFunctions):
         supportedDataTypes = supportedFunctions.get(mfType)
         if not supportedDataTypes:
             LogException("XXX")
-        if type(data) not in supportedDataTypes:
+        if dataType not in supportedDataTypes:
             print(type(data), supportedDataTypes)
             LogException("XXX")
 
-        param = func.get('parameters', Munch())
+        parameters = func.get('parameters', Munch())
 
-        # if mfType == 'addIndex':
-        #     mht = data
-        #     mht = mht.add
+                    
+        #############################
+        if mfType == 'addIndex':
+            name = parameters.pop('name', None)
+            axis = parameters.pop('axis', None)
+            axis = f'_{axis}' if axis else ''
+            name = f'name = {name}' if name else ''
+            statement = f'res = data.add{axis}_index({name})'
+            ldict = locals()
+            exec(statement, globals(), ldict)
+            data = ldict['res']
+
+        #############################
+        elif mfType == 'aggregate':
+            retType = parameters.pop('retType')
+            axis = parameters.pop('axis', None)
+            expr = parameters.pop('expr', None)
+            retType = dataTypeNameMapper[retType]
+            axis = f'_{axis}' if axis else ''
+            statement = f'res = data.aggregate{axis}({expr})'
+            ldict = locals()
+            exec(statement, globals(), ldict)
+            data = ldict['res']
+            data = retType(data)
+
+        #############################
+        elif mfType == 'annotate':
+            axis = parameters.pop('axis', None)
+            axis = f'_{axis}' if axis else ''
+            strParameters = ', '.join([f'{k}={v}' for k,v in parameters.items()])
+            statement = f'res = data.annotate{axis}({strParameters})'
+            ldict = locals()
+            exec(statement, globals(), ldict)
+            data = ldict['res']
+
+        #############################
+        elif mfType == 'union':
+            pass # TBI
+
+        #############################
+        elif mfType == 'collect':
+            pass # TBI
+
+        #############################
+        elif mfType == 'collectByKey':
+            pass # TBI
+
+        #############################
+        elif mfType == 'count':
+            pass # TBI
+
+        #############################
+        elif mfType == 'distinct':
+            pass # TBI
+
+        #############################
+        elif mfType == 'drop':
+            mt = mt.drop(*parameters)
+
+        #############################
+        elif mfType == 'explode':
+            pass # TBI
+
+        #############################
+        elif mfType == 'filter':
+            pass # TBI
+
+        #############################
+        elif mfType == 'groupBy':
+            pass # TBI
+
+        #############################
+        elif mfType == 'index':
+            pass # TBI
+
+        #############################
+        elif mfType == 'keyBy':
+            axis = parameters.pop('axis', None)
+            axis = f'_{axis}' if axis else ''
+            keys = ', '.join([f'\'{k}\'' for k in parameters.get('keys', [])])
+            namedKeys = ', '.join([f'{k}={v}' for k,v in parameters.get('namedKeys', {}).items()])
+            statement = f'res = data.key{axis}_by({keys}, {namedKeys})'
+            ldict = locals()
+            exec(statement, globals(), ldict)
+            data = ldict['res']
+
+        #############################
+        elif mfType == 'rename':
+            data = data.rename(parameters)
+
+        #############################
+        elif mfType == 'sample':
+            axis = parameters.pop('axis', None)
+            axis = f'_{axis}' if axis else ''
+            statement = f'res = data.sample{axis}({strParameters})'
+            ldict = locals()
+            exec(statement, globals(), ldict)
+            data = ldict['res']
+
+        #############################
+        elif mfType == 'select':
+            axis = parameters.pop('axis', None)
+            axis = f'_{axis}' if axis else ''
+            expr = ', '.join([f'\'{k}\'' for k in parameters.get('expr', [])])
+            namedExpr = ', '.join([f'{k}={v}' for k,v in parameters.get('namedExpr', {}).items()])
+            statement = f'res = data.select{axis}({expr}, {namedExpr})'
+            print(statement)
+            ldict = locals()
+            exec(statement, globals(), ldict)
+            data = ldict['res']
+
+        #############################
+        elif mfType == 'repartition':
+            data = data.repartition(parameters.numPartitions)
+
+        #############################
+        elif mfType == 'persist':
+            if parameters.persistence not in ['DISK_ONLY', 'DISK_ONLY_2', 'MEMORY_ONLY', 'MEMORY_ONLY_2', 'MEMORY_ONLY_SER', 'MEMORY_ONLY_SER_2', 'MEMORY_AND_DISK', 'MEMORY_AND_DISK_2', 'MEMORY_AND_DISK_SER', 'MEMORY_AND_DISK_SER_2', 'OFF_HEAP']:
+                LogException(f'Persistance {parameters.persistence} level not supported')
+            mht = mht.persist(parameters.persistence)
+
+        #############################
+        elif mfType == 'unpersist':
+            data.unpersist()
+
+        #############################
+        elif mfType == 'addId':
+            data = AddId(data, parameters)
+
+        #############################
+        elif mfType == 'maf':
+            # Calculate MAF in a coloum (avoid writing on existing cols by using a random col name)
+            mafColName = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+            mafExpr = {mafColName : hl.min(hl.agg.call_stats(mt.GT, mt.alleles).AF)}
+            mt = mt.annotate_rows(**mafExpr)
+            # Apply filter
+            mt = mt.filter_rows((mt[mafColName] >= parameters.min) & (mt[mafColName] <= parameters.max), keep=True)
+
+        #############################
+        elif mfType == 'ldPrune':
+            prunList = hl.ld_prune(data.GT, **parameters)
+            data = data.filter_rows(hl.is_defined(prunList[data.row_key]))
+
+        #############################
+        elif mfType == 'splitMulti':
+            mt = SplitMulti(mt, parameters)
+
+        #############################
+        elif mfType == 'forVep':
+            data = ForVep(data)
+        
 
     return data
 
-    # for op in operations:
-    #     params = operations[op]
-    #     try:
-    #         if op=='rename':
-    #             mt = mt.rename(params)
-    #         elif op=='drop':
-    #             mt = mt.drop(*params)
-    #         elif op=='gtOnly' and params==True:
-    #             mt = mt.select_entries('GT')
-    #         elif op=='annotateRows': ### TBF so that the type is mentiond and enough data to form expression
-    #             for k in params:
-    #                 if isinstance(params[k], dict):
-    #                     params[k] = hl.struct(**params[k])
-    #                 elif isinstance(params[k], list):
-    #                     if len(params[k]) == len(set(params[k])):
-    #                         params[k] = hl.set(params[k])
-    #                     else:
-    #                         params[k] = hl.array(params[k])
-    #             mt = mt.annotate_rows(**params)
-    #         elif op=='annotateCols':
-    #             mt = mt.annotate_cols(**params)
-    #         elif op=='annotateGlobals':
-    #             mt = mt.annotate_globals(**params)
-    #         elif op=='annotateEntries':
-    #             mt = mt.annotate_entries(**params)
-    #         elif op=='maf':
-    #             # Calculate MAF in a coloum (avoid writing on existing cols by using a random col name)
-    #             mafColName = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-    #             mafExpr = {mafColName : hl.min(hl.agg.call_stats(mt.GT, mt.alleles).AF)}
-    #             mt = mt.annotate_rows(**mafExpr)
-    #             # Apply filter
-    #             mt = mt.filter_rows((mt[mafColName] >= params.min) & (mt[mafColName] <= params.max), keep=True)
-    #         elif op=='ldPrune':
-    #             prunList = hl.ld_prune(mt.GT, **params)
-    #             mt = mt.filter_rows(hl.is_defined(prunList[mt.row_key]))
-    #         elif op=='subSample':
-    #             mt = SampleRows(mt, params)
-    #         elif op=='splitMulti':
-    #             mt = SplitMulti(mt, params)
-    #         elif op=='addId':
-    #             mt = AddId(mt, params)
-    #         elif op=='forVep' and params==True:
-    #             mt = ForVep(mt)
-    #         else:
-    #             LogException(f'Something Wrong in the code')
-    #     except:
-    #         LogException(f'Hail cannot perfom {op} with args: {params}.')
-    #     Log(f'{op} done with agrs: {params}.')
+@D_General
+def AddId(mt, parameters):
+
+    if 'sampleId' in parameters:
+        mt = mt.annotate_cols(sampleId=mt[parameters.sampleId])
+        mt = mt.key_cols_by('sampleId')
+    
+    if 'variantId' in parameters:
+        if parameters.variantId== 'CHR:POS:ALLELES':
+            mt = mt.annotate_rows(variantId=hl.str(':').join(hl.array([mt.locus.contig, hl.str(mt.locus.position)]).extend(mt.alleles)))
+        else:
+            LogException('VariantId is not Supported')
+    
+    return mt
+
+@D_General
+def ForVep(mt):
+
+    mt = mt.annotate_rows(rsid=hl.str(mt.variantId))
+    ht = mt.rows().select('rsid')
+    mt = hl.MatrixTable.from_rows_table(ht)
+    mt = mt.annotate_cols(sampleId='Dummy') # Neded For VCF Export purpose
+    mt = mt.key_cols_by(mt.sampleId)
+    return mt
