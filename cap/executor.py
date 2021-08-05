@@ -60,6 +60,5 @@ class Executor:
         workload = self.workload
         for stageId in workload.executionPlan:
             stage = workload.stages[stageId]
-            if stage.specifications.status != 'Completed':
-                stage.Execute(self.workload)
+            stage.Execute(self.workload)
     

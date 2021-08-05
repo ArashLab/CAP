@@ -1,3 +1,4 @@
+from cap import stage
 from inspect import Parameter
 from munch import Munch, munchify
 import jsonschema
@@ -13,7 +14,7 @@ from .shared import Shared
 from .datafile import DataFile
 from . import operation as Operation
 
-supportedFunctions = {
+supportedMicroFunctions = {
     'addIndex': ['ht', 'mt'], # rc
     'aggregate': ['ht', 'mt'], # rce
     'annotate': ['ht', 'mt'], # rcge
@@ -40,37 +41,28 @@ supportedFunctions = {
 
     'addId': ['mt'], # rc same as nnotate col and row this is a alisa
     # Genomic ones
-    'maf': ['mt'],
+    'maf': ['mt'], # to be alias
     'ldPrune': ['mt'],
     'splitMulti': ['mt'],
-    'forVep': ['mt']
+    'forVep': ['mt'],
+    'describe': ['ht', 'mt']
 }
-
-dataTypeMapper = {
-    hl.MatrixTable: 'mt',
-    hl.Table: 'ht',
-    int: 'int',
-    str: 'str'
-}
-
-dataTypeNameMapper = {v:k for k,v in dataTypeMapper.items()}
 
 @D_General
 def MicroFunction(data, microFunctions):
 
     for func in microFunctions:
-
         dataType = dataTypeMapper[type(data)]
 
         mfType = func.get('type')
+
         if not mfType:
             LogException("XXX")
 
-        supportedDataTypes = supportedFunctions.get(mfType)
+        supportedDataTypes = supportedMicroFunctions.get(mfType)
         if not supportedDataTypes:
             LogException("XXX")
         if dataType not in supportedDataTypes:
-            print(type(data), supportedDataTypes)
             LogException("XXX")
 
         parameters = func.get('parameters', Munch())
@@ -104,7 +96,7 @@ def MicroFunction(data, microFunctions):
         elif mfType == 'annotate':
             axis = parameters.pop('axis', None)
             axis = f'_{axis}' if axis else ''
-            strParameters = ', '.join([f'{k}={v}' for k,v in parameters.items()])
+            strParameters = ', '.join([f'{k}={v}' for k,v in parameters.get('namedExpr', Munch()).items()])
             statement = f'res = data.annotate{axis}({strParameters})'
             ldict = locals()
             exec(statement, globals(), ldict)
@@ -181,7 +173,6 @@ def MicroFunction(data, microFunctions):
             expr = ', '.join([f'\'{k}\'' for k in parameters.get('expr', [])])
             namedExpr = ', '.join([f'{k}={v}' for k,v in parameters.get('namedExpr', {}).items()])
             statement = f'res = data.select{axis}({expr}, {namedExpr})'
-            print(statement)
             ldict = locals()
             exec(statement, globals(), ldict)
             data = ldict['res']
@@ -225,7 +216,14 @@ def MicroFunction(data, microFunctions):
         #############################
         elif mfType == 'forVep':
             data = ForVep(data)
-        
+
+        #############################
+        elif mfType == 'describe':
+            print("=============")
+            print("=============")
+            data.describe()
+            print("=============")
+            print("=============")
 
     return data
 

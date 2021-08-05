@@ -32,36 +32,38 @@ class Stage(Munch):
     def Execute(self, workload):
         
         Shared.CurrentStageForLogging = self
-        
-        #self.CheckStage(stage)  # Check the stage right before execution to make sure no dynamic error occurs
-        func = getattr(Operation, self.specifications.function)
-        
-        LogPrint(f'Started')
-        
-        self.specifications.status = 'Running'
-        runtime = Munch()
-        runtime.base = Shared.runtime.base
-        self.specifications.runtimes = self.specifications.get('runtimes', list())
-        self.specifications.runtimes.append(runtime)
-        runtime.startTime = datetime.now()
-        workload.Update()
+        if self.specifications.status != 'Completed':
+            #self.CheckStage(stage)  # Check the stage right before execution to make sure no dynamic error occurs
+            func = getattr(Operation, self.specifications.function)
+            
+            LogPrint(f'Started')
+            
+            self.specifications.status = 'Running'
+            runtime = Munch()
+            runtime.base = Shared.runtime.base
+            self.specifications.runtimes = self.specifications.get('runtimes', list())
+            self.specifications.runtimes.append(runtime)
+            runtime.startTime = datetime.now()
+            workload.Update()
 
-        self.IncludeDataFiles(workload)
-        workload.Update()
+            self.IncludeDataFiles(workload)
+            workload.Update()
 
-        func(self)
-        workload.Update()
+            func(self)
+            workload.Update()
 
-        self.RemoveDataFiles()
-        workload.Update()
+            self.RemoveDataFiles()
+            workload.Update()
 
-        runtime.endTime = datetime.now()
-        runtime.execTime = str(runtime.endTime - runtime.startTime)
-        runtime.status = 'Completed'
-        self.specifications.status = 'Completed'
-        workload.Update()
+            runtime.endTime = datetime.now()
+            runtime.execTime = str(runtime.endTime - runtime.startTime)
+            runtime.status = 'Completed'
+            self.specifications.status = 'Completed'
+            workload.Update()
 
-        LogPrint(f'Completed in {runtime.execTime}')
+            LogPrint(f'Completed in {runtime.execTime}')
+        else:
+            LogPrint('Stage already executed and compeleted')
         Shared.CurrentStageForLogging = None
 
 

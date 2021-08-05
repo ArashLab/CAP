@@ -22,6 +22,15 @@ if __name__ == '__main__':
     print('This module is not executable.')
     exit(0)
 
+dataTypeMapper = {
+    hl.MatrixTable: 'mt',
+    hl.Table: 'ht',
+    int: 'int',
+    str: 'str'
+}
+
+dataTypeNameMapper = {v:k for k,v in dataTypeMapper.items()}
+
 def AbsPath(path):
 
     inpath=path

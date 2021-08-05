@@ -101,11 +101,11 @@ def KeyByTable(stage):
 
 @D_General
 def PcaHweNorm(stage):
-    spec, arg, io = UnpackStage(stage)
+    specifications, parameters, inouts, runtimes = UnpackStage(stage)
 
     ##### >>>>>>> Input/Output <<<<<<<<
-    inData = GetFile(io.inData)
-    outScores = GetFile(io.outScores)
+    inData = inouts.inData
+    outScores = inouts.outScores
 
     ##### >>>>>>> Live Input <<<<<<<<
     mt = inData.data
@@ -114,11 +114,11 @@ def PcaHweNorm(stage):
 
     try:
         cl = dict()
-        if 'outPcaLoading' in io:
+        if 'outPcaLoading' in inouts:
             cl['compute_loadings'] = True
         else:
             cl['compute_loadings'] = False
-        eigenvalues, pcs, loading = hl.hwe_normalized_pca(mt.GT, k=arg.numPcaVectors, **cl)
+        eigenvalues, pcs, loading = hl.hwe_normalized_pca(mt.GT, k=parameters.numPcaVectors, **cl)
         pcs = FlattenTable(pcs)
     except:
         LogException('Hail cannot perform the pca analysis')
@@ -136,29 +136,38 @@ def PcaHweNorm(stage):
 
 @D_General
 def HailAssociation(stage):
-    spec, arg, io = UnpackStage(stage)
+    specifications, parameters, inouts, runtimes = UnpackStage(stage)
 
     ##### >>>>>>> Input/Output <<<<<<<<
-    inData = GetFile(io.inData)
-    tables = dict()
-    for tableId in io:
-        if tableId not in ['inData']:
-            tables[tableId] = GetFile(io[tableId])
-
+    inMt = inouts.inMt
+    inTable = Munch()
+    for inout in inouts:
+        if inout.startswith('inTable_'):
+            inTable[inout] = inouts[inout]
+    outTable = Munch()
+    for inout in inouts:
+        if inout.startswith('outTable_'):
+            outTable[inout] = inouts[inout]
 
     ##### >>>>>>> Live Input <<<<<<<<
-    mt = inData.data
-
+    mt = inMt.data
+    inData = Munch()
+    for inout in inouts:
+        if inout.startswith('inTable_'):
+            inData[inout] = inouts[inout].GetData()
+            
     ##### >>>>>>> STAGE Code <<<<<<<<
 
-    htResults = {tbl: None for tbl in arg.resTables}
-    print(htResults)
+    outData = Munch()
+    for inout in inouts:
+        if inout.startswith('outTable_'):
+            outData[inout] = None
 
-    for test in arg.tests:
+    for test in parameters.tests:
         htCovar = None
         if 'covariates' in test:
             for cv in test.covariates:
-                ht = tables[cv.table].data
+                ht = inData[cv.table]
                 ht = ht.select(*cv.cols)
                 if htCovar:
                     htCovar = htCovar.join(ht, how='outer')
@@ -171,33 +180,50 @@ def HailAssociation(stage):
 
         if 'responseVariables' in test:
             for table in test.responseVariables:
-                ht = tables[table.tableId].data
+                ht = inData[table.tableId]
                 for col in table.cols:
 
-                    if test.type == 'LogReg':
-                        res = hl.logistic_regression_rows(
-                            test=test.subType, y=ht[mt.sampleId][col.colName], x=mt.GT.n_alt_alleles(), 
-                            covariates=covars, pass_through=['variantId'])
-                    elif test.type == 'LinReg':
-                        res = hl.linear_regression_rows(
+                    if test.type in ['LogReg', 'LinReg']:
+                        if test.type == 'LogReg':
+                            res = hl.logistic_regression_rows(
+                                test=test.subType, y=ht[mt.sampleId][col.colName], x=mt.GT.n_alt_alleles(), 
+                                covariates=covars, pass_through=['variantId'])
+                        elif test.type == 'LinReg':
+                            res = hl.linear_regression_rows(
+                                y=ht[mt.sampleId][col.colName], x=mt.GT.n_alt_alleles(), 
+                                covariates=covars, pass_through=['variantId'])
+                        res = res.key_by('variantId')
+                        res = res.drop('locus', 'alleles')
+                    
+                    elif test.type == 'skat':
+                        htKeyExpr = inData[test.keyExpr.tableId]
+                        colKeyExpr = test.keyExpr.colName
+
+                        htWeigthExpr = inData[test.weightExpr.tableId]
+                        colWeightExpr = test.weightExpr.colName
+
+                        res = hl.skat(
+                            key_expr=htKeyExpr[mt.locus, mt.alleles][colKeyExpr],
+                            weight_expr=htWeigthExpr[mt.locus, mt.alleles][colWeightExpr],
                             y=ht[mt.sampleId][col.colName], x=mt.GT.n_alt_alleles(), 
-                            covariates=covars, pass_through=['variantId'])
-                    res = res.key_by('variantId')
-                    res = res.drop('locus', 'alleles')
+                            covariates=covars, **col.param)
+
+                        #res = res.key_by(test.keyExpr.col)
+                        #res = res.drop('locus', 'alleles')
+
+
                     expr = {col.testName: hl.struct(**dict(res.row_value))}
                     res = res.annotate(**expr)
                     res = res.select(res[col.testName])
-                    if htResults[col.resTableId]:
-
-                        htResults[col.resTableId] = htResults[col.resTableId].join(res, how='outer')
+                    if outData[col.resTableId]:
+                        outData[col.resTableId] = outData[col.resTableId].join(res, how='outer')
                     else:
-                        htResults[col.resTableId] = res
-        
-        #output[] = htResults
+                        outData[col.resTableId] = res
 
     ##### >>>>>>> Live Output <<<<<<<<
-    for tbl in arg.resTables:
-        tables[tbl].SetData(htResults[tbl])
+    for inout in inouts:
+        if inout.startswith('outTable_'):
+            inouts[inout].SetData(outData[inout])
 
 
 @D_General
@@ -328,7 +354,7 @@ def MergeMatrixTables(stage):
     outData.data = mt
 
 @D_General
-def MergeTables(stage):
+def Join(stage):
     specifications, parameters, inouts, runtimes = UnpackStage(stage)
 
     ##### >>>>>>> Input/Output <<<<<<<<
@@ -346,58 +372,51 @@ def MergeTables(stage):
 
     ##### >>>>>>> STAGE Code <<<<<<<<
 
-    for i, item in parameters.order:
+    for i, item in enumerate(parameters.order):
         inTable = data[item.table]
+
         if not i:
             outTable = inTable
         else:
+            inType = dataTypeMapper[type(inTable)]
+            outType = dataTypeMapper[type(outTable)]
+
             kind = item.get('kind')
-            how = item.get('how')
+            how = item.get('how', 'inner')
             axis = item.get('axis')
-            if kind=='annotate' or axis:
-                if not isinstance(outTable, hl.MatrixTable):
-                    LogException('XXX')
-            if kind!='join':
-                if how:
-                    LogException("XXX")
-            else:
-                if not isinstance(outTable, hl.Table):
-                    LogException('XXX')
-                if not isinstance(outTable, hl.Table):
-                    LogException('XXX')
+
+            if inType=='ht' and outType=='ht' and axis:
+                LogException('XXX')
+            
+            if (inType=='mt' or outType=='mt') and (axis not in ['rows', 'cols']):
+                LogException('XXX')
+
+            if inType=='mt':
+                if axis=='rows':
+                    inTable = inTable.rows()
+                elif axis=='cols':
+                    inTable = inTable.cols()
+                inType = 'ht'
+
+
+            axisFunc = f'_{axis}' if (axis and inType == 'mt') else ''
+
+            if kind in ['semi', 'anti']:
+                func = getattr(outTable, f'{kind}_join{axisFunc}')
+                outTable = func(inTable)
+            if kind=='annotate':
+                strParameters = ', '.join([f'{k}={v}' for k,v in item.get('namedExpr', dict()).items()])
+                statement = f'res = outTable.annotate{axisFunc}({strParameters})'
+                ldict = locals()
+                exec(statement, globals(), ldict)
+                outTable = ldict['res']
 
             if kind=='join':
-                outTable = outTable.join()
-            
-
-
-    # if not hts:
-    #     LogException('No Table is loaded')
-
-    # how = parameters.get('how')
-    # how = how if how else 'inner'
-    # if how not in ['inner', 'outer', 'left', 'right']:
-    #     LogException('Join type is not supported.')
-
-    # inKeys = parameters.get('inKeys')
-    # if not inKeys:
-    #     LogException('Keys must present')
-    # if not isinstance(inKeys, list):
-    #     LogException('keys must be of type list')
-    # if len(inKeys) != len(hts):
-    #     LogException(f'number of keys ({len(inKeys)}) does not match number of tables ({len(hts)})')
-
-    # ht = hts[0]
-    # ht = KeyBy(ht, inKeys[0])
-
-    # if len(hts) > 1:
-    #     for i in range(1, len(hts)):
-    #         ht2 = KeyBy(ht[i], inKeys[i])
-    #         ht = ht.join(ht2, how=how)
-    
-    # outKey = parameters.get('outKey')
-    # if outKey:
-    #     ht = KeyBy(ht, outKey)
+                if outType=='mt':
+                    LogException('Not supported for now')
+                if how not in ['inner', 'outer', 'left', 'right']:
+                    LogException('XXX')
+                outTable = outTable.join(inTable, how=how)
 
     ##### >>>>>>> Live Output <<<<<<<<
     outData.SetData(outTable)
