@@ -100,11 +100,11 @@ executionPlan:
 stages:
     CO1:
         specifications:
-            function: CommonOperations
+            function: ByPass
         inouts:
             inData:
                 dataFileId: inVCF
-                commonOperations:
+                microFunctions:
                     -   type: rename
                         parameters:
                             s: sample
@@ -117,7 +117,7 @@ stages:
 
     CO2:
         specifications:
-            function: CommonOperations
+            function: ByPass
         inouts:
             inData:
                 dataFileId: outMt

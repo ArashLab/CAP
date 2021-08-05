@@ -1,16 +1,9 @@
-from munch import Munch, munchify
-import jsonschema
-import os
-
-import hail as hl
+from munch import Munch
 from .logutil import *
 from .common import *
 from .helper import *
 from .decorators import *
-from .pyobj import PyObj
-from .shared import Shared
-from .datafile import DataFile
-from . import operation as Operation
+from .microfunc import *
 
 if __name__ == '__main__':
     print('This module is not executable.')
@@ -25,16 +18,16 @@ class InOut(Munch):
     @D_General
     def GetData(self):
         data = self.dataFile.GetData()
-        # operations = self.get('commonOperations')
-        # if operations:
-        #     data = CommonOperations(data, operations)
+        microFunctions = self.get('microFunctions')
+        if microFunctions:
+            data = MicroFunction(data, microFunctions)
         return data
 
     @D_General
     def SetData(self, data):
-        # operations = self.get('commonOperations')
-        # if operations:
-        #     data = CommonOperations(data, operations)
+        microFunctions = self.get('microFunctions')
+        if microFunctions:
+            data = MicroFunction(data, microFunctions)
         self.dataFile.SetData(data)
 
     data = property(GetData, SetData)

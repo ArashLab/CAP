@@ -15,7 +15,7 @@ if __name__ == '__main__':
     exit(0)
 
 @D_General
-def CommonOperations(stage):
+def ByPass(stage):
     specifications, parameters, inouts, runtimes = UnpackStage(stage)
 
     ##### >>>>>>> Input/Output <<<<<<<<
@@ -24,7 +24,6 @@ def CommonOperations(stage):
 
     ##### >>>>>>> Live Input <<<<<<<<
     data = inData.GetData()
-    print("====", type(data))
 
     ##### >>>>>>> STAGE Code <<<<<<<<
     # DO Nothing (Just Common Operation)
