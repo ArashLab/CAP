@@ -11,8 +11,9 @@ from cap.executor import Executor
 @D_General
 def CapMain(args):
     workload = Workload(path=args.workload)
+    Shared.workload = workload
     executor = Executor(workload, hailLog=args.hailLog)
-    # executor.Execute()
+    executor.Execute()
 
 
 

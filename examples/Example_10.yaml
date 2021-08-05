@@ -1,0 +1,411 @@
+dataFiles:
+    inVCF:
+        disk:
+            path: 1kg.micro.vcf.bgz
+            isProduced: true
+
+    outVCF:
+        disk:
+            path: 1kg.micro.out.vcf.bgz
+
+    # outVCFvep:
+    #     disk:
+    #         path: 1kg.micro.vep.vcf.bgz
+    #         exportParam:
+    #             parallel: header_per_shard
+    #     commonOperations:
+    #         forVep: True
+    #     memory:
+    #         numPartitions: 1
+
+    # outVep:
+    #     disk:
+    #         path: OutVep
+    #         format: dir
+
+    # outVepVar:
+    #     disk:
+    #         path: 1kg.micro.vepVar.ht
+
+    # outVepClVar:
+    #     disk:
+    #         path: 1kg.micro.vepClVar.ht
+
+    # outVepFreq:
+    #     disk:
+    #         path: 1kg.micro.vepFreq.ht
+
+    # outVepConseq:
+    #     disk:
+    #         path: 1kg.micro.vepConseq.ht
+
+    # outVepConseqToVar:
+    #     disk:
+    #         path: 1kg.micro.vepConseqToVar.ht
+
+    # outVepConseqToTerms:
+    #     disk:
+    #         path: 1kg.micro.vepConseqToTerms.ht
+
+    # outVepVarTerms:
+    #     disk:
+    #         path: 1kg.micro.vepVarTerm.ht
+            
+    # outMTx:
+    #     disk:
+    #         path: 1kg.xx.mt
+    # outRow:
+    #     disk:
+    #         path: 1kg.row.ht
+    # outCol:
+    #     disk:
+    #         path: 1kg.col.ht
+    # inPheno:
+    #     disk:
+    #         path: 1kg.pheno.tsv
+    #         importParam:
+    #             impute: True
+    # outPheno:
+    #     disk:
+    #         path: 1kg.pheno.ht
+
+    # pcaScore:
+    #     disk:
+    #         path: 1kg.pca.ht
+
+    # outPval1:
+    #     disk:
+    #         path: 1kg.pval1.ht
+
+    # outPval2:
+    #     disk:
+    #         path: 1kg.pval2.ht
+
+#gzip -dc 1kg.micro2.vcf.bgz | head -n 98 | tail | cut -f 1-10 | column -t
+
+executionPlan:
+    - CO1
+    - CO2
+    # - EGTVEP
+    # - VEPANN
+    # - VEPLT1
+    # - VEPLT2
+    # - VEPLT3
+    # - VEPLT4
+    # - SMT
+    # - KBT
+    # - PCA
+    # - ASSOC
+
+stages:
+    CO1:
+        specifications:
+            function: CommonOperations
+        inouts:
+            inData:
+                direction: input
+                dataFiles:
+                    -   id: inVCF
+                        commonOperations:
+                            -   type: rename
+                                parameters:
+                                    s: sample
+                            -   type: addId
+                                parameters:
+                                    sampleId: sample
+                                    variantId: CHR:POS:ALLELES
+            outData:
+                direction: output
+                dataFiles:
+                    -   id: outMt
+
+    CO2:
+        specifications:
+            function: CommonOperations
+        inouts:
+            inData:
+                direction: output
+                dataFiles:
+                    -   id: outMt
+            outData:
+                direction: input
+                dataFiles:
+                    -   id: outVCF
+    # CO2:
+    #     specifications:
+    #         function: CommonOperations
+    #     inouts:
+    #         inData:
+    #             id: outMT
+    #             direction: input
+    #         outData:
+    #             id: outVCF
+    #             direction: output
+    # SMT:
+    #     specifications:
+    #         function: SplitMatrixTable
+    #     inouts:
+    #         inData:
+    #             id: outMT
+    #             direction: input
+    #         outData:
+    #             id: outMTx
+    #             direction: output
+    #         outCol:
+    #             id: outCol
+    #             direction: output
+    #         outRow:
+    #             id: outRow
+    #             direction: output
+    # KBT:
+    #     specifications:
+    #         function: KeyByTable
+    #     parameters:
+    #         keyCol: sampleId
+    #         joinColKey: sample
+    #         joinColData: ID
+    #     inouts:
+    #         inData:
+    #             id: inPheno
+    #             direction: input
+    #         outData:
+    #             id: outPheno
+    #             direction: output
+    #         keyTable:
+    #             id: outCol
+    #             direction: input
+    # PCA:
+    #     specifications:
+    #         function: PcaHweNorm
+    #     parameters:
+    #         numPcaVectors: 3
+    #     inouts:
+    #         inData:
+    #             id: outMTx
+    #             direction: input
+    #         outScores:
+    #             id: pcaScore
+    #             direction: output
+
+    # ASSOC:
+    #     specifications:
+    #         function: HailAssociation
+    #     parameters:
+    #         resTables:
+    #             - outData1
+    #             - outData2
+    #         tests:
+    #             -   type: LogReg
+    #                 subType: wald
+    #                 covariates:
+    #                     -   table: pca
+    #                         cols:
+    #                             - scores_1
+    #                             - scores_2
+    #                             - scores_3
+    #                     # -   table: pheno
+    #                     #     cols:
+    #                     #         - sex
+    #                 responseVariables:
+    #                     -   tableId: pheno
+    #                         cols:
+    #                             -   colName: t2d
+    #                                 testName: Binary-Pheno1
+    #                                 resTableId: outData1
+    #                             -   colName: t2d
+    #                                 testName: Binary-Pheno2
+    #                                 resTableId: outData1
+    #                     -   tableId: pheno
+    #                         cols:
+    #                             -   colName: t2d
+    #                                 testName: Binary-Pheno3
+    #                                 resTableId: outData1
+    #                             -   colName: t2d
+    #                                 testName: Binary-Pheno4
+    #                                 resTableId: outData2
+    #             -   type: LogReg
+    #                 subType: score
+    #                 covariates:
+    #                     -   table: pca
+    #                         cols:
+    #                             - scores_1
+    #                     # -   table: pheno
+    #                     #     cols:
+    #                     #         - sex
+    #                 responseVariables:
+    #                     -   tableId: pheno
+    #                         cols:
+    #                             -   colName: t2d
+    #                                 testName: Binary-Pheno1-LessPCA-Score
+    #                                 resTableId: outData2
+    #                             -   colName: t2d
+    #                                 testName: Binary-Pheno2-LessPCA-Score
+    #                                 resTableId: outData2
+    #                     -   tableId: pheno
+    #                         cols:
+    #                             -   colName: t2d
+    #                                 testName: Binary-Pheno3-LessPCA-Score
+    #                                 resTableId: outData1
+    #                             -   colName: t2d
+    #                                 testName: Binary-Pheno4-LessPCA-Score
+    #                                 resTableId: outData1
+    #             -   type: LinReg
+    #                 covariates:
+    #                     -   table: pca
+    #                         cols:
+    #                             - scores_1
+    #                             - scores_2
+    #                     # -   table: pheno
+    #                     #     cols:
+    #                     #         - sex
+    #                 responseVariables:
+    #                     -   tableId: pheno
+    #                         cols:
+    #                             -   colName: bmi
+    #                                 testName: Linear-Pheno1
+    #                                 resTableId: outData1
+    #                             -   colName: age
+    #                                 testName: Linear-Pheno2
+    #                                 resTableId: outData2
+    #                     -   tableId: pca
+    #                         cols:
+    #                             -   colName: scores_3
+    #                                 testName: Linear-Pheno3
+    #                                 resTableId: outData2
+    #     inouts:
+    #         inData:
+    #             id: outMTx
+    #             direction: input
+    #         outData1:
+    #             id: outPval1
+    #             direction: output
+    #         outData2:
+    #             id: outPval2
+    #             direction: output
+    #         pca:
+    #             id: pcaScore
+    #             direction: input
+    #         pheno:
+    #             id: outPheno
+    #             direction: input
+
+    # EGTVEP:
+    #     specifications:
+    #         function: CommonOperations
+    #     inouts:
+    #         inData:
+    #             id: outMT
+    #             direction: input
+    #         outData:
+    #             id: outVCFvep
+    #             direction: output
+
+    # VEPANN:
+    #     specifications:
+    #         function: VepAnnotation
+    #     parameters:
+    #         vepCli: 
+    #             - bash
+    #             - vep/cvs-norm.sh
+    #             - __IN_VCF__
+    #             - __OUT_JSON__
+    #             - __OUT_TBL__
+    #             - NoJobId
+    #             - __OUT_JOB__
+    #             - vep
+    #     inouts:
+    #         inData:
+    #             id: outVCFvep
+    #             direction: input
+    #             externalUse: true
+    #         outData:
+    #             id: outVep
+    #             direction: output
+    #             externalUse: true
+
+
+    # VEPLT1:
+    #     specifications:
+    #         function: VepLoadTables
+    #     parameters:
+    #         tables:
+    #             - var
+    #     inouts:
+    #         inData:
+    #             id: outVep
+    #             direction: input
+    #             externalUse: true
+    #         outVar:
+    #             id: outVepVar
+    #             direction: output
+            
+    # VEPLT2:
+    #     specifications:
+    #         function: VepLoadTables
+    #     parameters:
+    #         tables:
+    #             - clvar
+    #     inouts:
+    #         inData:
+    #             id: outVep
+    #             direction: input
+    #             externalUse: true
+    #         outClVar:
+    #             id: outVepClVar
+    #             direction: output
+    # VEPLT3:
+    #     specifications:
+    #         function: VepLoadTables
+    #     parameters:
+    #         tables:
+    #             - freq
+    #     inouts:
+    #         inData:
+    #             id: outVep
+    #             direction: input
+    #             externalUse: true
+    #         outFreq:
+    #             id: outVepFreq
+    #             direction: output
+    # VEPLT4:
+    #     specifications:
+    #         function: VepLoadTables
+    #     parameters:
+    #         tables:
+    #             - conseq
+    #     inouts:
+    #         inData:
+    #             id: outVep
+    #             direction: input
+    #             externalUse: true
+    #         outConseq:
+    #             id: outVepConseq
+    #             direction: output
+    #         outConseqToVar:
+    #             id: outVepConseqToVar
+    #             direction: output
+    #         outConseqToTerms:
+    #             id: outVepConseqToTerms
+    #             direction: output
+    #         outVarTerms:
+    #             id: outVepVarTerms
+    #             direction: output
+
+    # VEPLT4:
+    #     specifications:
+    #         function: MergeTables
+    #     parameters:
+    #         inKeys:
+    #             - conseqId
+    #             - conseqId
+    #         outKey: varId
+    #     inouts:
+    #         inData1:
+    #             id: outVepConseq
+    #             direction: input
+    #         inData2:
+    #             id: outVepConseqToVar
+    #             direction: input
+    #         outData:
+    #             id: outVepConseq
+    #             direction: output

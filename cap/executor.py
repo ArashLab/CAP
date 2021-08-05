@@ -1,5 +1,5 @@
 from .workload import Workload
-from . import operation as Operation
+
 from .helper import *
 from .common import *
 from .logutil import *
@@ -58,46 +58,12 @@ class Executor:
     @D_General
     def Execute(self):
         workload = self.workload
-        if workload.executionPlan:
-            for stageId in workload.executionPlan:
-                stage = workload.stages[stageId]
-                if stage.spec.status != 'Completed':
-                    self.ExecuteStage(stage)
+        for stageId in workload.executionPlan:
+            stage = workload.stages[stageId]
+            if stage.stage.specifications.status != 'Completed':
 
-    @D_General
-    def ExecuteStage(self, stage):
-        workload = self.workload
-        
-        Shared.CurrentStageForLogging = stage
-        
-        workload.CheckStage(stage)  # Check the stage right before execution to make sure no dynamic error occurs
-        func = getattr(Operation, stage.spec.function)
-        
-        LogPrint(f'Started')
-        
-        stage.spec.status = 'Running'
-        runtime = Munch()
-        runtime.base = Shared.runtime.base
-        if 'runtimes' not in stage.spec:
-            stage.spec.runtimes = list()
-        stage.spec.runtimes.append(runtime)
-        runtime.startTime = datetime.now()
-        workload.Update()
+                # for inout in stage.inouts.values():
+                # for items in inout.dataFiles:
+                stage.Execute()
 
-        workload.ExecuteInputs(stage)
-        workload.Update()
-
-        func(stage)
-        workload.Update()
-
-        workload.ExecuteOutputs(stage)
-        workload.Update()
-
-        runtime.endTime = datetime.now()
-        runtime.execTime = str(runtime.endTime - runtime.startTime)
-        runtime.status = 'Completed'
-        stage.spec.status = 'Completed'
-        workload.Update()
-
-        LogPrint(f'Completed in {runtime.execTime}')
-        Shared.CurrentStageForLogging = None
+    

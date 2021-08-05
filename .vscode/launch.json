@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "module": "cap.main",
-            "args": ["--workload", "Example_01.yaml", "--capLog", "log.cap.log", "--hailLog", "log.hail.log"]
+            "args": ["--workload", "Example_10.yaml", "--capLog", "log.cap.log", "--hailLog", "log.hail.log"]
         }
     ]
 }

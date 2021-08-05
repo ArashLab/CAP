@@ -15,12 +15,12 @@ if __name__ == '__main__':
     print('This module is not executable.')
     exit(0)
 
-class DataFile:
+class DataFile(Munch):
 
     @D_General
     def __init__(self, file):
         if isinstance(file, Munch):
-            self.file = file
+            self.update(file)
         else:
             LogException(f'`file` must be of type Munch but the type is `{type(file)}`.')
 
@@ -33,34 +33,26 @@ class DataFile:
 
     @D_General
     def Infer(self):
-        file = self.file
-
-        if 'isInferred' in file and file.isInferred:
-            Log('File has been already infered.')
-            return
+        file = self
 
         if 'storageType' not in file:
             if 'disk' in file:
                 file.storageType = 'disk'
-            elif 'memory' in file:
-                file.storageType = 'memory'
             else:
-                LogException('`disk` or `memory` must exist in a `file`')
+                file.storageType = 'memory'
 
         if file.storageType == 'memory' and 'disk' in file:
             LogException('`disk` should not present when storage type is `memory`')
 
-        if file.storageType == 'disk' and 'disk' not in file:
-            LogException('`disk` should present when storage type is `disk`')
+        if file.storageType == 'disk':
+            if 'disk' not in file:
+                LogException('`disk` should present when storage type is `disk`')
+            if 'isProduced' not in file.disk:
+                file.disk.isProduced = False
 
         if 'disk' in file and 'path' not in file.disk:
             LogException('`path` must present in `disk`')
 
-        if 'isLoaded' not in file:
-            file.isLoaded = False
-
-        if 'isDumped' not in file:
-            file.isDumped = False
 
     suffixMapper = {
         '.mt': ('mt', 'None'),
@@ -114,9 +106,9 @@ class DataFile:
         inferred.isParallel = False
         inferred.isWildcard = False
 
-        self.file.disk.inferred = inferred
+        self.disk.inferred = inferred
 
-        disk = self.file.disk
+        disk = self.disk
         path = disk.path
 
         # Check if path is a list
@@ -173,7 +165,7 @@ class DataFile:
 
     @D_General
     def ProcessPath(self):
-        disk = self.file.disk
+        disk = self.disk
 
         newPath = list()
 
@@ -191,7 +183,7 @@ class DataFile:
             # Get the absolute path (for local storage only and if 'file://' prefix is not attached)
             # Add the prefix based on the fileSystem (if path does not have prefix)
             if not isPrefixed:
-                fs = self.file.disk.fileSystem
+                fs = self.disk.fileSystem
                 fsFound = False
                 for prefix, storage in self.prefixMapper.items():
                     if fs == storage:
@@ -218,9 +210,9 @@ class DataFile:
     @D_General
     def ExpandWildcardPath(self):
 
-        disk = self.file.disk
+        disk = self.disk
         if disk.isWildcard:
-            if self.file.disk.fileSystem != 'local':
+            if self.disk.fileSystem != 'local':
                 LogException('Wildcard only supported for local fileSystem')
 
             # keep a copy of original wildcard path
@@ -241,7 +233,7 @@ class DataFile:
 
     @D_General
     def GetLocalPath(self, path):
-        if self.file.disk.fileSystem != 'local':
+        if self.disk.fileSystem != 'local':
             LogException('Cannot produce local path for non-local storage type')
 
         return path[7:] if path.lower().startswith('file://') else path
@@ -262,45 +254,28 @@ class DataFile:
 
     @D_General
     def InferMemory(self):
-        file = self.file
+        file = self
+        
+        if not file.get('memory'):  # memory could exist but an empty field
+            file.memory = Munch()
+        memory = file.memory
+
+        memory.inferred = Munch()
+        inferred = memory.inferred
 
         if file.storageType == 'disk':
-            if not 'memory' in file or not file.memory:  # memory could exist but an empty field
-                file.memory = Munch()
-            memory = file.memory
-
-            if not 'inferred' in memory:
-                memory.inferred = Munch()
-            inferred = memory.inferred
-
-            if file.disk.format in self.formatMapper:
-                inferred.formats = self.formatMapper[file.disk.format]
-            else:
-                inferred.formats = None
-
-            if 'format' not in memory:
-                if inferred.formats:
-                    memory.format = inferred.formats[0]
-                else:
-                    Log('Could not identify memory format')
+            inferred.formats = self.formatMapper.get(file.disk.format, [None])
+            if not memory.get('format'):
+                memory.format = inferred.formats[0]
             else:
                 if memory.format not in inferred.formats:
                     LogException(f'Memory format `{memory.format}` is not supported for disk format `{file.disk.format}`. Acceptable memory formats are `{inferred.formats}`')
-        else:
-            if 'format' not in file.memory:
-                LogException('memory format must present')
+            memory.isProduced = False #always false at the begining
 
-        memory = file.memory
-
-        if 'persistence' not in memory:
-            memory.persistence = Shared.defaults.persistence
-
-        if 'numPartitions' not in memory:
-            memory.numPartitions = Shared.defaults.numPartitions.default
 
     @D_General
     def ExistInternal(self, path):
-        fs = self.file.disk.fileSystem
+        fs = self.disk.fileSystem
         if fs in ['aws', 'google']:
             LogException(f'`{fs}` not supported')
         elif fs == 'hadoop':
@@ -311,12 +286,12 @@ class DataFile:
 
     @D_General
     def ExistAll(self):
-        disk = self.file.disk
+        disk = self.disk
         return all([self.ExistInternal(p) for p in disk.path])
 
     @D_General
     def ExistAny(self):
-        disk = self.file.disk
+        disk = self.disk
         return any([self.ExistInternal(p) for p in disk.path])
         
     @D_General
@@ -328,15 +303,14 @@ class DataFile:
 
     @D_General
     def Load(self):
-        file = self.file
-        if 'isLoaded' in file and file.isLoaded:
-            Log('Data file is already loaded.')
-            return
-
+        file = self
         disk = file.disk
         memory = file.memory
 
-        importParam = disk.importParam if 'importParam' in disk else {}
+        if not disk.isProduced:
+            LogException('file is not produced yet')
+
+        importParam = disk.get('importParam', Munch())
 
         data = None
         if memory.format == 'mt':
@@ -371,7 +345,7 @@ class DataFile:
                 data = ht
 
             elif disk.format == 'csv':
-                importParam['delimiter'] = ','
+                importParam.delimiter = ','
                 ht = hl.import_table(disk.path, **importParam)
                 data = ht
 
@@ -379,14 +353,11 @@ class DataFile:
 
     @D_General
     def Dump(self):
-        file = self.file
-        if 'isDumped' in file and file.isDumped:
-            LogException('Data file is already Dumped.')
-
+        file = self
         disk = file.disk
         memory = file.memory
 
-        exportParam = disk.exportParam if 'exportParam' in disk else {}
+        exportParam = disk.get('exportParam', Munch())
 
         if len(disk.path) > 1:
             LogException('Not supported')
@@ -415,23 +386,23 @@ class DataFile:
                 ht.write(disk.path[0])    
 
             elif disk.format == 'tsv':
-                exportParam['delimiter'] = '\t'
+                exportParam.delimiter = '\t'
                 ht = self.data
                 ht.export(disk.path[0], **exportParam)
 
             elif disk.format == 'csv':
-                exportParam['delimiter'] = ','
+                exportParam.delimiter = ','
                 ht = self.data
                 ht.export(disk.path[0], **exportParam)
 
-        file.isDumped = True
+        disk.isProduced = True
 
     @D_General
     def Partitioning(self):
-        if not self.file.isLoaded:
+        if not self.isLoaded:
             LogException('Data is not ready to perform common operation')
 
-        memory = self.file.memory
+        memory = self.memory
         if memory.format in ['mt', 'ht']:
             mht = self.data
             mht = mht.repartition(memory.numPartitions)
@@ -443,71 +414,49 @@ class DataFile:
     
     @D_General
     def SetData(self, data):
-        if self.file.isLoaded:
-            LogException('This file is alredy loaded')
-        
         self.data = data 
-        self.file.isLoaded = True
-
-        self.Partitioning()
-        self.CommonOperations()
-        self.Partitioning()  ## TBF
+        self.memory.isProduced = True
 
     @D_General
-    def CommonOperations(self):
-        file = self.file
-
-        if 'commonOperations' in self.file:
-            if not file.isLoaded:
-                LogException('Data is not ready to perform common operation')
-            if file.isDumped:
-                LogException('Data has been already dumped. Applying common operation will take no effect.')
-
-
-            if file.memory.format == 'mt':
-                self.CommonOperationsMatrixTable()
-            elif file.memory.format == 'ht':
-                self.CommonOperationsTable()
-
-    @D_General
-    def CommonOperationsTable(self):
-        file = self.file
-        if file.memory.format != 'mt':
-            LogException('This function only act on matrix tables')
+    def CommonOperations(self, operations):
+        file = self
         
         mt = self.data
-        operations = self.file.commonOperations
-
-        print(operations)  # To be implemented
-
-        self.data = mt
-
-    @D_General
-    def CommonOperationsMatrixTable(self):
-
-        file = self.file
-        if file.memory.format != 'mt':
-            LogException('This function only act on matrix tables')
-        
-        mt = self.data
-        operations = self.file.commonOperations
 
         supportedOperations = [
-            'gtOnly',
+            'addIndex', # rc
+            'aggregate', # rce
+            'annotate', # rcge
+            'antiJoin', # rc Function
+            'semiJoin', # rc Function
+            'union', # rc Function
+            'collect', # - ??
+            'collectBykey', # c ??
+            'count', # rcx (x:rc together)
+            'distinct', # rc
             'drop',
+            'explode', # rc ??
+            'filter', # rce
+            'groupBy', #rc
+            'index', # rcge
+            'keyBy', # rc
             'rename',
-            'annotateRows',
-            'annotateCols',
-            'annotateGlobals',
-            'annotateEntries',
+            'sample', #rc
+            'select', # rcge
+
+            'keyBy', # rc
+
+            'repartition',
+            'persist',
+            'unpersist',
+
+            'addId', # rc same as nnotate col and row this is a alisa
+            # Genomic ones
             'maf',
             'ldPrune',
-            'subSample',
             'splitMulti',
-            'addId',
             'forVep'
         ]
-        # KeyBy KeyBY row and col
 
         for op in operations:
             if op not in supportedOperations:
@@ -564,3 +513,43 @@ class DataFile:
 
         self.data = mt
 
+    @D_General
+    def ExecuteAsInput(self):
+        file = self
+
+        if file.get('externalUse'):
+            Log('This file is for external use and not loaded')
+            return
+        
+        if file.storageType == 'memory':
+            if not file.memory.isProduced:
+                LogException('Data has not produced yet')
+            else:
+                return
+
+        if file.storageType == 'disk':
+            self.ExpandWildcardPath()
+            if not self.ExistAll():
+                LogException('Input file does not exist')
+            self.Load()
+
+    @D_General
+    def ExecuteAsOutput(self):
+        file = self
+
+        if file.get('externalUse'):
+            Log('This file is for external use and not loaded')
+            return
+
+        if file.storageType == 'memory':
+            if not file.memory.isProduced:
+                LogException('Data has not produced yet')
+            else:
+                return
+
+        if file.storageType == 'disk':
+            if file.disk.isWildcard:
+                LogException('Output file cannot be wildcard')
+            if self.ExistAny():
+                LogException(f'Output path already exist')
+            self.Dump()

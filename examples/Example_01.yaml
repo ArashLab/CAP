@@ -8,9 +8,11 @@ dataFiles:
             addId:
                 sampleId: sample
                 variantId: CHR:POS:ALLELES
+                
     outMT:
         disk:
             path: 1kg.ma.mt
+
     outVCF:
         disk:
             path: 1kg.micro2.vcf.bgz

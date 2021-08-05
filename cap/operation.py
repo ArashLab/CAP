@@ -15,15 +15,15 @@ if __name__ == '__main__':
     exit(0)
 
 @D_General
-def Empty(stage):
-    specifications, parameters, dataFiles, runtimes = UnpackStage(stage)
+def CommonOperations(stage):
+    specifications, parameters, inouts, runtimes = UnpackStage(stage)
 
     ##### >>>>>>> Input/Output <<<<<<<<
-    inData = GetFile(io.inData)
-    outData = GetFile(io.outData)
+    inData = inouts.inData.dataFiles[0].dataFile
+    outData = inouts.outData.dataFiles[0].dataFile
 
     ##### >>>>>>> Live Input <<<<<<<<
-    data = inData.data
+    data = inData.GetData()
 
     ##### >>>>>>> STAGE Code <<<<<<<<
     # DO Nothing (Just Common Operation)

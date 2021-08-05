@@ -50,7 +50,7 @@ def FixMsg(msg, caller=None):
         stage = Shared.CurrentStageForLogging
 
     if stage:
-        sid = stage.spec.id
+        sid = stage.specifications.id
     else:
         sid = 'None'
 
@@ -71,7 +71,7 @@ def LogException(msg='An error occurred.', caller=None):
     """Log and raise the exception.
 
     Note:
-        - If CurrentStageForLogging is set then stage.spec.id is added to message and log the entire stage data.
+        - If CurrentStageForLogging is set then stage.specifications.id is added to message and log the entire stage data.
 
     Args:
         msg (str, optional): Error message. Defaults to 'An error occurred.'.
@@ -94,7 +94,7 @@ def LogOptionalPrint(msg, level='INFO', file=None, doPrint=True, caller=None):
     """Log a message at desired level and print it if needed.
 
     Note:
-        - If CurrentStageForLogging is set then stage.spec.id is added to message.
+        - If CurrentStageForLogging is set then stage.specifications.id is added to message.
         - If file is not identified, it is chosen between based on the level.
         - If level is CRITICAL or ERROR the stderr is chosen otherwise the message is printed on stdout.
 

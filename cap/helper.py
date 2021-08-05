@@ -381,12 +381,11 @@ def GetFile(iof):
 
 @D_General
 def UnpackStage(stage):
-    stage = stage.stageInfo
     specifications = stage.get('specifications', Munch())
     parameters = stage.get('parameters', Munch())
-    dataFiles = stage.get('dataFiles', Munch())
+    inouts = stage.get('inouts', Munch())
     runtimes = stage.get('runtimes', Munch())
-    return specifications, parameters, dataFiles, runtimes
+    return specifications, parameters, inouts, runtimes
 
 @D_General
 def StrListStr(item):
