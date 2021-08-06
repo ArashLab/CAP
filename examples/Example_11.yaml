@@ -1,3 +1,9 @@
+defaults:
+    localMode: false
+    numSgeJobs:
+        default: 256
+        min: 1
+        max: 1024
 dataFiles:
     inVCF:
         disk:
@@ -86,6 +92,8 @@ dataFiles:
         disk:
             path: 1kg.pval2.ht
 
+#gzip -dc 1kg.micro2.vcf.bgz | head -n 98 | tail | cut -f 1-10 | column -t
+
 executionPlan:
     - CO1
     - EGTVEP
@@ -129,21 +137,34 @@ stages:
                     -   type: forVep
                     -   type: repartition
                         parameters:
-                            numPartitions: 2
+                            numPartitions: 1
+    
+    CO2:
+        specifications:
+            function: ByPass
+        inouts:
+            inData:
+                dataFileId: outMt
+            outData:
+                dataFileId: outVCF
 
     VEPANN:
         specifications:
             function: VepAnnotation
         parameters:
+            isArrayJob: true
             vepCli: 
                 - bash
-                - vep/cvs-norm.sh
-                - __IN_VCF__
-                - __OUT_JSON__
-                - __OUT_TBL__
-                - NoJobId
-                - __OUT_JOB__
-                - vep
+                - /home/arabay/cap/scripts/run-sge-array.sh
+                - __VCF_DIR__
+                - __JSON_DIR__
+                - __TBL_DIR__
+                - __JOB_DIR__
+                - __JOB_NAME__
+                - __JOB_START__
+                - __JOB_END__
+                - __JOB_IN_PARALLEL__
+                - /home/arabay/cap/scripts
         inouts:
             inData:
                 dataFileId: vepVCF
@@ -280,7 +301,7 @@ stages:
             numPcaVectors: 3
         inouts:
             inData:
-                dataFileId: outMt
+                dataFileId: outMt2
             outScores:
                 dataFileId: pcaScore
 
