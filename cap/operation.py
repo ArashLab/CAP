@@ -579,7 +579,7 @@ def VepAnnotation(stage):
 
         if 'isArrayJob' in parameters and parameters.isArrayJob:
 
-            numSgeJobs = Shared.defaults.numSgeJobs.default
+            numSgeJobs = Shared.defaults.numSgeJobs
 
             if 'numSgeJobs' in parameters:
                 if not (numSgeJobs.min <= parameters.numSgeJobs <= numSgeJobs.max):
