@@ -100,17 +100,17 @@ dataFiles:
             path: 1kg.pval2.ht
 
 executionPlan:
-    # - CO1
-    # - EGTVEP
-    # - VEPANN
-    # - VEPLT1
-    # - VEPLT2
-    # - VEPLT3
-    # - VEPLT4
-    # - JOINVEP
-    # - JOINVEP2
-    # - PCA
-    # - ASSOC
+    - CO1
+    - EGTVEP
+    - VEPANN
+    - VEPLT1
+    - VEPLT2
+    - VEPLT3
+    - VEPLT4
+    - JOINVEP
+    - JOINVEP2
+    - PCA
+    - ASSOC
     - SQL1
 
 stages:
