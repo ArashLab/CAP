@@ -1,3 +1,6 @@
+# defaults:
+#     localMode: false
+
 dataFiles:
     inVCF:
         disk:
@@ -62,7 +65,17 @@ dataFiles:
             path: outGene.ht
             isProduced: true
 
-    
+    pcaSql:
+        disk:
+            path: sql://localhost/bio/pca
+            format: sql
+            exportParam:
+                driver: com.mysql.cj.jdbc.Driver
+                password: Garvan2021!
+                url: jdbc:mysql://localhost/bio?useLegacyDatetimeCode=false&serverTimezone=UTC
+                user: root
+                dbtable: pca
+
     inPheno:
         disk:
             path: 1kg.pheno.tsv
@@ -87,17 +100,18 @@ dataFiles:
             path: 1kg.pval2.ht
 
 executionPlan:
-    - CO1
-    - EGTVEP
-    - VEPANN
-    - VEPLT1
-    - VEPLT2
-    - VEPLT3
-    - VEPLT4
-    - JOINVEP
-    - JOINVEP2
-    - PCA
-    - ASSOC
+    # - CO1
+    # - EGTVEP
+    # - VEPANN
+    # - VEPLT1
+    # - VEPLT2
+    # - VEPLT3
+    # - VEPLT4
+    # - JOINVEP
+    # - JOINVEP2
+    # - PCA
+    # - ASSOC
+    - SQL1
 
 stages:
     CO1:
@@ -377,3 +391,12 @@ stages:
                                 - ID
             inTable_03:
                 dataFileId: outGene
+
+    SQL1:
+        specifications:
+            function: ByPass
+        inouts:
+            inData:
+                dataFileId: pcaScore
+            outData:
+                dataFileId: pcaSql

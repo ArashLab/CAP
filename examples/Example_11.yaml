@@ -301,7 +301,7 @@ stages:
             numPcaVectors: 3
         inouts:
             inData:
-                dataFileId: outMt2
+                dataFileId: outMt
             outScores:
                 dataFileId: pcaScore
 

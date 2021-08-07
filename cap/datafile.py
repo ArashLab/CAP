@@ -34,7 +34,14 @@ class DataFile(Munch):
 
     @D_General
     def SetData(self, data):
-        self.data = data 
+        self.__data = data
+        format = dataTypeMapper.get(type(data))
+        #TBF check for null format
+        if format in self.memory:
+            if self.memory.format != format:
+                LogException('XXX')
+        else:
+            self.memory.format = format
         self.memory.isProduced = True
         if self.storageType == 'disk':
             self.Dump()
@@ -47,7 +54,7 @@ class DataFile(Munch):
                 if self.disk.get('isProduced'):
                     self.Load()
                     self.memory.isProduced = True
-        return self.data
+        return self.__data
 
     @D_General
     def Infer(self):
@@ -103,7 +110,8 @@ class DataFile(Munch):
         'hdfs://': 'hadoop',
         'file://': 'local',
         's3://': 'aws',
-        'gs://': 'google'
+        'gs://': 'google',
+        'sql://': 'sql'
     }
 
     @D_General
@@ -250,6 +258,9 @@ class DataFile(Munch):
 
     @D_General
     def GetLocalPath(self, path):
+        if self.disk.fileSystem == 'sql':
+            return path
+
         if self.disk.fileSystem != 'local':
             LogException('Cannot produce local path for non-local storage type')
 
@@ -360,47 +371,52 @@ class DataFile(Munch):
                 importParam.delimiter = ','
                 ht = hl.import_table(disk.path, **importParam)
                 data = ht
-        self.data = data
+        self.__data = data
 
     @D_General
     def Dump(self):
         disk = self.disk
         memory = self.memory
-        data = self.data
+        data = self.__data
         exportParam = disk.get('exportParam', Munch())
 
         if len(disk.path) > 1:
             LogException('Not supported')
 
         if memory.format == 'mt':
+            mt = data
 
             if disk.format == 'mt':
-                mt = data
                 mt.write(disk.path[0])   
 
             elif disk.format == 'vcf':
-                mt = data
                 hl.export_vcf(mt, disk.path[0], **exportParam)
 
             elif disk.format == 'plink-bfile':
-                mt = data
                 for k in ['call', 'fam_id', 'ind_id', 'pat_id', 'mat_id', 'is_female', 'pheno', 'varid', 'cm_position']:
                     if k in exportParam:
                         exportParam[k] = HailPath([mt]+exportParam[k])
                 hl.export_plink(mt, disk.path[0], **exportParam)
 
         elif memory.format == 'ht':
+            ht = data
 
             if disk.format == 'ht':
-                ht = data
                 ht.write(disk.path[0])    
 
             elif disk.format == 'tsv':
                 exportParam.delimiter = '\t'
-                ht = data
                 ht.export(disk.path[0], **exportParam)
 
             elif disk.format == 'csv':
                 exportParam.delimiter = ','
-                ht = data
                 ht.export(disk.path[0], **exportParam)
+
+            elif disk.format == 'sql':
+                ht = FlattenTable(ht)
+                try:
+                    # TBF overwrite? really?
+                    ht.to_spark().write.format('jdbc').options(**exportParam).mode('overwrite').save()
+                except:
+                    LogException('Hail cannot write data into MySQL database')
+                Log(f'Data is exported to MySQL')
