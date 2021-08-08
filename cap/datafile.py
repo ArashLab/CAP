@@ -416,7 +416,9 @@ class DataFile(Munch):
                 ht = FlattenTable(ht)
                 try:
                     # TBF overwrite? really?
-                    ht.to_spark().write.format('jdbc').options(**exportParam).mode('overwrite').save()
+                    spdf = ht.to_spark()
+                    spdf = spdf.fillna(0)
+                    spdf.write.format('jdbc').options(**exportParam).mode('overwrite').save()
                 except:
                     LogException('Hail cannot write data into MySQL database')
                 Log(f'Data is exported to MySQL')
