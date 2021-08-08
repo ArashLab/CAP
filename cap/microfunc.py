@@ -161,6 +161,7 @@ def MicroFunction(data, microFunctions):
         elif mfType == 'sample':
             axis = parameters.pop('axis', None)
             axis = f'_{axis}' if axis else ''
+            strParameters = ', '.join([f'{k}={v}' for k,v in parameters.items()])
             statement = f'res = data.sample{axis}({strParameters})'
             ldict = locals()
             exec(statement, globals(), ldict)
