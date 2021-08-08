@@ -116,7 +116,7 @@ def MicroFunction(data, microFunctions):
 
         #############################
         elif mfType == 'count':
-            pass # TBI
+            LogPrint(data.count())
 
         #############################
         elif mfType == 'distinct':
@@ -197,6 +197,7 @@ def MicroFunction(data, microFunctions):
 
         #############################
         elif mfType == 'maf':
+            mt = data
             # Calculate MAF in a coloum (avoid writing on existing cols by using a random col name)
             mafColName = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
             mafExpr = {mafColName : hl.min(hl.agg.call_stats(mt.GT, mt.alleles).AF)}
@@ -211,6 +212,7 @@ def MicroFunction(data, microFunctions):
 
         #############################
         elif mfType == 'splitMulti':
+            mt = data
             mt = SplitMulti(mt, parameters)
 
         #############################
