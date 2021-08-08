@@ -95,17 +95,18 @@ dataFiles:
 #gzip -dc 1kg.micro2.vcf.bgz | head -n 98 | tail | cut -f 1-10 | column -t
 
 executionPlan:
-    - CO1
-    - EGTVEP
-    - VEPANN
-    - VEPLT1
-    - VEPLT2
-    - VEPLT3
-    - VEPLT4
-    - JOINVEP
-    - JOINVEP2
-    - PCA
-    - ASSOC
+    # - CO1
+    # - EGTVEP
+    # - VEPANN
+    # - VEPLT1
+    # - VEPLT2
+    # - VEPLT3
+    # - VEPLT4
+    # - JOINVEP
+    # - JOINVEP2
+    # - PCA
+    # - ASSOC1
+    - ASSOC2
 
 stages:
     CO1:
@@ -305,7 +306,7 @@ stages:
             outScores:
                 dataFileId: pcaScore
 
-    ASSOC:
+    ASSOC1:
         specifications:
             function: HailAssociation
         parameters:
@@ -351,6 +352,26 @@ stages:
                                 -   colName: bmi
                                     testName: bmi-LinReg
                                     resTableId: outTable_01
+        inouts:
+            inMt:
+                dataFileId: outMt
+            outTable_01:
+                dataFileId: outPval1
+            inTable_01:
+                dataFileId: pcaScore
+            inTable_02:
+                dataFileId: inPheno
+                microFunctions:
+                    -   type: keyBy
+                        parameters:
+                            keys:
+                                - ID
+
+    ASSOC2:
+        specifications:
+            function: HailAssociation
+        parameters:
+            tests:
                 -   type: skat
                     covariates:
                         -   table: inTable_01
@@ -383,8 +404,6 @@ stages:
         inouts:
             inMt:
                 dataFileId: outMt
-            outTable_01:
-                dataFileId: outPval1
             outTable_02:
                 dataFileId: outPval2
             inTable_01:

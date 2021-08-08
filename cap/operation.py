@@ -467,52 +467,6 @@ def ImportTable(stage):
 
 
 @D_General
-def ToMySql(stage):
-    spec, arg, io = UnpackStage(stage)
-
-    ##### >>>>>>> Input/Output <<<<<<<<
-    inHt = io.inHt
-
-    ##### >>>>>>> Live Input <<<<<<<<
-    ht = Shared.data[inHt.path]
-
-    ##### >>>>>>> STAGE Code <<<<<<<<
-    ht = FlattenTable(ht)
-    try:
-        # TBF overwrite? really?
-        ht.to_spark().write.format('jdbc').options(**arg.mySqlConfig).mode('overwrite').save()
-    except:
-        LogException('Hail cannot write data into MySQL database')
-    Log(f'Data is exported to MySQL')
-
-    ##### >>>>>>> Live Output <<<<<<<<
-
-
-@D_General
-def ToText(stage):
-    spec, arg, io = UnpackStage(stage)
-
-    ##### >>>>>>> Input/Output <<<<<<<<
-    inHt = io.inHt
-    outText = io.outText
-
-    ##### >>>>>>> Live Input <<<<<<<<
-    ht = Shared.data[inHt.path]
-
-    ##### >>>>>>> STAGE Code <<<<<<<<
-    ht = FlattenTable(ht)
-    try:
-        if 'exportParam' not in arg:
-            arg.exportParam = dict()
-        ht.export(outText.path, **arg.exportParam)
-    except:
-        LogException(f'Hail cannot write data into a file {outText.path}')
-    Log(f'Data is exported to {outText.path}')
-
-    ##### >>>>>>> Live Output <<<<<<<<
-
-
-@D_General
 def CalcQC(stage):
     spec, arg, io = UnpackStage(stage)
 
