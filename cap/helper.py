@@ -352,10 +352,11 @@ def CheckDefaults():
 @D_General
 def InferColumnTypes(df):
     Log(df.dtypes)
+    print(df)
     memFile = io.StringIO()
     df.to_csv(memFile, index=False, sep='\t')
     memFile.seek(0)
-    df = pd.read_csv(memFile, delimiter='\t')
+    df = pd.read_csv(memFile, delimiter='\t', low_memory=False)
     Log(df.dtypes)
     return df
 

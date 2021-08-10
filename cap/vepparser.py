@@ -63,26 +63,26 @@ def VepParser(args):
 
             # Process colocated variants and their frequencies
             if 'colocated_variants' in variant:
-                for clVariant in variant['colocated_variants']:
-                    clVariant['varId'] = variant['varId']
-                    clVariant['clVarId'] = clVarCnt
-                    clVarCnt += 1
+                # for clVariant in variant['colocated_variants']:
+                #     clVariant['varId'] = variant['varId']
+                #     clVariant['clVarId'] = clVarCnt
+                #     clVarCnt += 1
 
-                    if 'frequencies' in clVariant:
-                        for allele in clVariant['frequencies']:
-                            freq = clVariant['frequencies'][allele]  # get the dict of frequencys per allele
-                            #TBF the variant id is no longer chr:pos:ref:alt but it is an integer.
-                            # if allele == variant['varId'].split(':')[3]:
-                            #     variant.update(freq)
-                            #     freq['mainVariant'] = True
-                            # else:
-                            #     freq['mainVariant'] = False
-                            freq['varId'] = variant['varId']
-                            freq['clvarId'] = clVariant['clVarId']
-                            freq['allele'] = allele
-                            frequencies.append(freq)
-                        del clVariant['frequencies']
-                    clVariants.append(clVariant)
+                #     if 'frequencies' in clVariant:
+                #         for allele in clVariant['frequencies']:
+                #             freq = clVariant['frequencies'][allele]  # get the dict of frequencys per allele
+                #             #TBF the variant id is no longer chr:pos:ref:alt but it is an integer.
+                #             # if allele == variant['varId'].split(':')[3]:
+                #             #     variant.update(freq)
+                #             #     freq['mainVariant'] = True
+                #             # else:
+                #             #     freq['mainVariant'] = False
+                #             freq['varId'] = variant['varId']
+                #             freq['clvarId'] = clVariant['clVarId']
+                #             freq['allele'] = allele
+                #             frequencies.append(freq)
+                #         del clVariant['frequencies']
+                #     clVariants.append(clVariant)
                 del variant['colocated_variants']
 
             # add remaining field
@@ -90,24 +90,31 @@ def VepParser(args):
 
         parquetPath = args.parquet
         # write the variant to the file
-        cdf = pd.DataFrame(variants)
-        cdf = InferColumnTypes(cdf)
-        cdf.to_parquet(f'{parquetPath}.var.parquet', index=False)
+        if variants:
+            cdf = pd.DataFrame(variants)
+            # cdf = InferColumnTypes(cdf)
+            # cdf.to_parquet(f'{parquetPath}.var.parquet', index=False)
+            cdf.to_csv(f'{parquetPath}.var.tsv', sep='/t', index=False)
+            
 
-        # write colocated variant to the file
-        cdf = pd.DataFrame(clVariants)
-        cdf = InferColumnTypes(cdf)
-        cdf.to_parquet(f'{parquetPath}.clvar.parquet', index=False)
+        # # write colocated variant to the file
+        # if clVariants:
+        #     cdf = pd.DataFrame(clVariants)
+        #     cdf = InferColumnTypes(cdf)
+        #     cdf.to_parquet(f'{parquetPath}.clvar.parquet', index=False)
 
-        # write colocated variant frequencies to the file
-        cdf = pd.DataFrame(frequencies)
-        cdf = InferColumnTypes(cdf)
-        cdf.to_parquet(f'{parquetPath}.freq.parquet', index=False)
+        # # write colocated variant frequencies to the file
+        # if frequencies:
+        #     cdf = pd.DataFrame(frequencies)
+        #     cdf = InferColumnTypes(cdf)
+        #     cdf.to_parquet(f'{parquetPath}.freq.parquet', index=False)
 
         # write consequences to the file
-        cdf = pd.DataFrame(consequences)
-        cdf = InferColumnTypes(cdf)
-        cdf.to_parquet(f'{parquetPath}.conseq.parquet', index=False)
+        if consequences:
+            cdf = pd.DataFrame(consequences)
+            # cdf = InferColumnTypes(cdf)
+            # cdf.to_parquet(f'{parquetPath}.conseq.parquet', index=False)
+            cdf.to_csv(f'{parquetPath}.conseq.tsv', sep='/t', index=False)
 
 
 @D_General
@@ -118,6 +125,10 @@ def Main():
     parser.add_argument('-j', '--json', required=True, type=str, help='Input JSON file contains VEP annotations one per line.')
     parser.add_argument('-p', '--parquet', required=True, type=str, help='Output parquet file prefix (do not include ".parquet" at the end).')
     args = parser.parse_args()
+    print(args)
+
+    # InitLogger(capLog=args.capLog)
+    # Log(f'Runtime Information: {Shared.runtime}')
 
     VepParser(args)
 
