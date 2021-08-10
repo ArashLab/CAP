@@ -94,7 +94,7 @@ def VepParser(args):
             cdf = pd.DataFrame(variants)
             # cdf = InferColumnTypes(cdf)
             # cdf.to_parquet(f'{parquetPath}.var.parquet', index=False)
-            cdf.to_csv(f'{parquetPath}.var.tsv', sep='/t', index=False)
+            cdf.to_csv(f'{parquetPath}.var.tsv', sep='\t', index=False)
             
 
         # # write colocated variant to the file
@@ -114,7 +114,7 @@ def VepParser(args):
             cdf = pd.DataFrame(consequences)
             # cdf = InferColumnTypes(cdf)
             # cdf.to_parquet(f'{parquetPath}.conseq.parquet', index=False)
-            cdf.to_csv(f'{parquetPath}.conseq.tsv', sep='/t', index=False)
+            cdf.to_csv(f'{parquetPath}.conseq.tsv', sep='\t', index=False)
 
 
 @D_General
