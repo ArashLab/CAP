@@ -522,7 +522,7 @@ def VepAnnotation(stage):
     try:
         templateCommand = parameters.vepCli
 
-        # Bash(command=['mkdir', outPath], isPath=[False, True])
+        Bash(command=['mkdir', outPath], isPath=[False, True])
 
         if inFile.get('isParallel'):
             vcfList = WildCardPath(inPath + '/part-*.bgz')
