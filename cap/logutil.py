@@ -89,6 +89,12 @@ def LogException(msg='An error occurred.', caller=None):
     logger.exception(msg)
     raise Exception(msg)
 
+def LogExceptionType(data, expectedType=None, caller=None):
+    if not caller:
+        caller = getframeinfo(stack()[1][0])
+    expectedStatement = f'| expected type: `{str(expectedType)}` ' if expectedType else ''
+    LogException(f'*** TYPE ERROR | type: `{type(data)}` {expectedStatement}| data: `{str(data)}`', caller=caller)
+
 
 def LogOptionalPrint(msg, level='INFO', file=None, doPrint=True, caller=None):
     """Log a message at desired level and print it if needed.
