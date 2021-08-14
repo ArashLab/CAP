@@ -106,20 +106,7 @@ class DataFile(Munch):
                 return self.suffixMapper[suffix]
         return None, None
 
-    prefixMapper = {
-        'hdfs://': 'hadoop',
-        'file://': 'local',
-        's3://': 'aws',
-        'gs://': 'google',
-        'sql://': 'sql'
-    }
 
-    @D_General
-    def InferFileSystem(self, path):
-        for prefix in self.prefixMapper:
-            if path.startswith(prefix):
-                return self.prefixMapper[prefix]
-        return Shared.defaults.fileSystem
 
     @D_General
     def InferPath(self):
@@ -232,40 +219,7 @@ class DataFile(Munch):
             disk.path = [self.GetLocalPath(p) for p in disk.path]
             disk.fsPrefix = False
 
-    @D_General
-    def ExpandWildcardPath(self):
-
-        disk = self.disk
-        if disk.isWildcard:
-            if self.disk.fileSystem != 'local':
-                LogException('Wildcard only supported for local fileSystem')
-
-            # keep a copy of original wildcard path
-            disk.wildcard = Munch()
-            disk.wildcard.path = disk.path
-            disk.wildcard.numPath = disk.numPath
-
-            newPath = list()
-            for path in disk.path:
-                paths = self.ExpandWildcardPathInternal(path)
-                newPath.extend(paths)
-
-            disk.path = list(set(newPath))
-            disk.numPath = len(newPath)
-
-        if 'localMode' not in Shared.defaults or not Shared.defaults.localMode:
-            disk.path = [f'file://{p}' for p in disk.path]
-
-    @D_General
-    def GetLocalPath(self, path):
-        if self.disk.fileSystem == 'sql':
-            return path
-
-        if self.disk.fileSystem != 'local':
-            LogException('Cannot produce local path for non-local storage type')
-
-        return path[7:] if path.lower().startswith('file://') else path
-
+  
     formatMapper = {
         'mt': ['mt'],
         'ht': ['ht', 'pandas'],
@@ -299,34 +253,6 @@ class DataFile(Munch):
                 if memory.format not in inferred.formats:
                     LogException(f'Memory format `{memory.format}` is not supported for disk format `{file.disk.format}`. Acceptable memory formats are `{inferred.formats}`')
             memory.isProduced = False #always false at the begining
-
-    @D_General
-    def ExistInternal(self, path):
-        fs = self.disk.fileSystem
-        if fs in ['aws', 'google']:
-            LogException(f'`{fs}` not supported')
-        elif fs == 'hadoop':
-            return not subprocess.run(['hdfs', 'dfs', '-test', '-e', path]).returncode
-        elif fs == 'local':
-            path = self.GetLocalPath(path)
-            return os.path.exists(path)
-
-    @D_General
-    def ExistAll(self):
-        disk = self.disk
-        return all([self.ExistInternal(p) for p in disk.path])
-
-    @D_General
-    def ExistAny(self):
-        disk = self.disk
-        return any([self.ExistInternal(p) for p in disk.path])
-        
-    @D_General
-    def ExpandWildcardPathInternal(self, path):
-        path = self.GetLocalPath(path)
-        fileList = glob.glob(path)
-        Log(f'{len(fileList)} files are found in {path}')
-        return fileList
 
     @D_General
     def Load(self):

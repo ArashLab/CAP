@@ -14,3 +14,8 @@ def JsonDumps(obj):
 def ToDict(obj):
     return json.loads(JsonDumps(obj))
 
+def IsListOfStr(data):
+    return isinstance(data, list) and all([isinstance(value, str) for value in list(data)])
+
+def ExpandVars(path):
+    return os.path.expandvars(path)
