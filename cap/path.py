@@ -1,6 +1,8 @@
 import os
 import subprocess
 
+from munch import Munch
+
 from .logutil import *
 from .decorators import *
 
@@ -19,10 +21,36 @@ FileSystems = [
     'https'
 ]
 
+# If a path could match more that one there is uncertainity in the outcome
+extensionMapper = {
+    '.mt': ('mt', None),
+    '.ht': ('ht', None),
+    '.vcf': ('vcf', None),
+    '.vcf.gz': ('vcf', 'gz'),
+    '.vcf.bgz': ('vcf', 'bgz'),
+    '.tsv': ('tsv', None),
+    '.tsv.gz': ('tsv', 'gz'),
+    '.tsv.bgz': ('tsv', 'bgz'),
+    '.csv': ('csv', None),
+    '.csv.gz': ('csv', 'gz'),
+    '.csv.bgz': ('csv', 'bgz'),
+    '.json': ('json', None),
+    '.json.gz': ('json', 'gz'),
+    '.json.bgz': ('json', 'bgz'),
+    '.yaml': ('yaml', None),
+    '.yaml.gz': ('yaml', 'gz'),
+    '.yaml.bgz': ('yaml', 'bgz'),
+    '.bed': ('bed', None),
+    '.bim': ('bim', None),
+    '.fam': ('fam', None),
+    '.parquet': ('parquet', None)
+}
+
+
 class Path:
 
-    ##### If true, remove file system prefix (i.e. 'file://' or 'hdfs://') of the defaultFileSystem.
-    ##### For example, if 'defaultFileSystem=local' it removes the 'file://' from the path 
+    # If true, remove file system prefix (i.e. 'file://' or 'hdfs://') of the defaultFileSystem.
+    # For example, if 'defaultFileSystem=local' it removes the 'file://' from the path
     __defaultMode = True
 
     @classmethod
@@ -33,7 +61,7 @@ class Path:
     def GetDefaultMode(cls):
         return cls.__defaultMode
 
-    ##### If the path does not have a file system prefix (i.e. 'file://' or 'hdfs://')  adds the prefix based on the default file system
+    # If the path does not have a file system prefix (i.e. 'file://' or 'hdfs://')  adds the prefix based on the default file system
     __defaultFileSystem = 'file'
 
     @classmethod
@@ -52,6 +80,12 @@ class Path:
         self.__raw = None
         if path:
             self.path = path
+
+    def __repr__(self):
+        rep = dict()
+        for k in ['raw', 'path', 'fileSystem', 'format', 'compression']:
+            rep[k] = getattr(self,k)
+        return str(rep)
 
     @property
     def path(self):
@@ -72,16 +106,24 @@ class Path:
     def raw(self):
         return self.__raw
 
+    @property
+    def format(self):
+        return self.__format
+
+    @property
+    def compression(self):
+        return self.__compression
+
     @path.setter
     def path(self, path):
-        if isinstance (path, str):
+        if isinstance(path, str):
             self.__raw = str(path)
             self.Processes()
         else:
             LogExceptionType(path, expectedType='str')
 
     def Processes(self):
-        ##### Identify the file system and extract it from the path
+        # Identify the file system and extract it from the path
         rawPath = os.path.expandvars(self.__raw)
         if ':' in rawPath:
             parts = rawPath.split(':')
@@ -100,6 +142,7 @@ class Path:
 
         self.__path = self.Trim(path)
         self.Absolute()
+        self.InferFormat()
 
     @classmethod
     def Trim(cls, path, char='/'):
@@ -109,13 +152,19 @@ class Path:
             else:
                 break
         return path
-    
+
     def Absolute(self):
         fs = self.fileSystem
         if fs not in ['file']:
             LogException(f'File system `{fs}` is not supported')
         elif fs == 'file':
             self.__path = os.path.abspath(self.__path)
+
+    def InferFormat(self):
+        for ext in extensionMapper:
+            if self.local.endswith(ext):
+                self.__format, self.__compression = extensionMapper[ext]
+                break
 
     def Exist(self):
         fs = self.fileSystem

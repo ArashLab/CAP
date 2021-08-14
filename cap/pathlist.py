@@ -16,8 +16,9 @@ class PathList:
         self.__opaths = list()
         self.paths = paths
 
-    def __str__(self):
-        return JsonDumps([path.path for path in self.paths])
+    def __repr__(self):
+        maxShow = len(self.__paths) if len(self.__paths) < 10 else 10
+        return str(self.__paths[:maxShow])
         
     @property
     def path(self):
@@ -26,6 +27,16 @@ class PathList:
             return self.__paths[0]
         elif numPath > 1:
             LogException('More than one path (`{numPath}` paths) is in the list')
+        else:
+            LogException('No path exist')
+
+    @property
+    def solos(self): # string or list of string
+        numPath = len(self.__paths) 
+        if numPath == 1:
+            return self.__paths[0].path
+        elif numPath > 1:
+            return [path.path for path in self.__paths]
         else:
             LogException('No path exist')
 
@@ -64,9 +75,9 @@ class PathList:
                 return True
         return False
 
-    def ExpandWildcardPath(self):
+    def ExpandWildCard(self):
         if self.__opaths:
-            Log('PathList is already expanded', level='WARN')
+            return # already expanded
 
         self.__opaths = self.__paths
         self.__paths = list()

@@ -1,0 +1,33 @@
+# defaults:
+#     localMode: false
+
+dataFiles:
+    inVCF:
+        disk:
+            path: 1kg.micro.vcf.bgz
+            isProduced: true
+
+    outMt:
+        disk:
+            path: out.mt
+
+executionPlan:
+    - CO1
+
+stages:
+    CO1:
+        specifications:
+            function: ByPass
+        inouts:
+            inData:
+                dataFileId: inVCF
+                microFunctions:
+                    -   type: rename
+                        parameters:
+                            s: sample
+                    -   type: addId
+                        parameters:
+                            sampleId: sample
+                            variantId: CHR:POS:ALLELES
+            outData:
+                dataFileId: outMt
