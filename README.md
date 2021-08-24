@@ -1,21 +1,27 @@
+# CAP is under construction. It will be ready soon.
 # Cohort Analysis Platform (CAP)
 
-Think of the concept of Infrastructure as Code (IaC) used in the cloud environment. The infrastructure is described. The cloud provids the infrastructure.
+Think of the concept of `Infrastructure as Code` used in the cloud environment:
 
-CAP uses the same concept to provide genomic cohort analyses. The analysis is described. CAP executes the analysis.
+You describe the infrastructure `--->>>` The cloud provids the infrastructure
 
-The isolation between the description and the execution of the analysis simplifies maintenance of the analysis pipeline and opens the path to implement serverless analysis in the future.
+CAP uses the same concept to provide genomic cohort analysis:
 
-The [Tutorial](docs/Tutorial.md) page is a quick walk through to get started with CAP.
-## What is Cohort Analysis
-Genomic cohort consists of genetic variations of a number of samples compared to a reference sample. Common analyses include:
-- Clustring (PCA) to predict ethnicity
-- Association analysis to identify genetic variants relevant to a phenotype ()
-- Sex imputation
-- Rare variant analysis
-- Polygenic risk score
+You describe the analysis `--->>>` CAP executes the analysis
 
-We aim to expand CAP beyond its title in the future (i.e. RNA seq).
+The isolation between the description and the execution of the analysis simplifies maintenance of the analysis pipeline. Furthermore, it opens the path to Cohort Analysis as a Service (CAS) in the future.
+## What is Genomic Cohort Analysis
+Simpley, a genomic cohort is a massive table of thousands of samples (i.e. humans) and tens of millons of features (genomic variants). There are clinical attributes for each sample such as ethnicity and gender and genomic attributes for each variant such as if the variant located in a gene or affect a protein structure.
+
+And here is where the analysis begins. There are endless questions to ask.
+- Can we cluster samples by their genome?
+- What are underlying distributions?
+- Can we compute the risk of a particular disease based on genetic data?
+- What part of the genome is responsible for a disease?
+
+Answering one question a the time we are unlocking the secrets of the genome.
+
+`We are leaving in the eara where life decode the life.`
 
 ## How the Analysis is Described
 The analysis is described in a YAML (or JSON) file refered as `Analysis File`. To know more read [CAP Architecture](docs/CAP_Architecture.md) and [Analysis Specification](docs/Analysis_Specification.md).
