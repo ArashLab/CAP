@@ -21,7 +21,7 @@ And here is where the analysis begins. There are endless questions to ask.
 
 Answering one question a the time we are unlocking the secrets of the genome.
 
-`We are leaving in the eara where life decode the life.`
+`We are leaving in an era where life decoding itself.`
 
 ## How the Analysis is Described
 The analysis is described in a YAML (or JSON) file refered as `Analysis File`. To know more read [CAP Architecture](docs/CAP_Architecture.md) and [Analysis Specification](docs/Analysis_Specification.md).
