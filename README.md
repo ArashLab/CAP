@@ -9,11 +9,11 @@ CAP uses the same concept to provide genomic cohort analysis:
 
 You describe the analysis `--->>>` CAP executes the analysis
 
-The isolation between the description and the execution of the analysis simplifies maintenance of the analysis pipeline. Furthermore, it opens the path to Cohort Analysis as a Service (CAS) in the future.
+The isolation between the description and the execution of the analysis simplifies maintenance of the analysis pipeline. Furthermore, it opens the path to Cohort Analysis as a Service (CAS) to appear in the future.
 ## What is Genomic Cohort Analysis
-Simpley, a genomic cohort is a massive table of thousands of samples (i.e. humans) and tens of millons of features (genomic variants). There are clinical attributes for each sample such as ethnicity and gender and genomic attributes for each variant such as if the variant located in a gene or affect a protein structure.
+A genomic cohort is a massive table of thousands of samples (i.e. humans) and tens of millons of features (genomic variants). There are clinical attributes for each sample such as ethnicity and gender, and genomic attributes for each variant such as if the variant located in a gene or affect a protein structure.
 
-And here is where the analysis begins. There are endless questions to ask.
+There are endless questions to answer.
 - Can we cluster samples by their genome?
 - What are underlying distributions?
 - Can we compute the risk of a particular disease based on genetic data?
