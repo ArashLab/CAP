@@ -19,10 +19,12 @@ And here is where the analysis begins. There are endless questions to ask.
 - Can we compute the risk of a particular disease based on genetic data?
 - What part of the genome is responsible for a disease?
 
-Answering one question a the time we are unlocking the secrets of the genome.
+Answering one question a the time, we are unlocking the secrets of the genome.
 
 `We are leaving in an era where life decoding itself.`
 
+## What is CAP
+Whether you are the end-user or you want to contribute to expanding CAP functionality, we recommend reading [CAP Architecture in Short](docs/CapArch.md). It helps you quickly identify if CAP is something you need or not by summarising the mental idea behind CAP and the way it is implemented. It also includes a short description of how the analysis should be described. 
 ## How the Analysis is Described
 The analysis is described in a YAML (or JSON) file refered as `Analysis File`. To know more read [CAP Architecture](docs/CAP_Architecture.md) and [Analysis Specification](docs/Analysis_Specification.md).
 
