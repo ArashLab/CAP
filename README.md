@@ -24,12 +24,9 @@ Answering one question a the time, we are unlocking the secrets of the genome.
 `We are leaving in an era where life decoding itself.`
 
 ## What is CAP
-Whether you are the end-user or you want to contribute to expanding CAP functionality, we recommend reading [CAP Architecture in Short](docs/CapArch.md). It helps you quickly identify if CAP is something you need or not by summarising the mental idea behind CAP and the way it is implemented. It also includes a short description of how the analysis should be described. 
-## How the Analysis is Described
-The analysis is described in a YAML (or JSON) file refered as `Analysis File`. To know more read [CAP Architecture](docs/CAP_Architecture.md) and [Analysis Specification](docs/Analysis_Specification.md).
+To understand and use CAP, we recommend reading [CAP Architecture in Short](docs/CapArch.md) first. It helps you quickly identify if CAP is something you need or not by summarising the mental idea behind CAP and the way it is implemented. It also includes a short description of how the analysis should be described. Next you may try our step-by-step tutorials in [Getting Started](docs/GetingStarted.md) to have a better feeling of how CAP work.
 
-## How the Analysis is Executed
-CAP uses a wide range of avaialble tools to perform the analysis. These tools are wrapped by CAP in forms of operations.
+Next you may read either [Describe Your Analysis](docs/DescribeAnalysis.md) or [Code Architecture](docs/CodeArch.md). The former hepls user to learn how to understand the provided pipelines be able to modify them or start a new analysis from scratch. The latter, is useful if you are a python programmer and would like expand the functionality of the CAP. 
 
 ## Installation
 You can simply install cap using pip.
