@@ -9,7 +9,7 @@ CAP uses the same concept to provide genomic cohort analysis:
 
 You describe the analysis `--->>>` CAP executes the analysis
 
-The isolation between the description and the execution of the analysis simplifies maintenance of the analysis pipeline. Furthermore, it opens the path to Cohort Analysis as a Service (CAS) to appear in the future.
+The isolation between the description and the execution of the analysis simplifies maintenance of the analysis pipeline. Furthermore, it opens the path to Cohort Analysis as a Service (CAS) to appear in the future. CAP also facilitate report generation process.
 ## What is Genomic Cohort Analysis
 A genomic cohort is a massive table of thousands of samples (i.e. humans) and tens of millons of features (genomic variants). There are clinical attributes for each sample such as ethnicity and gender, and genomic attributes for each variant such as if the variant located in a gene or affect a protein structure.
 
@@ -26,7 +26,9 @@ Answering one question a the time, we are unlocking the secrets of the genome.
 ## What is CAP
 To understand and use CAP, we recommend reading [CAP Architecture in Short](docs/CapArch.md) first. It helps you quickly identify if CAP is something you need or not by summarising the mental idea behind CAP and the way it is implemented. It also includes a short description of how the analysis should be described. Next you may try our step-by-step tutorials in [Getting Started](docs/GetingStarted.md) to have a better feeling of how CAP work.
 
-Next you may read either [Describe Your Analysis](docs/DescribeAnalysis.md) or [Code Architecture](docs/CodeArch.md). The former hepls user to learn how to understand the provided pipelines be able to modify them or start a new analysis from scratch. The latter, is useful if you are a python programmer and would like expand the functionality of the CAP. 
+Next you may read either [Describe Your Analysis](docs/DescribeAnalysis.md) or [Code Architecture](docs/CodeArch.md). The former hepls user to learn how to understand the provided pipelines be able to modify them or start a new analysis from scratch. The latter, is useful if you are a python programmer and would like expand the functionality of the CAP.
+
+Finally [Explore Data](docs/ExploreData.md) describes set of utility to help you to explore the result of analysis performed by CAP.
 
 ## Installation
 You can simply install cap using pip.
