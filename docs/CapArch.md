@@ -1,16 +1,16 @@
 # CAP Architecture in Short
 
 CAP can be seen as a simple workflow manager with its own terminology:
-- `Workflow` refers to a file that contains detailed description of the analysis.
-- `Operation` is the implementation of one analysis step. Limited number of operations are implmented currently. More operations will be introduced with each new version we release. 
-- `Job` is the specification of a step in the analysis. Each job is linked to an operation. A job specify input, output and parameters used to execute the operation. 
-- `DataHandle` is the specification of an input or an output of a job.
-- `Flow` is the order of jobs to be executed in the analysis. Currently CAP only support a simple linear execution of the jobs and does not automatically check the data dependency between the jobs.
-- `Config` is the configuration of the analysis (i.e. default values)
-- `Runtime` is the runtime information about execution of the analysis (i.e. when every job is started to finished, what version of eahc tool is used in the analysis)
+- `workflow` refers to a file that contains detailed description of the analysis.
+- `operation` is the implementation of an analysis step. Limited number of *operations* are implmented currently. More *operations* will be introduced with each new version we release.
+- `job` is the specification of a step in the analysis. Each job is linked to an *operation*. A job specify input, output and parameters used to execute the operation. 
+- `dataHandle` is the specification of data used in the input or output of a *job*.
+- `executionPlan` is the order of `job`s to be executed in the analysis. Currently CAP only support a simple linear execution of the jobs and does not automatically check the data dependency between the `job`s.
+- `config` is the configuration of the analysis (i.e. default values)
+- `runtime` is the runtime information about execution of the analysis (i.e. when every job is started to finished, what version of eahc tool is used in the analysis)
 
-CAP reads the workflow and constantly updates its runtime as the analysis is progressed.
-To minimise errors in the execution, CAP checks the workflow schema at different stages to make sure the workflow contains valid information.
+CAP reads the `workflow` and constantly updates its runtime as the analysis is progressed.
+To minimise errors in the execution, CAP checks the `workflow` schema at different stages to make sure the `workflow` contains valid information.
 If a CAP process is re-executed after a failour, it skips all the steps which are completed and continue from where it fails.
 
 As described above, CAP is a basic workflow manager. **However, our main contributions listed below are beyond a workflow manager:**
@@ -20,7 +20,7 @@ As described above, CAP is a basic workflow manager. **However, our main contrib
 - CAP parallelises the workload over multiple compute nodes.
 
 ## Workflow File
-The workflow file describes the analysis in *YAML* or *JSON* format. These formats are simple, human-readable and widely used to store configuration data. If you don't know *YAML*, don't worry. You can learn all you need to know in a 4-minute tutorial [here](https://youtu.be/0fbnyS_lHW4). Also, the [Geting Started](GetingStarted.md) includes a few examples that can help you understand these formats.
+The `workflow` describes the analysis in *YAML* or *JSON* format. These formats are simple, human-readable and widely used to store configuration data. If you don't know *YAML*, don't worry. You can learn all you need to know in a 4-minute tutorial [here](https://youtu.be/0fbnyS_lHW4). Also, the [Geting Started](GetingStarted.md) includes a few examples that can help you understand these formats.
 
 CAP requires specific information to be presented in the workflow. The details are provided in [Describe Your Analysis](docs/DescribeAnalysis.md).
 
@@ -69,30 +69,59 @@ DataHandels:
     MyDataHandle:
         disk:
             path: hdfs:///users/me/input.vcf.bgz
-            isProduced: True
 ```
 
 CAP infers the following information given the above definition:
 ```yaml
-MyDataHandle:
-    disk:
-        path: hdfs:///users/me/input.vcf.bgz
-        isProduced: True
-        BlaBla: Bla
+DataHandels:
+    MyDataHandle:
+        disk:
+            path: hdfs:///users/me/input.vcf.bgz
+            isProduced: True
 ```
 
 ### Jobs:
-A Job is the specification of one analysis step. Only jobs which are listed in the *flow* section are executed by CAP. Here is an example of the job:
+A Job is the specification of one analysis step. Only jobs which are listed in the `Flow` section are executed by CAP. Here is an example of the job called `vcf2bfile`:
 
 ```yaml
-Jobs:
-    disk:
-        path: hdfs:///users/me/input.vcf.bgz
+dataHandels:
+    inVCF:
+        disk:
+            path: hdfs:///users/me/input.vcf.bgz
+    outBFILE:
+        disk:
+            path: hdfs:///users/me/output.bfile
+jobs:
+    vcf2bfile:
+        spec:
+            operation: bypass
+        dataHandles:
+            inData:
+                dataHandle: inVCF
+                microOperations:
+                    -   type: maf
+                        parameter:
+                            min: 0.05
+                    -   type: count
+            outData:
+                dataHandle: outBFILE
+
         isProduced: True
         BlaBla: Bla
 ```
 
-This job is linked to the most basic operation in CAP called `BYPASS`. As its name suggest it does nothing but to bypass the only input to the only output. Yet there are alot you can do with this nothing. 
+This example job is linked to the most basic operation in CAP called `bypass`.
+As its name suggest, it does nothing but to bypass the only input (`inData`) to the only output (`outData`).
+Yet there are alot you can do with bypass.
+In this example the input and output are connected to `inVCF` and `outBfile` dataHandles respectively.
+As a consequence the VCF file is convereted to plink bfile format (bim, bed, fam).
+`microOperation` are samll operations applied to the input and output of the jobs.
+In this example we apply two micro opperation to the input:
+- Filter variants where minor allele frequency (maf) is greater than 5%
+- Count the number of variants and samples in the dataset. 
+When *microOperations* applied to an input their effect is only available during the execution of the job.
+They do not affect the input source.
+Output micro 
 
 
 The input(s) and output(s) of operations are pointers to DataHandles. Each operation in the workflow file is linked to a pre-coded operation implmented in CAP. 
