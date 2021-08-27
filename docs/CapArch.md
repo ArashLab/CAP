@@ -2,20 +2,20 @@
 
 CAP can be seen as a simple workflow manager with its own terminology:
 - `workflow` refers to a file that contains detailed description of the analysis.
-- `operation` is the implementation of an analysis step. Limited number of *operations* are implmented currently. More *operations* will be introduced with each new version we release.
-- `job` is the specification of a step in the analysis. Each job is linked to an *operation*. A job specify input, output and parameters used to execute the operation. 
-- `dataHandle` is the specification of data used in the input or output of a *job*.
-- `executionPlan` is the order of `job`s to be executed in the analysis. Currently CAP only support a simple linear execution of the jobs and does not automatically check the data dependency between the `job`s.
-- `config` is the configuration of the analysis (i.e. default values)
-- `runtime` is the runtime information about execution of the analysis (i.e. when every job is started to finished, what version of eahc tool is used in the analysis)
+- `dataHandle` is the specification of a data used in the analysis.
+- `job` is the specification of a step in the analysis. Each job is linked to an `operation` and specifies `datahandle`s and parameters used to execute the `operation`. 
+- `operation` refers to the peice of code that implments an analysis step.
 
-CAP reads the `workflow` and constantly updates its runtime as the analysis is progressed.
-To minimise errors in the execution, CAP checks the `workflow` schema at different stages to make sure the `workflow` contains valid information.
-If a CAP process is re-executed after a failour, it skips all the steps which are completed and continue from where it fails.
 
-As described above, CAP is a basic workflow manager. **However, our main contributions listed below are beyond a workflow manager:**
+CAP reads the `workflow` and constantly updates its `runtime` as the analysis is progressed.
+`runtime` is the information about execution of the analysis (i.e. if a job is compeleted).
+To minimise errors in the execution, CAP performs several `schemaCheck` on the `workflow` at different stages to make sure the `workflow` contains valid information.
+`schemaCheck`s help you to indentify and fix erros in the workflow as early as possible.
+If a CAP process is re-executed after a failour, it skips all the `job`s which are completed and continue from where it fails.
+
+CAP is a basic workflow manager. The `executionPlan` (written by the user) defines the order of `job`s to be executed. Currently CAP only support a simple linear execution of the jobs and does not check the data dependency between the `job`s. **However, our main contributions listed below are beyond creating another workload manager:**
 - CAP introduce the syntax that best suits describing genomic cohort analysis. 
-- CAP offers a set of pre-coded and configurable operations used in the genomic cohort analysis. These operations allow seamless communication between various genomic software such as Hail, VEP and many more.
+- CAP offers a set of pre-coded and configurable `operation`s used in the genomic cohort analysis. These `operation`s allow seamless communication between various genomic software such as *Hail*, *VEP* and many more. Currently, limited number of `operation`s are implmented. More `operation`s will be introduced with future version.
 - CAP executes multiple steps in one process. So the data flows between analysis steps in the memory (where possible). Workflow managers orchestrate independent steps executed in independent processes. Note that writing and reading large genomic dataset to/from disk takes a lot of time. This is specially unacceptable for a chain of small operations where the intermediate data is not of interest.
 - CAP parallelises the workload over multiple compute nodes.
 
@@ -25,6 +25,9 @@ The `workflow` describes the analysis in *YAML* or *JSON* format. These formats 
 CAP requires specific information to be presented in the workflow. The details are provided in [Describe Your Analysis](docs/DescribeAnalysis.md).
 
 The workflow file includes information about the following:
+- 
+- `config` is the configuration of the analysis (i.e. default values)
+- 
 ### DataHandles:
 A DataHandle is the specification of the data used (as input) or produced (as output) in the analysis step. 
 The DataHandle is produced once but could be used by multiple analysis steps.
@@ -81,13 +84,14 @@ DataHandels:
 ```
 
 ### Jobs:
-A Job is the specification of one analysis step. Only jobs which are listed in the `Flow` section are executed by CAP. Here is an example of the job called `vcf2bfile`:
+A Job is the specification of a step in the analysis. Only jobs which are listed in the `executionPlan` section are executed by CAP. Here is an example of the job called `vcf2bfile`:
 
 ```yaml
 dataHandels:
     inVCF:
         disk:
             path: hdfs:///users/me/input.vcf.bgz
+
     outBFILE:
         disk:
             path: hdfs:///users/me/output.bfile
@@ -123,7 +127,5 @@ When *microOperations* applied to an input their effect is only available during
 They do not affect the input source.
 Output micro 
 
-
-The input(s) and output(s) of operations are pointers to DataHandles. Each operation in the workflow file is linked to a pre-coded operation implmented in CAP. 
 
 
