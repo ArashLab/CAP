@@ -32,8 +32,18 @@ For example, tabular data can be stored using the following formats:
     - Hail Table
     
 **A DataHandle provides two interface to work with data: disk interface and memory interface.**.
+
+![Data Flow](../Figures/DataFlow.png)
+
 There are two types of operations: internal and extranal (see ???)
-External operations work with file interface of a DataHandle as they don't share the memory with CAP<sup id="ret_shared_mem">[1](#fn_shared_mem)</sup>.
+External operations work with the disk interface of a DataHandle as they don't share the memory with CAP<sup id="ret_shared_mem">[1](#fn_shared_mem)</sup>.
+Internal operations usually access memory interface of the DataHandle.
+When an internal operation produce (write) data in the memory interface, the **DataHandler** (a CAP module) immediately writes the data into the disk interface to be stored permanently (if DataHandle is not temporary).
+The data persist in memory and subsequent operations can read it from the memory.
+When an internal operation read data from the memory interface that is not loaded yet
+
+**If external operation update data which is already loaded to memory how to update it? Note that there is no overwrite**
+
 
 There are many fields to describe a DataHandle.
 However, you don't need to write the entire structure for each new DataHandle.
@@ -69,5 +79,6 @@ In fact,
 CAP source code isolates and automates the process of loading data from disk to memory (when needed) and dumping data from memory to disk (when produced).
 This improve readability and simplicity of the source code.
 
-<a name="fn_shared_mem">1</a>: Footnote content goes here [↩](#ret_shared_mem)
+## Foot Notes
+<a name="fn_shared_mem">1</a>: There are ways to share the memory between independent process. While we can share the CAP memory the external operator need to be able to read from the shared memory too. This may requier modification the the source code of the tool used in the external operation. Alternatives to this are using pipes or [RamDisk](https://en.wikipedia.org/wiki/RAM_drive). However, pipes need data serialisation and deserialisation. Also, RamDisk only speedup the disk interface of a DataHandle and does not allow to share the memory interface. [↩](#ret_shared_mem)
 
