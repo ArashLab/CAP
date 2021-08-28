@@ -77,3 +77,13 @@ When *microOperations* applied to an input their effect is only available during
 They do not affect the input source.
 Output micro 
 
+
+# Comment
+There are two types of operations: internal and extranal (see ???)
+External operations work with the disk interface of a DataHandle as they don't share the memory with CAP<sup id="ret_shared_mem">[1](#fn_shared_mem)</sup>.
+Internal operations usually access memory interface of the DataHandle.
+When an internal operation produce (write) data in the memory interface, the **DataHandler** (a CAP module) immediately writes the data into the disk interface to be stored permanently (if DataHandle is not temporary).
+The data persist in memory and subsequent operations can read it from the memory.
+When an internal operation read data from the memory interface that is not loaded yet
+
+**If external operation update data which is already loaded to memory how to update it? Note that there is no overwrite**
