@@ -31,6 +31,10 @@ Answering one question a the time, we are unlocking the secrets of the genome.
 `We are leaving in an era where life decoding itself.`
 
 ## What is CAP
+
+If you don't know `YAML`, watch this 4-minute tutorial [here](https://youtu.be/0fbnyS_lHW4).
+This is helpful when you read the following documents.
+
 To understand and use CAP, we recommend reading [CAP Architecture in Short](docs/CapArch.md) first. It helps you quickly identify if CAP is something you need or not by summarising the mental idea behind CAP and the way it is implemented. It also includes a short description of how the analysis should be described. Next you may try our step-by-step tutorials in [Getting Started](docs/GetingStarted.md) to have a better feeling of how CAP work.
 
 Next you may read either [Describe Your Analysis](docs/DescribeAnalysis.md) or [Code Architecture](docs/CodeArch.md). The former hepls user to learn how to understand the provided pipelines be able to modify them or start a new analysis from scratch. The latter, is useful if you are a python programmer and would like expand the functionality of the CAP.

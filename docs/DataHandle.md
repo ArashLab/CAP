@@ -39,34 +39,36 @@ For example, tabular data can be stored using the following formats:
 
 
     
-**A DataHandle is the disk and the memory specification of the data.**
-Temporary data does not have a disk specification.
-If data is not 
-Some DataHandles are temporary that means they don't have any disk specification.
-Temporary date live only in the memory and cannot be recovered if the CAP process is failed.
-A temporary DataHandle is not requierd to be defined as CAP will add its definitions when it is first used in one of the analysis steps.
-
-There is a flags in both disk and memory section to determind if the data is produced.
-In fact, a DataHandle is a complex object with many fields.
+**A DataHandle is the disk and the memory specification of the data.**.
+There are many fields to describe a DataHandle.
 However, you don't need to write the entire structure for each new DataHandle.
-In most cases, all you need is to put the path to the file and CAP infers the rest of the field.
-
-CAP source code isolates and automates the process of loading data from disk to memory (when needed) and dumping data from memory to disk (when produced).
-This improve readability and simplicity of the source code.
-
-Here is an example of a DataHandle definition:
+In most cases, all you need is to put the path to the file and CAP infers the rest of the field (see [Infer DataHandle](InferDataHandle.md)).
+This example define a DataHan :
 ```yaml
-DataHandels:
-    MyDataHandle:
-        disk:
-            path: hdfs:///users/me/input.vcf.bgz
+MyDataHandle:
+    disk:
+        path: hdfs:///users/me/input.vcf.bgz
 ```
 
 CAP infers the following information given the above definition:
 ```yaml
-DataHandels:
-    MyDataHandle:
-        disk:
-            path: hdfs:///users/me/input.vcf.bgz
-            isProduced: True
+MyDataHandle:
+    disk:
+        path: hdfs:///users/me/input.vcf.bgz
+        isProduced: True
 ```
+
+
+Notes:
+- Temporary DataHandle does not have a disk specification.
+- A DataHandle may not have memory specification unless an internal operation requiere data to be loaded into memory.
+- Temporary DataHandle cannot be recovered if the CAP process is failed.
+- 
+A temporary DataHandle is not requierd to be defined as CAP will add its definitions when it is first used in one of the analysis steps.
+
+There is a flags in both disk and memory section to determind if the data is produced.
+In fact, 
+
+CAP source code isolates and automates the process of loading data from disk to memory (when needed) and dumping data from memory to disk (when produced).
+This improve readability and simplicity of the source code.
+

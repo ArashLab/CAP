@@ -7,6 +7,7 @@ Glossary:
 - **Operation** is infact a function that implments one analysis step. (INTERNAL- EXTERNAL (speedup using ramdisk))
 
 External op should have a python interface for submition and wait.
+there is an operaion to create RamDisk on nodes
 
 - **Job** is the specification of a step in the analysis. Each job is linked to an operation and specifies datahandles and parameters used to execute the operation. Currently, limited number of operations are implmented. More operations will be introduced with future version.
 - **Workflow** refers to a file that contains detailed description of the analysis.
@@ -22,7 +23,7 @@ CAP is a basic workflow manager. The executionPlan (written by the user) defines
 
 
 ## Workflow File
-The workflow describes the analysis in *YAML* or *JSON* format. These formats are simple, human-readable and widely used to store configuration data. If you don't know *YAML*, don't worry. You can learn all you need to know in a 4-minute tutorial [here](https://youtu.be/0fbnyS_lHW4). Also, the [Geting Started](GetingStarted.md) includes a few examples that can help you understand these formats.
+The workflow describes the analysis in *YAML* or *JSON* format. These formats are simple, human-readable and widely used to store configuration data. If you don't know *YAML*, don't worry.  Also, the [Geting Started](GetingStarted.md) includes a few examples that can help you understand these formats.
 
 CAP requires specific information to be presented in the workflow. The details are provided in [Describe Your Analysis](docs/DescribeAnalysis.md).
 
