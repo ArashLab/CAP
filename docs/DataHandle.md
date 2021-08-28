@@ -39,7 +39,8 @@ For example, tabular data can be stored using the following formats:
     - Spark RDD
     - Hail Table
 
-The figure below explain how the data flows between disk, memory and 
+The figure below explain how the data flows between disk, memory and operation
+
 ![Data Flow](../Figures/DataFlow.png)
 
 Notes:
