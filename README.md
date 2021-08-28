@@ -11,13 +11,12 @@ You describe the analysis `--->>>` CAP executes the analysis
 
 The isolation between the description and the execution of the analysis simplifies maintenance of the analysis pipeline. Furthermore, it opens the path to Cohort Analysis as a Service (CAS) to appear in the future. CAP also facilitate report generation process.
 
-CAP reads the specification of the analysis (the workflow). From this perspective, CAP is a simple workflow manager. There are many advanced workflow managers such as NextFlow and SnakeMake. Our contribution is beyond introducing another workflow manager. Our focus is on:
+CAP reads the specification of the analysis (the workflow) and executes all analysis steps (jobs). From this perspective, CAP is a simple workflow manager. Currently, CAP executes jobs serially and in a given order without checking for dependencies. There are many advanced workflow managers such as NextFlow and SnakeMake offering more features. **Our contribution is beyond introducing another workflow manager and our focus is on:**
 - Designing the specification that best suits describing genomic cohort analysis. 
-- Offer a set of pre-coded and configurable operations that allow seamless communication between various genomic software such as *Hail*, *VEP* and many more.
-- CAP executes the analysis in one process (where possible) so the cohort and other data flow in the memory throughout the analysis. Note that writing and reading large genomic data to/from the disk is time-consuming. This is especially unacceptable for a chain of small operations performed on a large cohort where the intermediate data is not of interest.
-- CAP parallelises the workload over multiple compute nodes (where possible).
+- Offering a set of pre-coded and configurable operations that allow seamless communication between various genomic software such as *Hail*, *VEP* and many more.
+- Executing the analysis in one process (where possible) so the cohort and other data flow in the memory throughout the analysis. Note that writing and reading large genomic data to/from the disk is time-consuming. This is especially unacceptable for a chain of small operations performed on a large cohort where the intermediate data is not of interest.
+- Parallelising the workload over multiple compute nodes (where possible).
 
-In terms of workflow management, CAP is currently quite basic as it can only execute jobs serially and in a given order without checking for dependencies.
 ## What is Genomic Cohort Analysis
 A genomic cohort is a massive table of thousands of samples (i.e. humans) and tens of millons of features (genomic variants). There are clinical attributes for each sample such as ethnicity and gender, and genomic attributes for each variant such as if the variant located in a gene or affect a protein structure.
 
