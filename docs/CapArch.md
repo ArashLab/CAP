@@ -1,6 +1,11 @@
 # CAP Architecture in Short
 
-CAP can be seen as a simple workflow manager with its own terminology:
+CAP can be seen as a simple workflow manager. However, our main contributions are beyond creating another workload manager.
+
+Currently, limited number of `operation`s are implmented. More `operation`s will be introduced with future version.
+
+ with its own terminology
+
 - `workflow` refers to a file that contains detailed description of the analysis.
 - `dataHandle` is the specification of a data used in the analysis.
 - `job` is the specification of a step in the analysis. Each job is linked to an `operation` and specifies `datahandle`s and parameters used to execute the `operation`. 
@@ -13,11 +18,7 @@ To minimise errors in the execution, CAP performs several `schemaCheck` on the `
 `schemaCheck`s help you to indentify and fix erros in the workflow as early as possible.
 If a CAP process is re-executed after a failour, it skips all the `job`s which are completed and continue from where it fails.
 
-CAP is a basic workflow manager. The `executionPlan` (written by the user) defines the order of `job`s to be executed. Currently CAP only support a simple linear execution of the jobs and does not check the data dependency between the `job`s. **However, our main contributions listed below are beyond creating another workload manager:**
-- CAP introduce the syntax that best suits describing genomic cohort analysis. 
-- CAP offers a set of pre-coded and configurable `operation`s used in the genomic cohort analysis. These `operation`s allow seamless communication between various genomic software such as *Hail*, *VEP* and many more. Currently, limited number of `operation`s are implmented. More `operation`s will be introduced with future version.
-- CAP executes multiple steps in one process. So the data flows between analysis steps in the memory (where possible). Workflow managers orchestrate independent steps executed in independent processes. Note that writing and reading large genomic dataset to/from disk takes a lot of time. This is specially unacceptable for a chain of small operations where the intermediate data is not of interest.
-- CAP parallelises the workload over multiple compute nodes.
+CAP is a basic workflow manager. The `executionPlan` (written by the user) defines the order of `job`s to be executed. Currently CAP only support a simple linear execution of the jobs and does not check the data dependency between the `job`s.
 
 ## Workflow File
 The `workflow` describes the analysis in *YAML* or *JSON* format. These formats are simple, human-readable and widely used to store configuration data. If you don't know *YAML*, don't worry. You can learn all you need to know in a 4-minute tutorial [here](https://youtu.be/0fbnyS_lHW4). Also, the [Geting Started](GetingStarted.md) includes a few examples that can help you understand these formats.
