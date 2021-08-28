@@ -104,38 +104,29 @@ A DataHandle has the following structure:
 
 ### Supported Disk Formats and Compression
 
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;}
-.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-  overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg .tg-zlqz{background-color:#c0c0c0;border-color:inherit;font-weight:bold;text-align:center;vertical-align:top}
-.tg .tg-c3ow{border-color:inherit;text-align:center;vertical-align:top}
-</style>
-<table class="tg">
+<table>
 <tbody>
   <tr>
-    <td class="tg-zlqz" colspan="2">format</td>
-    <td class="tg-zlqz" colspan="2">compression</td>
+    <td colspan="2">format</td>
+    <td colspan="2">compression</td>
   </tr>
   <tr>
-    <td class="tg-zlqz">name</td>
-    <td class="tg-zlqz">extension</td>
-    <td class="tg-zlqz">gzip (gz)</td>
-    <td class="tg-zlqz">bgzip (bgz)</td>
+    <td>name</td>
+    <td>extension</td>
+    <td>gzip (gz)</td>
+    <td>bgzip (bgz)</td>
   </tr>
   <tr>
-    <td class="tg-c3ow">comma-separated-values</td>
-    <td class="tg-c3ow">csv</td>
-    <td class="tg-c3ow">X</td>
-    <td class="tg-c3ow">X</td>
+    <td>comma-separated-values</td>
+    <td>csv</td>
+    <td>X</td>
+    <td>X</td>
   </tr>
   <tr>
-    <td class="tg-c3ow"></td>
-    <td class="tg-c3ow"></td>
-    <td class="tg-c3ow"></td>
-    <td class="tg-c3ow"></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
   </tr>
 </tbody>
 </table>
