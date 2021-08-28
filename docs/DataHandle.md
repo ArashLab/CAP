@@ -77,10 +77,7 @@ inputVCF:
 
 CAP infers the following information given the above definition:
 ```yaml
-MyDataHandle:
-    disk:
-        path: hdfs:///users/me/input.vcf.bgz
-        isProduced: True
+WillBeUpdate: Later
 ```
 
 ## Specification:
@@ -90,46 +87,87 @@ A DataHandle has the following structure:
     - `isProduced`: binary
     - `format`: see ???
     - `compression`: currently gzip (gz) and bgzip (bgz) are supported
-    - `path`: string or list of string (see ???)
-    - `pathList`: list of processes path where each item includes the following fields
-        - `raw`: raw initial path
-        - `path`: processed final path
-        - `fileSystem`: see ???
-        - `format`:
-        - `compression`:
-- memory
+    - `path`: string or list of string or list of `pathStruct` (see ???)
+    - `loadParam`: Parameter used to load data from disk (depends on memory format)
+    - `dumpParam`: Parameter used to dump date to disk (depends on memory format)
+- `memory`
     - `isProduced`: binary
     - `format`: see ???
 
+### Path
+`pathStruct` is the compelete representation of a path.
+`disk.path` is always inferred to the list of `pathStruct` (see ???).
+Note that data may be stored in multiple files or database tables.
+For example, a VCF file could be divided by chromosomes.
+To address these situation, multiple paths can be linked to a single DataHandle.
+Also a path may contain wildcard characters and translate into multiple paths.
 
-### Supported Disk Formats and Compression
+The `pathStruct` contains the following field
+- `path`: Path to the file (for sql see ???).
+    - During execution of the workflow:
+        - `path` is copied to `raw`
+        - `path` is replaced by the processed path that
+            - is absolute and from the file system root
+            - has the file system prefix
+            - does not contain any environemntal variable (they are replaced by their actual values)
+            - does not contain wildcard characters
+- `fileSystem`: see ???
+- `format`: see ???
+- `compression`: see ???
+- `raw` is the copy of the given path before being processed. The raw path can be presented in multiple `pathStruct` (i.e. if there is a star wildcard)
 
-<table>
-<tbody>
-  <tr>
-    <td colspan="2">format</td>
-    <td colspan="2">compression</td>
-  </tr>
-  <tr>
-    <td>name</td>
-    <td>extension</td>
-    <td>gzip (gz)</td>
-    <td>bgzip (bgz)</td>
-  </tr>
-  <tr>
-    <td>comma-separated-values</td>
-    <td>csv</td>
-    <td>X</td>
-    <td>X</td>
-  </tr>
-  <tr>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-  </tr>
-</tbody>
-</table>
+
+### Supported File Systems:
+
+| FileSystem |  prefix |
+|:----------:|:-------:|
+|  LocalDisk | file:// |
+|    HDFS    | hdfs:// |
+
+### Supported Disk Formats
+
+|        Format        | Extension  |
+|:--------------------:|:----------:|
+|       HailTable      |     ht     |
+|    HailMatrixTable   |     mt     |
+|   VariantCallFormat  |     vcf    |
+| CommaSeparatedValues |     csv    |
+|  TabSeparatedValues  |     tsv    |
+
+### Supported Memory Formats
+
+|      Format      |      Type       |
+|:----------------:|:---------------:|
+|     HailTable    |      Table      |
+|  HailMatrixTable |   MatrixTable   |
+
+### Disk and Memory Compatibility
+
+- VariantCallForamt (.vcf)
+    - HailMatrixTable
+        - Compression: `gzip` and `bgzip`
+        - Can read from list of file
+        - Can write into multiple files with parallel option in the `dumpParam`
+        - `loadParam`: ???
+        - `dumpParam`: ???
+
+- CommaSeparatedValues (.csv) & TabSeparatedValues (.tsv)
+    - HailTable
+        - Compression: `gzip` and `bgzip`
+        - Can read from list of file
+        - Can write into multiple files with parallel option in the `dumpParam`
+        - `loadParam`: ???
+        - `dumpParam`: ???
+
+- HailTable (.mt)
+    - HailTable 
+
+- HailMatrixTable (.mt)
+    - HailMatrixTable
+
+- SqlTable (database)
+    - HailTable: Only dump is implemented
+    - `dumpParam`:
 
 ## Foot Notes
 <a name="fn_shared_mem">1</a>: There are ways to share the memory between independent process. While we can share the CAP memory the external operator need to be able to read from the shared memory too. This may requier modification the the source code of the tool used in the external operation. Alternatives to this are using pipes or [RamDisk](https://en.wikipedia.org/wiki/RAM_drive). However, pipes need data serialisation and deserialisation. Also, RamDisk only speedup the disk interface of a DataHandle and does not allow to share the memory interface. [↩](#ret_shared_mem)
