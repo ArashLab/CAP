@@ -1,15 +1,11 @@
 # CAP Architecture in Short
 
-CAP is a simple workflow manager specialized for genomic cohort analysis (see [ReadMe](../README.md)). In this document, we describe the termoinologies we used and brifly describe the whole thing. 
+CAP is a simple workflow manager specialized for genomic cohort analysis (see [ReadMe](../README.md)).
 
 Glossary:
 - **DataHandle** is the specification of a data used in the analysis (see [DataHandle](DataHandle.md))
-- **Operation** is infact a function that implments one analysis step. (INTERNAL- EXTERNAL (speedup using ramdisk))
-
-External op should have a python interface for submition and wait.
-there is an operaion to create RamDisk on nodes
-
-- **Job** is the specification of a step in the analysis. Each job is linked to an operation and specifies datahandles and parameters used to execute the operation. Currently, limited number of operations are implmented. More operations will be introduced with future version.
+- **Operation** is a function that implments an analysis step (see [Operation](Operation.md)). Each operation act on a set of input and output DataHandles based on given parameters
+- **Job** is the specification of a step in the analysis. Each job is linked to an operation and specifies DataHandles and parameters used to execute the operation. Currently, limited number of operations are implmented. More operations will be introduced with future version.
 - **Workflow** refers to a file that contains detailed description of the analysis.
 
 
@@ -87,3 +83,6 @@ The data persist in memory and subsequent operations can read it from the memory
 When an internal operation read data from the memory interface that is not loaded yet
 
 **If external operation update data which is already loaded to memory how to update it? Note that there is no overwrite**
+
+External op should have a python interface for submition and wait.
+there is an operaion to create RamDisk on nodes
