@@ -4,7 +4,7 @@ Imagine you want to make some tiny changes to a table just before passing the ta
 Or, you want to make some changes to the output of the function.
 MicroOperations are designed for these cases.
 They act on a signle [DataHandle](DataHandle.md) just before being used or after being produced in a job.
-A list of MicroOperations could be attached to each DataHanlde of a job.
+A list of MicroOperations could be attached to each DataHanlde of a [job](Job.md).
 Micro oprations are applied in the same order they appear in the list.
 If DataHandle is input of the job, the effect of the MicroOperations is only visible during the execution of the job.
 If DataHandle is ouput of the hob, the effect of the MicroOperations remains in the output permanently.
@@ -31,7 +31,7 @@ Three parameters are commonly used in MicroOperations. So we list them here to p
 - `newFields`: A dictionay with one or more items. each item is definition of a new field where *key* is the name for the new field and value is the expression to calculate the new field.
 
 
-- **addIndex**: Add an integer index (starting from 0) to the table.
+- **`addIndex`**: Add an integer index (starting from 0) to the table.
     - Supported Types:
         - HailTable
         - HailMatrixTable
@@ -40,7 +40,7 @@ Three parameters are commonly used in MicroOperations. So we list them here to p
         - `name`: name of the field with integer index
 
 
-- **annotate**: Add one or more field computed using expressions
+- **`annotate`**: Add one or more field computed using expressions
     - Supported Types:
         - HailTable
         - HailMatrixTable
@@ -48,21 +48,21 @@ Three parameters are commonly used in MicroOperations. So we list them here to p
         - `axis`: `rows`, `cols`, `globals` or `entries`
         - `newFields`: To be annotated.
 
-- **count**: Print the number of lines in CAP-log and console
+- **`count`**: Print the number of lines in CAP-log and console
     - Supported Types:
         - HailTable
         - HailMatrixTable
     - Notes:
         - For HailMatrixTable this MicorOperation counts line in both `rows` and `cols` tables
 
-- **drop**: Drop one or more fields of the table at once
+- **`drop`**: Drop one or more fields of the table at once
     - Supported Types:
         - HailTable
         - HailMatrixTable
     - Parameters:
         - `fields`: To drop.
 
-- **keyBy**: Key table by one or more fields
+- **`keyBy`**: Key table by one or more fields
     - Supported Types:
         - HailTable
         - HailMatrixTable
@@ -71,7 +71,7 @@ Three parameters are commonly used in MicroOperations. So we list them here to p
         - `fields`: To be in the key list
         - `newFields`: To be in the key list
 
-- **rename**: Rename one or more fields of the table at once
+- **`rename`**: Rename one or more fields of the table at once
     - Supported Types:
         - HailTable
         - HailMatrixTable
@@ -80,7 +80,7 @@ Three parameters are commonly used in MicroOperations. So we list them here to p
             - *Key* is the existing field name
             - *Value* is the new field name
 
-- **subsample**: Subsample lines in the table
+- **`subsample`**: Subsample lines in the table
     - Supported Types:
         - HailTable
         - HailMatrixTable
@@ -91,7 +91,7 @@ Three parameters are commonly used in MicroOperations. So we list them here to p
     - Notes:
         - `prob` can be considered as approximate fraction of the line kept in the output.
 
-- **select**: Select one or more fields of the table along with all key fields.
+- **`select`**: Select one or more fields of the table along with all key fields.
     - Supported Types:
         - HailTable
         - HailMatrixTable
