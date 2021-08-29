@@ -238,7 +238,7 @@ def AddId(mt, parameters):
         mt = mt.key_cols_by('sampleId')
     
     if 'variantId' in parameters:
-        if parameters.variantId== 'CHR:POS:ALLELES':
+        if parameters.variantId=='CHR:POS:ALLELES':
             mt = mt.annotate_rows(variantId=hl.str(':').join(hl.array([mt.locus.contig, hl.str(mt.locus.position)]).extend(mt.alleles)))
         else:
             LogException('VariantId is not Supported')
@@ -251,6 +251,6 @@ def ForVep(mt):
     mt = mt.annotate_rows(rsid=hl.str(mt.variantId))
     ht = mt.rows().select('rsid')
     mt = hl.MatrixTable.from_rows_table(ht)
-    mt = mt.annotate_cols(sampleId='Dummy') # Neded For VCF Export purpose
+    mt = mt.annotate_cols(sampleId='dummy') # Neded For VCF Export purpose
     mt = mt.key_cols_by(mt.sampleId)
     return mt
