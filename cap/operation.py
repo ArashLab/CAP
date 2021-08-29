@@ -225,7 +225,6 @@ def HailAssociation(stage):
         if inout.startswith('outTable_'):
             inouts[inout].SetData(outData[inout])
 
-
 @D_General
 def ImportMatrixTable(stage):
     spec, arg, io = UnpackStage(stage)
@@ -371,7 +370,6 @@ def Join(stage):
             data[inout] = inouts[inout].GetData()
 
     ##### >>>>>>> STAGE Code <<<<<<<<
-
     for i, item in enumerate(parameters.order):
         inTable = data[item.table]
 
