@@ -39,7 +39,7 @@ Glossary:
 - **Operation & Job**: Think of a function and a function-call. We have the same concept here. The Operation is like a function and the Job is like a function-call. Operations are implemented in the CAP source code. Jobs are defined in the workflow file. Functions have arguments and a return value. Operations have DataHandles (input and output data) and Parameters. Currently, limited number of operations are implmented in CAP. More operations will be introduced with future version.
 - **Workflow**: A file that describes the analysis.
 - **DataHandle**: DataHandle is the specification of data. Where and how the data is stored permanently? How to load data into memory? 
-- **MicroOperation**: Imagine you want to make some tiny changes to a table just before passing the table to a function (without modifying the original table). Or, you want to make some changes to the output of the function. MicroOperations are designed for this cases. They act on a signle DataHandle just before being used or after being produced. 
+- **MicroOperation**: Imagine you want to make some tiny changes to a table just before passing the table to a function (without modifying the original table). Or, you want to make some changes to the output of the function. MicroOperations are designed for these cases. They act on a signle DataHandle just before being used or after being produced in a job. 
 - **Runtime** is the information about execution of the workflow (i.e. if a job is compeleted). CAP constantly updates runtime information in the workflow as the analysis is progressed. 
 - **ExecutionPlan** is a list of job names to be executed in the same orde they appear in the list<sup id="ret_exec_plan">[1](#fn_exec_plan)</sup>.
 - **SchemaCheck**: Errors in the workflow could cuase runtime exceptions. As a consecuence, CAP havily check the workflow at different stages of the execution to make sure of its correctness. There checks are mainly done by SchemaCheck (JSON Schema) but some of the checks are performed by python code.
@@ -49,6 +49,8 @@ Notes:
 - CAP requiers a path to the workflow file to be executed.
 - If a CAP process is re-executed after a failour (assuming you fix the cause of the failour), it skips all the jobs which are completed and continue from where it fails. This is possible using the runtime information that are stored in workflow file permanently.
 - CAP makes changes to the workflow. This includes the inferred and runtime information. The resulting workflow my not look neat. It is recomended to have a back up of the workflow prior to the execution.
+- CAP produce a detailed log file that is helpful to investigate errors
+
 ## Learn More about CAP
 
 If you don't know `YAML`, watch this 4-minute tutorial [here](https://youtu.be/0fbnyS_lHW4).

@@ -1,4 +1,5 @@
-# DataHandle
+# DataHandle & DataHandler
+
 A **DataHandle** is the specification of the data in the workflow file.
 `DataHandler` is the coresponding module in CAP source code. 
 
