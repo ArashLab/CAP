@@ -21,7 +21,7 @@ All operations work with memory interface of their DataHandles unless specified 
         - `inData` and `outData` disk format are VCF and PlinkBfile respectively while the memory format is a HailMatrixTable for both. In this case, a VCF file is converted to a PlinkBfile.
         - `inData` and `outData` disk format are VCF and MySQL-Table respectively. The memory format is a HailMatrixTable and HailTable respectively. `axis` is set to `rows`. In this case, all the variant information from VCF file are exported into a MySQL-Table.
 
-- **`join`**: Joining two tables is so easy. The `join` operation here can perform a chain of joins. Not just joins but also filtering of a table based on another table (semi-join and anti-joins) as well as annotating one table using another. The chain can consist of series of HailTables and HailMatrixTables. The `order` parameter defines the order of data in the chain of joins and how to join them.
+- **`join`**: Joining two tables is so easy. The `join` operation here can perform a chain of joins. Not just joins but also filtering of a table based on another table (semi-join and anti-joins) as well as annotating one table using another. The chain can consist of series of HailTables and HailMatrixTables. The `order` in which tables are joined is passed through parameter.
     - `dataHandles`
         - `inData_*`: The '*' can be replaces with anything to produce infinit number of input DataHandles used in the joining chain. Using `keyBy` MicroOperation the key of each table can be set to what is needed in the join. 
             - Supported Types
@@ -32,7 +32,14 @@ All operations work with memory interface of their DataHandles unless specified 
                 - HailTable
                 - HailMatrixTable
     - `parameters`:
-        - `order`: It is a list of dictionaries. Each dict point to a table and describe how it should be joined with others. The following field exist All dict has the `table` keys with the value of `inData_*` (point to one of the input data). Other keys determinse how this table must be join with others. The first dict in the list does not have any other keys as it is used as the base table. 
+        - `order`: It is a list of dictionaries. Each dictionary points to a input DataHandle and describe how it should be joined with others. Tables are joind in the same order they appear in the list. This opratin starts with the first table in the list (as left table) and join it with second table in the list (as right table). The result is assigned to the left table and the next table in the list is considred to be the right table. Each dict has the following keys:
+            - `table`: keys with the value of `inData_*` (point to one of the input data).
+            - `kind`: could take any of the following values:
+                - `join`: simply join tables based on `how` key in the dict
+                - `semi`: keep lines of the left table where their key present in the right table
+                - `anti`: keep lines of the left table where their key does not present in the right table
+                - `annotate`: add all fields of the right table under one filed in the left table
+            - Other keys determinse how this table must be join with others. The first dict in the list does not have any other keys as it is used as the base table.
     - Notes:
         - When converting HailMatrixTable to HailTable, the `axis` parameter determind which part of the HailMatrixTable is bypassed.
         - When converting HailTable to HailMatrixTable, HailTable populates the rows table of the HailMatrixTable. The cols table remains empty.
