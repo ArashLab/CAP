@@ -41,11 +41,7 @@ All operations work with memory interface of their DataHandles unless specified 
                 - `annotate`: add all fields of the right table under one filed in the left table
             - Other keys determinse how this table must be join with others. The first dict in the list does not have any other keys as it is used as the base table.
     - Notes:
-        - When converting HailMatrixTable to HailTable, the `axis` parameter determind which part of the HailMatrixTable is bypassed.
-        - When converting HailTable to HailMatrixTable, HailTable populates the rows table of the HailMatrixTable. The cols table remains empty.
     - Examples:
-        - `inData` and `outData` disk format are VCF and PlinkBfile respectively while the memory format is a HailMatrixTable for both. In this case, a VCF file is converted to a PlinkBfile.
-        - `inData` and `outData` disk format are VCF and MySQL-Table respectively. The memory format is a HailMatrixTable and HailTable respectively. `axis` is set to `rows`. In this case, all the variant information from VCF file are exported into a MySQL-Table.
 
 
 
