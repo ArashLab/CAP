@@ -49,7 +49,7 @@ Notes:
 - CAP requiers a path to the workflow file to be executed.
 - If a CAP process is re-executed after a failour (assuming you fix the cause of the failour), it skips all the jobs which are completed and continue from where it fails. This is possible using the runtime information that are stored in workflow file permanently.
 - CAP makes changes to the workflow. This includes the inferred and runtime information. The resulting workflow my not look neat. It is recomended to have a back up of the workflow prior to the execution.
-## Learn More aboutCAP
+## Learn More about CAP
 
 If you don't know `YAML`, watch this 4-minute tutorial [here](https://youtu.be/0fbnyS_lHW4).
 This is helpful when you read the following documents.
@@ -57,14 +57,10 @@ This is helpful when you read the following documents.
 You may first try our step-by-step tutorials in [Getting Started](docs/GetingStarted.md) to have a better feeling of how CAP work.
 
 The following documents explain different aspect of the CAP in more details:
-- [Workflow](docs/Workflow.md): Specification of what can be in a workflow file.
-- [DataHandle](docs/DataHandle.md): Specification of a DataHandle in the workflow as well as the flow of data in the program.
-- [Operations](docs/Operations.md): List of all Operations and their specification.
-- [MicroOperations](docs/MicroOperations.md): List of all MicorOperations and their specification.
-
-Next you may read either [Describe Your Analysis](docs/DescribeAnalysis.md) or [Code Architecture](docs/CodeArch.md). The former hepls user to learn how to understand the provided pipelines be able to modify them or start a new analysis from scratch. The latter, is useful if you are a python programmer and would like expand the functionality of the CAP.
-
-Finally [Explore Data](docs/ExploreData.md) describes set of utility to help you to explore the result of analysis performed by CAP.
+- [Workflow](docs/Workflow.md): Specification of the workflow.
+- [DataHandle](docs/DataHandle.md): Specification of DataHandle as well as the flow of data in the program.
+- [Operations](docs/Operations.md): Specification of Operations
+- [MicroOperations](docs/MicroOperations.md): Specification of MicorOperations.
 
 ## Installation
 You can simply install cap using pip.
@@ -75,6 +71,5 @@ pip install cap-genomics
 Note that [Hail](https://hail.is) is a requierment of the CAP. Hail has a few dependencies which must be installed prior to Hail installation. See [here](https://hail.is/docs/0.2/getting_started.html#installing-hail) for more details.
 
 
-
-
-
+## Foot Notes
+<a name="fn_exec_plan">1</a>: Since each job is parallelised oever several compute nodes to harvest entire compute resources, job-level parallelisation is not critical. Yet, we plan to offer job-level parallelisation in the future. Ultimately, CAP will identify the dependencies between jobs automatically and identify the execution plan dynamically (to be implemented). [↩](#ret_exec_plan)
