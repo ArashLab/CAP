@@ -17,6 +17,8 @@ CAP reads the specification of the analysis (the workflow) and executes all anal
 - Executing the analysis in one process (where possible) so the cohort and other data flow in the memory throughout the analysis. Note that writing and reading large genomic data to/from the disk is time-consuming. This is especially unacceptable for a chain of small operations performed on a large cohort where the intermediate data is not of interest.
 - Parallelising the workload over multiple compute nodes (where possible).
 
+We design CAP for genomic cohort analysis. However, the architecture we propose can be expanded to virtually any data analysis pipeline.  
+
 ## What is Genomic Cohort Analysis
 A genomic cohort is a massive table of thousands of samples (i.e. humans) and tens of millons of features (genomic variants). There are clinical attributes for each sample such as ethnicity and gender, and genomic attributes for each variant such as if the variant located in a gene or affect a protein structure.
 
