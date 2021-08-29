@@ -58,7 +58,9 @@ You may first try our step-by-step tutorials in [Getting Started](docs/GetingSta
 
 The following documents explain different aspect of the CAP in more details:
 - [Workflow](docs/Workflow.md): Specification of what can be in a workflow file.
-- [Operations](docs/Operations.md): List of all existing operation and their specification
+- [DataHandle](docs/DataHandle.md): Specification of a DataHandle in the workflow as well as the flow of data in the program.
+- [Operations](docs/Operations.md): List of all Operations and their specification.
+- [MicroOperations](docs/MicroOperations.md): List of all MicorOperations and their specification.
 
 Next you may read either [Describe Your Analysis](docs/DescribeAnalysis.md) or [Code Architecture](docs/CodeArch.md). The former hepls user to learn how to understand the provided pipelines be able to modify them or start a new analysis from scratch. The latter, is useful if you are a python programmer and would like expand the functionality of the CAP.
 
