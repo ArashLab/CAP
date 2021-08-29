@@ -1,5 +1,7 @@
 # MicroOperations
 
+A MicroOperation is an action that act on signle DataHandle used in a job.
+It may transform the DataHandle before being 
 A list of MicroOperations could be attached to each DataHanlde linked to a job.
 Micro oprations are applied in the same order they appear in the list.
 If DataHandle is input of the job, the effect of the MicroOperations is only visible during the execution of the job.

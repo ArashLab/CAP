@@ -1,36 +1,38 @@
 # CAP Architecture in Short
 
 CAP is a simple workflow manager specialized for genomic cohort analysis (see [ReadMe](../README.md)).
+Here is a brief explanatio of the terminology used.
 
 Glossary:
-- **DataHandle** is the specification of a data used in the analysis (see [DataHandle](DataHandle.md))
-- **Operation** is a function that implments an analysis step (see [Operation](Operation.md)). Each operation act on a set of input and output DataHandles based on given parameters
-- **Job** is the specification of a step in the analysis. Each job is linked to an operation and specifies DataHandles and parameters used to execute the operation. Currently, limited number of operations are implmented. More operations will be introduced with future version.
-- **Workflow** refers to a file that contains detailed description of the analysis.
+- **Operation** & **Job**: Think of a function and a function-call. We have the same concept here. The Operation is like a function and the Job is like a function-call. Operations are implemented in the CAP source code. Jobs are defined in the workflow file. Functions have arguments and a return value. Operations have DataHandles (input and output data) and Parameters. Currently, limited number of operations are implmented in CAP. More operations will be introduced with future version.
+- **Workflow** is a file that describes the analysis. It includes: 
+    - **Jobs** as defined above.
+    - **DataHandles** which are specification of a data (i.e. path to a file, its format and compression). 
+    - **Runtime** is the information about execution of the workflow (i.e. if a job is compeleted). CAP constantly updates runtime information in the workflow as the analysis is progressed. 
+    - **ExecutionPlan** is a list of job names to be executed in the same orde they appear in the list<sup id="ret_exec_plan">[1](#fn_exec_plan)</sup>.
+- **SchemaCheck**: Errors in the workflow could cuase runtime exceptions. As a consecuence, CAP havily check the workflow at different stages of the execution to make sure of its correctness. There checks are mainly done by SchemaCheck (JSON Schema) but some of the checks are performed by python code.
 
-
-CAP reads the workflow and constantly updates its runtime as the analysis is progressed.
-runtime is the information about execution of the analysis (i.e. if a job is compeleted).
-To minimise errors in the execution, CAP performs several schemaCheck on the workflow at different stages to make sure the workflow contains valid information.
-schemaChecks help you to indentify and fix erros in the workflow as early as possible.
-If a CAP process is re-executed after a failour, it skips all the jobs which are completed and continue from where it fails.
-
-CAP is a basic workflow manager. The executionPlan (written by the user) defines the order of jobs to be executed. Currently CAP only support a simple linear execution of the jobs and does not check the data dependency between the jobs.
-
-
-## Workflow File
-The workflow describes the analysis in *YAML* or *JSON* format. These formats are simple, human-readable and widely used to store configuration data. If you don't know *YAML*, don't worry.  Also, the [Geting Started](GetingStarted.md) includes a few examples that can help you understand these formats.
-
-CAP requires specific information to be presented in the workflow. The details are provided in [Describe Your Analysis](docs/DescribeAnalysis.md).
-
-The workflow file includes information about the following:
-- 
+Notes: 
+- CAP can be executed in command line and through a python program (see [Geting Started](GetingStarted.md)).
+- CAP requiers a path to the workflow file to be executed.
+- If a CAP process is re-executed after a failour (assuming you fix the cause of the failour), it skips all the jobs which are completed and continue from where it fails. This is possible using the runtime information that are stored in workflow file permanently.
+- CAP makes changes to the workflow. This includes the inferred and runtime information. The resulting workflow my not look neat. It is recomended to have a back up of the workflow prior to the execution.
+## Workflow
+The workflow describes the analysis in *YAML* or *JSON* format.
+If you don't know `YAML`, watch this 4-minute tutorial [here](https://youtu.be/0fbnyS_lHW4).
+These formats are simple, human-readable and widely used to store configuration data.
+The following information can present in the workflow. 
+- DataHandles
+- Jobs
+- ExecutionPlan
 - config is the configuration of the analysis (i.e. default values)
 - 
 
+See [Workflow](Workflow.md) document for compelete description
+
 
 ### Jobs:
-A Job is the specification of a step in the analysis. Only jobs which are listed in the executionPlan section are executed by CAP. Here is an example of the job called vcf2bfile:
+A Job is the specification of a step in the analysis. Only jobs which are listed in the ExecutionPlan section are executed by CAP. Here is an example of the job called vcf2bfile:
 
 ```yaml
 dataHandels:
@@ -86,3 +88,13 @@ When an internal operation read data from the memory interface that is not loade
 
 External op should have a python interface for submition and wait.
 there is an operaion to create RamDisk on nodes
+
+
+## Foot Notes
+exec_plan
+
+<a name="fn_exec_plan">1</a>: Since each job is parallelised oever several compute nodes to harvest entire compute resources, job-level parallelisation is not critical. Yet, we plan to offer job-level parallelisation in the future. Ultimately, CAP will identify the dependencies between jobs automatically and identify the execution plan dynamically (to be implemented). [↩](#ret_exec_plan)
+
+
+<a name="fn_shared_mem">1</a>: There are ways to share the memory between independent process. While we can share the CAP memory the external operator need to be able to read from the shared memory too. This may requier modification the the source code of the tool used in the external operation. Alternatives to this are using pipes or [RamDisk](https://en.wikipedia.org/wiki/RAM_drive). However, pipes need data serialisation and deserialisation. Also, RamDisk only speedup the disk interface of a DataHandle and does not allow to share the memory interface. [↩](#ret_shared_mem)
+
