@@ -1,5 +1,7 @@
 # DataHandle & DataHandler
 
+Usually different processes could talk to each other 
+
 A **DataHandle** is the specification of the data in the workflow file.
 `DataHandler` is the coresponding module in CAP source code. 
 
@@ -7,7 +9,7 @@ A **DataHandle** is the specification of the data in the workflow file.
 
 Data could be anything, a single integer number or a giant table.
 Example of data includes a VCF file, a phenotype file and a Python list stored in the momory.
-Data can be permanent (like files) or temporary (like a python object in memory).
+Data can be `permanent` (like files) or volatile (like a python object in memory).
 Permanent data is stored in different storage such as local disk, tape storage, NAS and HDFS as well as cloud storage such as S3 and Dropbox.
 For simplicity we use the term **Disk** to refer to all those storages.
 Permanent data could be in form of file(s), databases or something else (just in case).

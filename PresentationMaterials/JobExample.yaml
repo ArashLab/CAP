@@ -1,0 +1,28 @@
+DataHandles:
+  InGt:
+    Permanent:
+      path: hdfs://users/me/data/input.vcf.bgz
+      isProduced: true
+  VarInfo:
+    Permanent:
+      path: s3://VarInfo/info.tsv
+Jobs:
+  GetVarInfo:
+    Specifications:
+      Operation: bypass
+    Parameters:
+      axis: rows
+    DataHandles:
+      inData:
+        DataHandle: InGt
+        MicroOperations:
+          - Type: maf
+            Parameters:
+              Minimum: 0.1
+      outData:
+        DataHandle: VarInfo
+        MicroOperations:
+          - type: rename
+            Parameters:
+              rsid: dbSnpId
+    

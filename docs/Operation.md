@@ -2,7 +2,7 @@
 
 All operations work with memory interface of their DataHandles unless specified otherwise.
 
-- **`bypass`**: Bypass is the most basic operation in CAP. As its name suggests, it does nothing but to bypass the only input (inData) to the only output (outData). Different formats are converted if possibe (see notes). Note that the same memory format can be linked to different disk formats (see the first Example).
+- **`bypass`**: Bypass is the most basic operation in CAP. As its name suggests, it does nothing but to bypass the only input (`inData`) to the only output (`outData`). Different formats are converted if possibe (see notes). Note that the same memory format can be linked to different disk formats (see the first Example).
     - `dataHandles`
         - `inData`
             - Supported Types

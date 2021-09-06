@@ -9,7 +9,12 @@ CAP uses the same concept to provide genomic cohort analysis:
 
 You describe the analysis `--->>>` CAP executes the analysis
 
-The isolation between the description and the execution of the analysis simplifies maintenance of the analysis pipeline. Furthermore, it opens the path to Cohort Analysis as a Service (CAS) to appear in the future. CAP also facilitate report generation process.
+The isolation between the description and the execution of the analysis leads to the following benefits:
+- Maintenance of the analysis pipeline.
+- Opens the path to Cohort Analysis as a Service.
+- Allow to systematically control for ethical analysis to be performed only.
+
+<CAP also facilitate report generation process./>
 
 CAP reads the specification of the analysis (the workflow) and executes all analysis steps (jobs). From this perspective, CAP is a simple workflow manager. Currently, CAP executes jobs serially and in a given order without checking for dependencies. There are many advanced workflow managers such as NextFlow and SnakeMake offering more features. **Our contribution is beyond introducing another workflow manager and our focus is on:**
 - Designing the specification that best suits describing genomic cohort analysis. 
